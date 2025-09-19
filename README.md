@@ -33,7 +33,7 @@ app.keyboard.add_keybindings({
 app.mainloop()
 ```
 
-Example using *zengl* (based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame-ce example):
+Example using [zengl](https://github.com/szabolcsdombi/zengl) (based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame-ce example):
 
 ```py
 from typing import override
