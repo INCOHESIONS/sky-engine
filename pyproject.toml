@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "sky-engine"
+version = "0.0.1"
+description = "A wrapper around pygame that makes it less painful to use."
+authors = ["iNCOHESiONS"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/incohesions/sky-engine"
+homepage = "https://github.com/incohesions/sky-engine"
+
+keywords = ["pygame", "gamedev"]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Windows",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python",
+]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+pygame-ce = "^2.5.3"
+singleton-decorator = "^1.0.0"
+pywin32 = "^310"               # win32gui
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

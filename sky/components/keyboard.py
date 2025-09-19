@@ -1,0 +1,128 @@
+from dataclasses import dataclass
+from typing import Callable, Self, override
+
+import pygame
+
+from sky.listenable import Listenable
+
+from ..core import Component
+from ..enums import Key, KeyLike, State
+from ..utils import get_by_attrs
+
+__all__ = ["Keyboard"]
+
+type _KeyListener = Callable[[Key], None]
+type _StatefulKeyListener = Callable[[Key, State], None]
+
+
+@dataclass
+class _Keybinding:
+    keys: tuple[Key, ...]
+    action: Callable[[], None]
+    state: State = State.downed
+
+
+class Keyboard(Component):
+    def __init__(self) -> None:
+        self._states: dict[Key, State] = {}
+        self._text = ""
+
+        self.on_key = Listenable[_StatefulKeyListener]()
+
+        self.on_key_pressed = Listenable[_KeyListener]()
+        self.on_key_downed = Listenable[_KeyListener]()
+        self.on_key_released = Listenable[_KeyListener]()
+
+        self._keybindings: list[_Keybinding] = []
+
+    @property
+    def states(self) -> dict[Key, State]:
+        return self._states
+
+    @property
+    def text(self) -> str:
+        return self._text
+
+    @override
+    def update(self) -> None:
+        _pressed = pygame.key.get_pressed()
+        _downed = pygame.key.get_just_pressed()
+        _released = pygame.key.get_just_released()
+
+        for key in Key:
+            state = State.from_bools(
+                pressed=_pressed[key.value],
+                released=_released[key.value],
+                down=_downed[key.value],
+            )
+
+            if state != State.none:
+                getattr(self, f"on_key_{state.name}").notify(key)
+
+            self.on_key.notify(key, state)
+
+            self._states[key] = state
+
+        for keybinding in self._keybindings:
+            if all(self.get_state(key) == keybinding.state for key in keybinding.keys):
+                keybinding.action()
+
+        self._text = "".join(e.unicode for e in self.app.events.get_all(pygame.KEYDOWN))
+
+    def add_keybinding(
+        self,
+        keys: KeyLike | tuple[KeyLike, ...],
+        action: Callable[[], None],
+        state: State = State.downed,
+        /,
+    ) -> Self:
+        converted = tuple(
+            map(Key.convert, (keys if isinstance(keys, tuple) else (keys,)))
+        )
+        self._keybindings.append(_Keybinding(converted, action, state))
+        return self
+
+    def add_keybindings(
+        self,
+        keybindings: dict[KeyLike | tuple[KeyLike, ...], Callable[[], None]],
+        /,
+    ) -> Self:
+        for keys, action in keybindings.items():
+            self.add_keybinding(keys, action)
+        return self
+
+    def remove_keybinding(self, keys: Key | tuple[Key, ...], /) -> None:
+        keybinding = get_by_attrs(
+            self._keybindings, keys=keys if isinstance(keys, tuple) else (keys,)
+        )
+
+        if keybinding is None:
+            raise ValueError(f"No keybinding found for {keys}")
+
+        self._keybindings.remove(keybinding)
+
+    def get_state(self, key: KeyLike, /) -> State:
+        return self._states[Key.convert(key)]
+
+    def set_state(self, key: KeyLike, state: State, /) -> None:
+        self._states[Key.convert(key)] = state
+
+    def is_state(self, key: KeyLike, state: State, /) -> bool:
+        return self.get_state(key) == state
+
+    def is_pressed(self, key: KeyLike, /) -> bool:
+        return self.is_state(key, State.pressed)
+
+    def is_downed(self, key: KeyLike, /) -> bool:
+        return self.is_state(key, State.downed)
+
+    def is_released(self, key: KeyLike, /) -> bool:
+        return self.is_state(key, State.released)
+
+    def any(self, state: State = State.none, /) -> bool:
+        return any(
+            self.get_state(key) == state
+            if state != State.none
+            else self.get_state(key) != State.none
+            for key in self._states
+        )
