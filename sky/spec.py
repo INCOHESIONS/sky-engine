@@ -9,6 +9,8 @@ __all__ = ["AppSpec", "Backend", "WindowSpec"]
 
 
 class Backend(Enum):
+    """What backend to use for the window. Should be set according to what rendering backend is used."""
+
     software = auto()
     opengl = auto()
     vulkan = auto()
@@ -22,6 +24,8 @@ class Backend(Enum):
 
 @dataclass
 class WindowSpec:
+    """Defines information the window needs to have before mainloop."""
+
     _: KW_ONLY
     title: str = "Sky Engine"
     position: Vector2 | None = None
@@ -33,5 +37,7 @@ class WindowSpec:
 
 @dataclass
 class AppSpec:
+    """Defines information the app needs to have before mainloop."""
+
     _: KW_ONLY
     window_spec: WindowSpec = field(default_factory=WindowSpec)

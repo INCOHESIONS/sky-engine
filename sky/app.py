@@ -14,6 +14,8 @@ __all__ = ["App"]
 
 @singleton
 class App:
+    """The singleton app class."""
+
     def __init__(self, /, *, spec: AppSpec = AppSpec()) -> None:
         pygame.init()
 
@@ -45,6 +47,23 @@ class App:
             component._internal = True  # type: ignore
 
     def mainloop(self) -> None:
+        """
+        The app's main loop.
+
+        Order of execution:
+            Pre-loop:
+                1. Component.start
+                2. App.setup
+            During loop:
+                1. App.pre_update
+                2. Component.update
+                3. App.post_update
+            Post-loop:
+                1. App.teardown
+                2. Component.stop
+
+        App.teardown is called before Component.stop since dependencies on it might need information that components have.
+        """
         for component in self._components:
             component.start()
 
@@ -70,12 +89,34 @@ class App:
     run = mainloop
 
     def add_component(self, component: type[Component] | Component, /) -> Self:
+        """
+        Adds a component to the app. Can be used as a class decorator.
+
+        Parameters
+        ----------
+        component: type[Component] | Component
+            The component, or its type, to add. Will be instanced immediately if a type is passed.
+
+        Returns
+        -------
+        Self
+            The app, for chaining.
+        """
         self._components.append(
             component() if isinstance(component, type) else component
         )
         return self
 
     def remove_component(self, component: type[Component] | Component, /) -> None:
+        """
+        Removes a component from the app.
+
+        Parameters
+        ----------
+        component: type[Component] | Component
+            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
+            If the component is an internal component (such as `Events` or `Windowing`), an error will be raised.
+        """
         if getattr(component, "_internal", False):
             raise ValueError("Cannot remove internal component")
 
@@ -87,7 +128,29 @@ class App:
 
         self._components.remove(component)
 
+    def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
+        """
+        Gets a component from the app.
+
+        Parameters
+        ----------
+        component: type[Component] | str
+            The component's type's name, or the type itself.
+
+        Returns
+        -------
+        Component | None
+            The component, if found.
+        """
+        if isinstance(component, str):
+            return first(
+                filter(lambda c: c.__class__.__name__ == component, self._components)  # type: ignore
+            )
+
+        return first(filter(lambda c: isinstance(c, component), self._components))  # type: ignore
+
     def quit(self) -> None:
+        """Closes the app in the next frame."""
         pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def _should_quit(self) -> bool:

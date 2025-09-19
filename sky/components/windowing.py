@@ -12,6 +12,8 @@ __all__ = ["Windowing"]
 
 
 class Windowing(Component):
+    """Handles windowing."""
+
     _magic_fullscreen_position = Vector2(-8, -31)
     _magic_size_offset = Vector2(16, 39)
 
@@ -27,27 +29,52 @@ class Windowing(Component):
 
     @property
     def main_window(self) -> pygame.Window | None:
+        """The main window, or None if the app is not running."""
         return self._main_window
 
     @property
     def main_monitor_size(self) -> Vector2:
+        """The size of the main monitor."""
         return self.monitor_sizes[self._main_monitor_index]
 
     @property
     def monitor_sizes(self) -> tuple[Vector2, ...]:
+        """The sizes of all connected monitors."""
         return tuple(map(Vector2, self._monitors))
 
     @property
     def spec(self) -> WindowSpec:
+        """The window spec."""
         return self.app.spec.window_spec
 
     @property
     def position(self) -> Vector2:
+        """
+        The position of the main window.
+
+        Raises
+        ------
+        AssertionError
+            If the main window is not set.
+        """
         assert self._main_window is not None
         return Vector2(self._main_window.position)
 
     @position.setter
     def position(self, value: Vector2) -> None:
+        """
+        Sets the position of the main window, with some magic to fix fullscreening problems.
+
+        Parameters
+        ----------
+        value: Vector2
+            The new position.
+
+        Raises
+        ------
+        AssertionError
+            If the main window is not set.
+        """
         # this is based on some old code i wrote to fix fullscreening problems with pygame.
         # i don't really know what the magic numbers mean, i just know that they work.
         # well, mostly. at least they do on my machine
@@ -61,21 +88,52 @@ class Windowing(Component):
 
     @property
     def size(self) -> Vector2:
+        """
+        The current size of the main window if the app is running, or the size in the spec otherwise.
+        """
         return Vector2(
             self._main_window.size if self._main_window is not None else self.spec.size
         )
 
     @size.setter
     def size(self, value: Vector2) -> None:
+        """
+        Sets the size of the main window.
+
+        Parameters
+        ----------
+        value: Vector2
+            The new size.
+
+        Raises
+        ------
+        AssertionError
+            If the main window is not set.
+        """
         assert self._main_window is not None
         self._main_window.size = value
 
     @property
     def fullscreen(self) -> bool:
+        """Whether the main window is fullscreen or not."""
         return self._fullscreen
 
     @fullscreen.setter
     def fullscreen(self, value: bool) -> None:
+        """
+        Sets whether the main window is fullscreen or not.
+        Probably the only part in the library that's currently not cross-platform.
+
+        Parameters
+        ----------
+        value: bool
+            Whether to set the window to fullscreen or not.
+
+        Raises
+        ------
+        AssertionError
+            If the main window is not set.
+        """
         assert self._main_window is not None
         self._fullscreen = value
         self.position = (
@@ -102,6 +160,7 @@ class Windowing(Component):
         if self._main_window is not None:
             self._main_window.destroy()
 
+    # uses post_update to guarantee the window is flipped after any user-added components update
     def post_update(self) -> None:
         assert self._main_window is not None
 
@@ -113,6 +172,7 @@ class Windowing(Component):
                 self.app.quit()
 
     def toggle_fullscreen(self) -> None:
+        """Toggles fullscreen mode."""
         self.fullscreen = not self._fullscreen
 
     def _centered_window_pos(self) -> Vector2:

@@ -11,6 +11,8 @@ __all__ = ["Component", "singleton"]
 
 
 class Component:
+    """Base class for components."""
+
     app: App
 
     def start(self) -> None: ...
@@ -21,4 +23,5 @@ class Component:
 
 
 def singleton[T: type](cls: T) -> T:
+    """Makes the decorated class a singleton while keeping its type."""
     return untyped_singleton(cls)  # type: ignore

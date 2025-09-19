@@ -9,18 +9,30 @@ __all__ = ["Chrono"]
 
 
 class Chrono(Component):
+    """Handles time."""
+
     def __init__(self) -> None:
         self.start_time = None
+        """The time the app started, or None if it hasn't started yet."""
+
         self.stop_time = None
+        """The time the app stopped, or None if it hasn't stopped yet."""
 
         self.target_framerate = 60
+        """The target framerate. Set to 0 to disable framerate limiting."""
+
         self.deltatime = 0
+        """The time since the last frame."""
+
         self.frames = 0
+        """The number of frames since the start of the app."""
 
         self._internal_clock = pygame.time.Clock()
 
     @property
     def time_since_start(self) -> timedelta | None:
+        """The time since the start of the app, or None if it hasn't started yet."""
+
         if self.start_time is None:
             return None
         return datetime.now() - self.start_time

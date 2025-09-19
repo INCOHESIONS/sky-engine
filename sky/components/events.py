@@ -21,6 +21,8 @@ class _Handler:
 
 
 class Events(Component):
+    """Handles pygame events."""
+
     def __init__(self) -> None:
         self._events: list[PygameEvent] = []
         self._handlers: list[_Handler] = []
@@ -30,7 +32,9 @@ class Events(Component):
 
     @property
     def events(self) -> list[PygameEvent]:
-        return self._events
+        """The list of events collected this frame."""
+
+        return self._events.copy()
 
     @override
     def update(self) -> None:
@@ -41,15 +45,61 @@ class Events(Component):
             )
 
     def add_handler(self, type: int, handler: Callable[[PygameEvent], None], /) -> None:
+        """
+        Adds a handler to the list of handlers.
+
+        Parameters
+        ----------
+        type: int
+            The type of event the handler should respond to.
+        handler: Callable[[PygameEvent], None]
+            The function to call to handle the event.
+        """
+
         self._handlers.append(_Handler(type, handler))
 
     def remove_handler(self, type: int, /) -> None:
+        """
+        Removes a handler from the list of handlers.
+
+        Parameters
+        ----------
+        type: int
+            The type of event the handler responds to.
+        """
+
         map(self._handlers.remove, filter_by_attrs(self._handlers, type=type))
 
     def get(self, type: int, /) -> PygameEvent | None:
+        """
+        Gets an event of a certain type.
+
+        Parameters
+        ----------
+        type: int
+            The type of event to get.
+
+        Returns
+        -------
+        PygameEvent | None
+            The event of the specified type, or None if no event of that type was found.
+        """
         return first(self.get_all(type))
 
     def get_all(self, type: int, /) -> list[PygameEvent]:
+        """
+        Gets all events of a certain type.
+
+        Parameters
+        ----------
+        type: int
+            The type of event to get.
+
+        Returns
+        -------
+        list[PygameEvent]
+            The events of the specified type.
+        """
         return list(filter_by_attrs(self._events, type=type))
 
     def post(self, event: PygameEvent | int, /) -> None:

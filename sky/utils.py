@@ -6,6 +6,8 @@ __all__ = ["filter_by_attrs", "first", "get_by_attrs", "last", "Vector2"]
 
 
 class Vector2(PygameVector2):
+    """A 2D vector. Should be used instead of pygame.math.Vector2."""
+
     def to_int_tuple(self) -> tuple[int, int]:
         return tuple(map(int, self))  # type: ignore
 
