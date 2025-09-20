@@ -168,7 +168,7 @@ def change_bg_color() -> Coroutine:
 
     for t in animate(duration=3, step=lambda: app.chrono.deltatime):
         app.windowing.surface.fill(RED.lerp(BLUE, t))
-        yield None
+        yield None  # same as WaitForFrames(1)
 
 
 app.mainloop()
