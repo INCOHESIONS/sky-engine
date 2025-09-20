@@ -108,7 +108,7 @@ app = App(spec=spec)
 app.add_component(RenderPipeline).mainloop()
 ```
 
-Coroutine example:
+Coroutine example (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
 
 ```python
 from sky import App, WaitForSeconds
