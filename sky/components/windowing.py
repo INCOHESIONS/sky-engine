@@ -35,8 +35,6 @@ class Windowing(Component):
         self._main_monitor_index = 0
         self._monitors = pygame.display.get_desktop_sizes()
 
-        self.app.post_update += self._post_update
-
     @property
     def main_monitor_size(self) -> Vector2:
         """The size of the main monitor."""
@@ -193,6 +191,8 @@ class Windowing(Component):
         )
 
         self._main.get_surface()
+
+        self.app.post_update += self._post_update
 
     @override
     def stop(self) -> None:
