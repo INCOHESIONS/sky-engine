@@ -167,7 +167,6 @@ class Windowing(Component):
 
         if os.name != "nt":
             self.main.set_fullscreen(value)
-            return
 
         self.position = (
             self._magic_fullscreen_position if value else self._centered_window_pos
