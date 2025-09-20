@@ -158,7 +158,7 @@ app.keyboard.add_keybindings({
 class Circle:
     position: Vector2
     velocity: Vector2
-    acceleration: Vector2 = field(default_factory=Vector2)
+    acceleration: Vector2
     radius: float = field(default_factory=lambda: randint(10, 20))
     color: Color = field(default_factory=Color.random)
 
