@@ -46,7 +46,7 @@ class RenderPipeline(Component):
     def start(self) -> None:
         self._ctx = zengl.context()
         self._image = self._ctx.image(
-            app.spec.window_spec.size.to_int_tuple(), "rgba8unorm", samples=4
+            app.windowing.size.to_int_tuple(), "rgba8unorm", samples=4
         )
         self._pipeline = self._ctx.pipeline(
             vertex_shader=self.VERTEX_SHADER,
