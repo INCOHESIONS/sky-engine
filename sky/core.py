@@ -10,7 +10,15 @@ from singleton_decorator import singleton as untyped_singleton  # type: ignore
 if TYPE_CHECKING:
     from .app import App
 
-__all__ = ["Component", "singleton"]
+__all__ = [
+    "Component",
+    "singleton",
+    "WaitForFrames",
+    "WaitForSeconds",
+    "WaitUntil",
+    "WaitWhile",
+    "Yieldable",
+]
 
 
 class Component:
