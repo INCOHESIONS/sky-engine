@@ -163,7 +163,7 @@ app = App()
 
 
 @app.setup
-def change_bg_color() -> Coroutine:
+def lerp_color() -> Coroutine:
     assert app.windowing.surface is not None
 
     for t in animate(duration=3, step=lambda: app.chrono.deltatime):
