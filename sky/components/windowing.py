@@ -1,12 +1,16 @@
+import os
 from ctypes import windll
 from typing import override
 
 import pygame
-import win32gui
 
 from ..core import Component
 from ..spec import WindowSpec
 from ..utils import Vector2
+
+if os.name == "nt":
+    import win32gui
+
 
 __all__ = ["Windowing"]
 
@@ -96,6 +100,11 @@ class Windowing(Component):
         # i don't really know what the magic numbers mean, i just know that they work.
         # well, mostly. at least they do on my machine
         assert self._main is not None
+
+        if os.name != "nt":
+            self.main.position = value
+            return
+
         handle = win32gui.FindWindow(None, self._main.title)
         windll.user32.MoveWindow(
             handle,
