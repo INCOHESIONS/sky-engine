@@ -25,7 +25,7 @@ del environ
 import pygame
 
 from .app import App
-from .core import Component
+from .core import Component, WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
 from .enums import Cursor, Key, MouseButton, State
 from .listenable import Listenable
 from .spec import AppSpec, Backend, WindowSpec
@@ -46,5 +46,9 @@ __all__ = [
     "Listenable",
     "MouseButton",
     "State",
+    "WaitForFrames",
+    "WaitForSeconds",
+    "WaitUntil",
+    "WaitWhile",
     "WindowSpec",
 ]

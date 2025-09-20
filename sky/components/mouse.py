@@ -3,7 +3,8 @@ from typing import override
 import pygame
 
 from ..core import Component
-from ..enums import State
+from ..enums import MouseButton, State
+from ..types import MouseButtonLike
 from ..utils import Vector2
 
 __all__ = ["Mouse"]
@@ -54,13 +55,13 @@ class Mouse(Component):
             for i in range(0, self._num_buttons)
         ]
 
-    def get_state(self, button: int, /) -> State:
+    def get_state(self, button: MouseButtonLike, /) -> State:
         """
         Gets the state of a button.
 
         Parameters
         ----------
-        button: int
+        button: MouseButtonLike
             The button to get the state of.
 
         Returns
@@ -69,9 +70,9 @@ class Mouse(Component):
             The button's state.
         """
 
-        return self._states[button]
+        return self._states[MouseButton.convert(button).value]
 
-    def is_state(self, button: int, state: State, /) -> bool:
+    def is_state(self, button: MouseButtonLike, state: State, /) -> bool:
         """
         Checks if a button is in a certain state.
         State can be State.none to check if the button is not being interacted with at all.\n
@@ -79,7 +80,7 @@ class Mouse(Component):
 
         Parameters
         ----------
-        button: int
+        button: MouseButtonLike
             The button to check.
         state: State
             The state to check for.
@@ -91,13 +92,13 @@ class Mouse(Component):
         """
         return self.get_state(button) == state
 
-    def is_pressed(self, button: int, /) -> bool:
+    def is_pressed(self, button: MouseButtonLike, /) -> bool:
         """
         Checks if a button is pressed (pressed for multiple frames).
 
         Parameters
         ----------
-        button: int
+        button: MouseButtonLike
             The button to check.
 
         Returns
@@ -107,13 +108,13 @@ class Mouse(Component):
         """
         return self.is_state(button, State.pressed)
 
-    def is_downed(self, button: int, /) -> bool:
+    def is_downed(self, button: MouseButtonLike, /) -> bool:
         """
         Checks if a button is downed (pressed on this frame).
 
         Parameters
         ----------
-        button: int
+        button: MouseButtonLike
             The button to check.
 
         Returns
@@ -123,13 +124,13 @@ class Mouse(Component):
         """
         return self.is_state(button, State.downed)
 
-    def is_released(self, button: int, /) -> bool:
+    def is_released(self, button: MouseButtonLike, /) -> bool:
         """
         Checks if a button is released (released on this frame).
 
         Parameters
         ----------
-        button: int
+        button: MouseButtonLike
             The button to check.
 
         Returns

@@ -5,20 +5,15 @@ from typing import Self, final
 
 import pygame
 
+from .types import CursorLike
+
 __all__ = [
     "Cursor",
-    "CursorLike",
     "InputEnum",
     "Key",
-    "KeyLike",
     "MouseButton",
-    "MouseButtonLike",
     "State",
 ]
-
-type KeyLike = Key | str | int
-type MouseButtonLike = MouseButton | str | int
-type CursorLike = Cursor | str | int
 
 _keyname_mapping: dict[str, str] = {
     "alpha_0": "0",

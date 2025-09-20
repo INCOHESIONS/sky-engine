@@ -28,11 +28,6 @@ class Windowing(Component):
         self.app.post_update += self.post_update
 
     @property
-    def main_window(self) -> pygame.Window | None:
-        """The main window, or None if the app is not running."""
-        return self._main_window
-
-    @property
     def main_monitor_size(self) -> Vector2:
         """The size of the main monitor."""
         return self.monitor_sizes[self._main_monitor_index]
@@ -46,6 +41,17 @@ class Windowing(Component):
     def spec(self) -> WindowSpec:
         """The window spec."""
         return self.app.spec.window_spec
+
+    @property
+    def window(self) -> pygame.Window | None:
+        """The main window, or None if the app is not running."""
+        return self._main_window
+
+    @property
+    def surface(self) -> pygame.Surface | None:
+        """The main window's surface."""
+
+        return self.window.get_surface() if self.window else None
 
     @property
     def position(self) -> Vector2:

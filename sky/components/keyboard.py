@@ -6,7 +6,8 @@ import pygame
 from sky.listenable import Listenable
 
 from ..core import Component
-from ..enums import Key, KeyLike, State
+from ..enums import Key, State
+from ..types import KeyLike
 from ..utils import get_by_attrs
 
 __all__ = ["Keyboard"]

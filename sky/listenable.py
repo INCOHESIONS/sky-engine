@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterator, Self
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, get_type_hints
+
+from .types import Coroutine
+
+if TYPE_CHECKING:
+    from sky import App
 
 __all__ = ["Listenable"]
 
@@ -60,7 +65,29 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
     on_something.notify()
     ```
+
+    Can also be used as a decorator in a coroutine, as long as TListener is `Callable[[], None]`:
+    ```python
+    from sky import App, WaitForSeconds
+    from sky.colors import BLUE, RED
+    from sky.types import Coroutine
+
+    app = App()
+
+
+    @app.setup
+    def change_bg_color() -> Coroutine:
+        assert app.windowing.surface is not None
+        app.windowing.surface.fill(RED)
+        yield WaitForSeconds(3)
+        app.windowing.surface.fill(BLUE)
+
+
+    app.mainloop()
+    ```
     """
+
+    app: App
 
     def __init__(self, cancellable: bool = False, once: bool = False) -> None:
         self._listeners: list[TListener] = []
@@ -71,9 +98,14 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     def __iter__(self) -> Iterator[TListener]:
         return iter(self._listeners)
 
-    def __call__(self, listener: TListener) -> Self:
+    def __call__(self, listener: TListener | Callable[[], Coroutine]) -> Self:
         """Allows listenables to be used as decorators."""
-        self.add_listener(listener)
+
+        if get_type_hints(listener)["return"] is Coroutine:
+            self.add_listener(lambda: self.app.executor.start_coroutine(listener))  # type: ignore
+            return self
+
+        self.add_listener(listener)  # type: ignore
         return self
 
     def __iadd__(self, listener: TListener) -> Self:

@@ -33,7 +33,7 @@ app.keyboard.add_keybindings({
 app.mainloop()
 ```
 
-Example using [zengl](https://github.com/szabolcsdombi/zengl) (based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame-ce example):
+Rendering example (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame-ce example):
 
 ```py
 from typing import override
@@ -106,4 +106,25 @@ class RenderPipeline(Component):
 spec = AppSpec(window_spec=WindowSpec(backend=Backend.opengl))
 app = App(spec=spec)
 app.add_component(RenderPipeline).mainloop()
+```
+
+Coroutine example:
+
+```python
+from sky import App, WaitForSeconds
+from sky.colors import BLUE, RED
+from sky.types import Coroutine
+
+app = App()
+
+
+@app.setup
+def change_bg_color() -> Coroutine:
+    assert app.windowing.surface is not None
+    app.windowing.surface.fill(RED)
+    yield WaitForSeconds(3)
+    app.windowing.surface.fill(BLUE)
+
+
+app.mainloop()
 ```

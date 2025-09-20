@@ -4,8 +4,8 @@ import pygame
 
 from sky.listenable import Listenable
 
-from .components import Chrono, Events, Keyboard, Mouse, Windowing
-from .core import Component, singleton
+from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
+from .core import Component, Yieldable, singleton
 from .spec import AppSpec
 from .utils import first, get_by_attrs
 
@@ -19,6 +19,8 @@ class App:
     def __init__(self, /, *, spec: AppSpec = AppSpec()) -> None:
         pygame.init()
 
+        Listenable.app = self
+        Yieldable.app = self
         Component.app = self
 
         self.spec = spec
@@ -34,6 +36,7 @@ class App:
         self.mouse = Mouse()
         self.windowing = Windowing()
         self.chrono = Chrono()
+        self.executor = Executor()
 
         self._components: list[Component] = [
             self.events,
@@ -41,10 +44,19 @@ class App:
             self.mouse,
             self.windowing,
             self.chrono,
+            self.executor,
         ]  # do not change ordering
 
         for component in self._components:
             component._internal = True  # type: ignore
+
+        self._is_running = True
+
+    @property
+    def is_running(self) -> bool:
+        """Whether the app is running."""
+
+        return self._is_running
 
     def mainloop(self) -> None:
         """
@@ -64,10 +76,13 @@ class App:
 
         App.teardown is called before Component.stop since dependencies on it might need information that components have.
         """
+
         for component in self._components:
             component.start()
 
         self.setup.notify()
+
+        self._is_running = True
 
         while not self._should_quit():
             self.events._events = pygame.event.get()  # type: ignore
@@ -83,6 +98,8 @@ class App:
 
         for component in self._components:
             component.stop()
+
+        self._is_running = False
 
         pygame.quit()
 
@@ -102,6 +119,7 @@ class App:
         Self
             The app, for chaining.
         """
+
         self._components.append(
             component() if isinstance(component, type) else component
         )
@@ -117,6 +135,7 @@ class App:
             The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
             If the component is an internal component (such as `Events` or `Windowing`), an error will be raised.
         """
+
         if getattr(component, "_internal", False):
             raise ValueError("Cannot remove internal component")
 
@@ -142,6 +161,7 @@ class App:
         Component | None
             The component, if found.
         """
+
         if isinstance(component, str):
             return first(
                 filter(lambda c: c.__class__.__name__ == component, self._components)  # type: ignore
@@ -151,6 +171,7 @@ class App:
 
     def quit(self) -> None:
         """Closes the app in the next frame."""
+
         pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def _should_quit(self) -> bool:
