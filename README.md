@@ -128,3 +128,11 @@ def change_bg_color() -> Coroutine:
 
 app.mainloop()
 ```
+
+Headless application (useful for certain types of testing):
+
+```python
+from sky import App, AppSpec
+
+App(spec=AppSpec.headless()).mainloop()
+```

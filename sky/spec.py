@@ -37,7 +37,13 @@ class WindowSpec:
 
 @dataclass
 class AppSpec:
-    """Defines information the app needs to have before mainloop."""
+    """Defines information the app needs to have before mainloop. If window_spec is None, a window will not be created."""
 
     _: KW_ONLY
-    window_spec: WindowSpec = field(default_factory=WindowSpec)
+    window_spec: WindowSpec | None = field(default_factory=WindowSpec)
+
+    @classmethod
+    def headless(cls) -> AppSpec:
+        """Simply creates an AppSpec with window_spec set to None."""
+
+        return cls(window_spec=None)
