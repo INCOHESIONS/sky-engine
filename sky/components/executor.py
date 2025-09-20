@@ -11,8 +11,7 @@ class Executor(Component):
         self._coroutines: dict[Coroutine, Yieldable] = {}
 
     def start_coroutine(
-        self,
-        coroutine: Callable[[], Coroutine] | Coroutine,
+        self, coroutine: Callable[[], Coroutine] | Coroutine, /
     ) -> None:
         """
         Starts a Coroutine.
@@ -27,11 +26,11 @@ class Executor(Component):
             coroutine = coroutine()
 
         if coroutine in self._coroutines:
-            return
+            raise RuntimeError("Tried adding the same exact coroutine twice")
 
         self._step_coroutine(coroutine)
 
-    def stop_coroutine(self, coroutine: Coroutine) -> None:
+    def stop_coroutine(self, coroutine: Coroutine, /) -> None:
         """
         Stops the given `Coroutine`.
 
@@ -39,6 +38,11 @@ class Executor(Component):
         ----------
         coroutine : `Coroutine`
             The `Coroutine` to be stopped.
+
+        Raises
+        ------
+        KeyError
+            If the `Coroutine` is not found.
         """
 
         self._coroutines.pop(coroutine)
@@ -49,7 +53,7 @@ class Executor(Component):
             if yieldable.ready():
                 self._step_coroutine(coroutine)
 
-    def _step_coroutine(self, coroutine: Coroutine) -> None:
+    def _step_coroutine(self, coroutine: Coroutine, /) -> None:
         next = self._get_next(coroutine)
 
         if next is not None:
@@ -57,9 +61,15 @@ class Executor(Component):
         else:
             self.stop_coroutine(coroutine)
 
-    def _get_next(self, coroutine: Coroutine) -> Yieldable | None:
+    def _get_next(self, coroutine: Coroutine, /) -> Yieldable | None:
         try:
-            n = next(coroutine)
+            value = next(coroutine)
         except StopIteration:
             return None
-        return n() if isinstance(n, type) else n if n is not None else WaitForFrames(1)
+        return (
+            value()
+            if isinstance(value, type)
+            else WaitForFrames(1)
+            if value is None
+            else value
+        )

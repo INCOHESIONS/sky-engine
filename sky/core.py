@@ -26,6 +26,8 @@ class Component:
 
 
 class Yieldable(ABC):
+    """Base class for yieldables: values that tell the coroutine executor to wait or continue executing a coroutine."""
+
     app: App
 
     @abstractmethod
@@ -34,7 +36,12 @@ class Yieldable(ABC):
 
 @dataclass
 class WaitForFrames(Yieldable):
-    frames: int
+    """
+    Waits for a certain amount of frames to pass. By default, it waits for 1 frame.
+    If None is returned from a coroutine, it will also wait for 1 frame.
+    """
+
+    frames: int = 1
 
     def __post_init__(self) -> None:
         self._frames_started = self.app.chrono.frames
@@ -46,6 +53,8 @@ class WaitForFrames(Yieldable):
 
 @dataclass
 class WaitForSeconds(Yieldable):
+    """Waits for a certain amount of seconds to pass."""
+
     seconds: float
 
     def __post_init__(self) -> None:
@@ -58,6 +67,8 @@ class WaitForSeconds(Yieldable):
 
 @dataclass
 class WaitWhile(Yieldable):
+    """Waits while a certain condition is not met."""
+
     func: Callable[[], bool]
 
     @override
@@ -67,6 +78,8 @@ class WaitWhile(Yieldable):
 
 @dataclass
 class WaitUntil(Yieldable):
+    """Waits until a certain condition is met."""
+
     func: Callable[[], bool]
 
     @override
@@ -76,4 +89,5 @@ class WaitUntil(Yieldable):
 
 def singleton[T: type](cls: T) -> T:
     """Makes the decorated class a singleton while keeping its type."""
+
     return untyped_singleton(cls)  # type: ignore

@@ -9,4 +9,4 @@ type KeyLike = Key | str | int
 type MouseButtonLike = MouseButton | str | int
 type CursorLike = Cursor | str | int
 
-type Coroutine = Generator[Yieldable | None, None, None]
+type Coroutine = Generator[type[Yieldable] | Yieldable | None, None, None]
