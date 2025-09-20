@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, get_type_hints
 
 from .types import Coroutine
@@ -160,3 +161,51 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
                 break
 
         self._called = True
+
+    def equals(
+        self, *args: Any
+    ) -> Callable[[Callable[[], None]], Callable[[TListener], None]]:
+        """
+        Prevents a handler from being invoked if the arguments passed to `invoke` don't match the arguments passed as `args`.
+
+        Examples
+        --------
+        ```python
+        @app.mouse.on_button_downed
+        def on_button_downed(button: MouseButton) -> None:
+            if button == MouseButton.left: ...
+        ```
+
+        Can be rewritten as:
+
+        ```python
+        @app.mouse.on_button_downed.equals(MouseButton.left)
+        def on_button_downed() -> None: ...
+        ```
+
+        Parameters
+        ----------
+        *args : `Any`
+            The arguments to check against.
+
+        Returns
+        -------
+        `Callable[[Callable[[], None]], Callable[[TListener], None]]`
+            Blah blah blah. It's a decorator with arguments. No one knows how to type these.
+        """
+
+        def decorator(func: Callable[[], None]) -> Callable[[TListener], None]:
+            nonlocal self
+
+            @functools.wraps(func)
+            def wrapper(*args2: TListener) -> None:
+                if args == args2:
+                    func()
+
+            # there's no way to cast `wrapper` to `T` here, and since python doesn't support extracting
+            # the type of the arguments of a callable in some crazy typescript-like way, we have to do this
+            self += wrapper  # type: ignore
+
+            return wrapper
+
+        return decorator
