@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from time import perf_counter
-from typing import TYPE_CHECKING, Callable, override
+from typing import TYPE_CHECKING, Callable, final, override
 
 from singleton_decorator import singleton as untyped_singleton  # type: ignore
 
@@ -34,6 +34,7 @@ class Yieldable(ABC):
     def ready(self) -> bool: ...
 
 
+@final
 @dataclass
 class WaitForFrames(Yieldable):
     """
@@ -51,6 +52,7 @@ class WaitForFrames(Yieldable):
         return self.app.chrono.frames - self._frames_started >= self.frames
 
 
+@final
 @dataclass
 class WaitForSeconds(Yieldable):
     """Waits for a certain amount of seconds to pass."""
@@ -65,6 +67,7 @@ class WaitForSeconds(Yieldable):
         return perf_counter() - self._time_started >= self.seconds
 
 
+@final
 @dataclass
 class WaitWhile(Yieldable):
     """Waits while a certain condition is not met."""
@@ -76,6 +79,7 @@ class WaitWhile(Yieldable):
         return not self.func()
 
 
+@final
 @dataclass
 class WaitUntil(Yieldable):
     """Waits until a certain condition is met."""

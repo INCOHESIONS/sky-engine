@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Literal
+from typing import Literal, final
 
 from .utils import Vector2
 
 __all__ = ["AppSpec", "WindowSpec"]
 
 
+@final
 @dataclass
 class WindowSpec:
     """Defines information the window needs to have before mainloop.If position is None, the window will be centered on the screen."""
@@ -27,6 +28,7 @@ class WindowSpec:
         return not self.is_software()
 
 
+@final
 @dataclass
 class AppSpec:
     """Defines information the app needs to have before mainloop. If window_spec is None, a window will not be created."""
