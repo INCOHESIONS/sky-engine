@@ -62,7 +62,7 @@ class WaitWhile(Yieldable):
 
     @override
     def ready(self) -> bool:
-        return self.func()
+        return not self.func()
 
 
 @dataclass
@@ -71,7 +71,7 @@ class WaitUntil(Yieldable):
 
     @override
     def ready(self) -> bool:
-        return not self.func()
+        return self.func()
 
 
 def singleton[T: type](cls: T) -> T:
