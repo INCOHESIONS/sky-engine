@@ -2,7 +2,7 @@
 
 More like a wrapper than an engine. Makes `pygame` less painful to use. Fully typed with Pylance on strict mode. Probably won't actually publish this on PyPI, but it's here for now.
 
-Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, but you can also use `pygame`'s software renderer with `pygame.draw`.
+Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, as well as one using `pygame`'s software renderer with `pygame.draw`.
 
 ## Usage
 
