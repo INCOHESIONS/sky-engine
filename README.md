@@ -6,33 +6,6 @@ Rendering is yet to be implemented, and thus is up to the user. An OpenGL exampl
 
 ## Usage
 
-Simple example:
-
-```python
-from sky import App
-
-app = App()
-
-# pre component (i.e. windowing, keyboard) update
-@app.pre_update
-def pre_update() -> None:
-    print("Runs every frame!")
-
-
-@app.keyboard.on_key
-def on_key(key: Key, state: State) -> None:
-    print(f"Key {key} was {state.name}!")  # states: pressed (held down for more than one frame), downed (just pressed), released (just released)
-
-
-# alternatively, you can add keybindings instead of listening for events
-app.keyboard.add_keybindings({
-    Key.escape: app.quit,
-    Key.f11: app.windowing.toggle_fullscreen,
-})  # fmt: skip
-
-app.mainloop()
-```
-
 Rendering example (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame-ce example):
 
 ```py
@@ -40,7 +13,7 @@ from typing import override
 
 import zengl
 
-from sky import App, AppSpec, Backend, Component, WindowSpec
+from sky import App, AppSpec, Component, WindowSpec
 
 
 class RenderPipeline(Component):
@@ -104,37 +77,10 @@ class RenderPipeline(Component):
 
 
 spec = AppSpec(window_spec=WindowSpec(backend="opengl"))
+
 app = App(spec=spec)
-app.add_component(RenderPipeline).mainloop()
-```
-
-Coroutine example (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
-
-```python
-from sky import App, WaitForSeconds
-from sky.colors import BLUE, RED
-from sky.types import Coroutine
-
-app = App()
-
-
-@app.setup
-def change_bg_color() -> Coroutine:
-    assert app.windowing.surface is not None
-    app.windowing.surface.fill(RED)
-    yield WaitForSeconds(3)
-    app.windowing.surface.fill(BLUE)
-
-
+app.add_component(RenderPipeline)
 app.mainloop()
-```
-
-Headless application (useful for certain types of testing):
-
-```python
-from sky import App, AppSpec
-
-App(spec=AppSpec.headless()).mainloop()
 ```
 
 More involved, interactive example (using pygame's drawing functions):
@@ -198,6 +144,27 @@ def pre_update() -> None:
 @app.mouse.on_mouse_button_downed.equals(MouseButton.left)
 def on_mouse_button_downed() -> None:
     circles.append(Circle(app.mouse.position, Vector2(), app.mouse.velocity / 3))
+
+
+app.mainloop()
+```
+
+Coroutine example (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
+
+```python
+from sky import App, WaitForSeconds
+from sky.colors import BLUE, RED
+from sky.types import Coroutine
+
+app = App()
+
+
+@app.setup
+def change_bg_color() -> Coroutine:
+    assert app.windowing.surface is not None
+    app.windowing.surface.fill(RED)
+    yield WaitForSeconds(3)
+    app.windowing.surface.fill(BLUE)
 
 
 app.mainloop()
