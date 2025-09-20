@@ -1,0 +1,305 @@
+from pygame import Color
+
+__all__ = [
+    "TRANSPARENT",
+    "ALICE_BLUE",
+    "ANTIQUE_WHITE",
+    "AQUA",
+    "AQUAMARINE",
+    "AZURE",
+    "BEIGE",
+    "BISQUE",
+    "BLACK",
+    "BLANCHED_ALMOND",
+    "BLUE_VIOLET",
+    "BLUE",
+    "BROWN",
+    "BURLY_WOOD",
+    "CADET_BLUE",
+    "CHARTREUSE",
+    "CHOCOLATE",
+    "CORAL",
+    "CORNFLOWER_BLUE",
+    "CORNSILK",
+    "CRIMSON",
+    "CYAN",
+    "DARK_BLUE",
+    "DARK_CYAN",
+    "DARK_GOLDEN_ROD",
+    "DARK_GRAY",
+    "DARK_GREEN",
+    "DARK_GREY",
+    "DARK_KHAKI",
+    "DARK_MAGENTA",
+    "DARK_OLIVE_GREEN",
+    "DARK_ORANGE",
+    "DARK_ORCHID",
+    "DARK_RED",
+    "DARK_SALMON",
+    "DARK_SEA_GREEN",
+    "DARK_SLATE_BLUE",
+    "DARK_SLATE_GRAY",
+    "DARK_SLATE_GREY",
+    "DARK_TURQUOISE",
+    "DARK_VIOLET",
+    "DEEP_PINK",
+    "DEEP_SKY_BLUE",
+    "DIM_GRAY",
+    "DIM_GREY",
+    "DODGER_BLUE",
+    "FIRE_BRICK",
+    "FLORAL_WHITE",
+    "FOREST_GREEN",
+    "FUCHSIA",
+    "GAINSBORO",
+    "GHOST_WHITE",
+    "GOLD",
+    "GOLDEN_ROD",
+    "GRAY",
+    "GREEN_YELLOW",
+    "GREEN",
+    "GREY",
+    "HONEY_DEW",
+    "HOT_PINK",
+    "INDIAN_RED",
+    "INDIGO",
+    "IVORY",
+    "KHAKI",
+    "LAVENDER_BLUSH",
+    "LAVENDER",
+    "LAWN_GREEN",
+    "LEMON_CHIFFON",
+    "LIGHT_BLUE",
+    "LIGHT_CORAL",
+    "LIGHT_CYAN",
+    "LIGHT_GOLDEN_ROD_YELLOW",
+    "LIGHT_GRAY",
+    "LIGHT_GREEN",
+    "LIGHT_GREY",
+    "LIGHT_PINK",
+    "LIGHT_SALMON",
+    "LIGHT_SEA_GREEN",
+    "LIGHT_SKY_BLUE",
+    "LIGHT_SLATE_GRAY",
+    "LIGHT_SLATE_GREY",
+    "LIGHT_STEEL_BLUE",
+    "LIGHT_YELLOW",
+    "LIME_GREEN",
+    "LIME",
+    "LINEN",
+    "MAGENTA",
+    "MAROON",
+    "MEDIUM_AQUA_MARINE",
+    "MEDIUM_BLUE",
+    "MEDIUM_ORCHID",
+    "MEDIUM_PURPLE",
+    "MEDIUM_SEA_GREEN",
+    "MEDIUM_SLATE_BLUE",
+    "MEDIUM_SPRING_GREEN",
+    "MEDIUM_TURQUOISE",
+    "MEDIUM_VIOLET_RED",
+    "MIDNIGHT_BLUE",
+    "MINT_CREAM",
+    "MISTY_ROSE",
+    "MOCCASIN",
+    "NAVAJO_WHITE",
+    "NAVY",
+    "OLD_LACE",
+    "OLIVE_DRAB",
+    "OLIVE",
+    "ORANGE_RED",
+    "ORANGE",
+    "ORCHID",
+    "PALE_GOLDEN_ROD",
+    "PALE_GREEN",
+    "PALE_TURQUOISE",
+    "PALE_VIOLET_RED",
+    "PAPAYA_WHIP",
+    "PEACH_PUFF",
+    "PERU",
+    "PINK",
+    "PLUM",
+    "POWDER_BLUE",
+    "PURPLE",
+    "REBECCA_PURPLE",
+    "RED",
+    "ROSY_BROWN",
+    "ROYAL_BLUE",
+    "SADDLE_BROWN",
+    "SALMON",
+    "SANDY_BROWN",
+    "SEA_GREEN",
+    "SEA_SHELL",
+    "SIENNA",
+    "SILVER",
+    "SKY_BLUE",
+    "SLATE_BLUE",
+    "SLATE_GRAY",
+    "SLATE_GREY",
+    "SNOW",
+    "SPRING_GREEN",
+    "STEEL_BLUE",
+    "TAN",
+    "TEAL",
+    "THISTLE",
+    "TOMATO",
+    "TURQUOISE",
+    "VIOLET",
+    "WHEAT",
+    "WHITE_SMOKE",
+    "WHITE",
+    "YELLOW_GREEN",
+    "YELLOW",
+]
+
+
+TRANSPARENT = Color("#00000000")
+
+ALICE_BLUE = Color("#F0F8FF")
+ANTIQUE_WHITE = Color("#FAEBD7")
+AQUA = Color("#00FFFF")
+AQUAMARINE = Color("#7FFFD4")
+AZURE = Color("#F0FFFF")
+BEIGE = Color("#F5F5DC")
+BISQUE = Color("#FFE4C4")
+BLACK = Color("#000000")
+BLANCHED_ALMOND = Color("#FFEBCD")
+BLUE = Color("#0000FF")
+BLUE_VIOLET = Color("#8A2BE2")
+BROWN = Color("#A52A2A")
+BURLY_WOOD = Color("#DEB887")
+CADET_BLUE = Color("#5F9EA0")
+CHARTREUSE = Color("#7FFF00")
+CHOCOLATE = Color("#D2691E")
+CORAL = Color("#FF7F50")
+CORNFLOWER_BLUE = Color("#6495ED")
+CORNSILK = Color("#FFF8DC")
+CRIMSON = Color("#DC143C")
+CYAN = Color("#00FFFF")
+DARK_BLUE = Color("#00008B")
+DARK_CYAN = Color("#008B8B")
+DARK_GOLDEN_ROD = Color("#B8860B")
+DARK_GRAY = Color("#A9A9A9")
+DARK_GREEN = Color("#006400")
+DARK_GREY = Color("#A9A9A9")
+DARK_KHAKI = Color("#BDB76B")
+DARK_MAGENTA = Color("#8B008B")
+DARK_OLIVE_GREEN = Color("#556B2F")
+DARK_ORANGE = Color("#FF8C00")
+DARK_ORCHID = Color("#9932CC")
+DARK_RED = Color("#8B0000")
+DARK_SALMON = Color("#E9967A")
+DARK_SEA_GREEN = Color("#8FBC8F")
+DARK_SLATE_BLUE = Color("#483D8B")
+DARK_SLATE_GRAY = Color("#2F4F4F")
+DARK_SLATE_GREY = Color("#2F4F4F")
+DARK_TURQUOISE = Color("#00CED1")
+DARK_VIOLET = Color("#9400D3")
+DEEP_PINK = Color("#FF1493")
+DEEP_SKY_BLUE = Color("#00BFFF")
+DIM_GRAY = Color("#696969")
+DIM_GREY = Color("#696969")
+DODGER_BLUE = Color("#1E90FF")
+FIRE_BRICK = Color("#B22222")
+FLORAL_WHITE = Color("#FFFAF0")
+FOREST_GREEN = Color("#228B22")
+FUCHSIA = Color("#FF00FF")
+GAINSBORO = Color("#DCDCDC")
+GHOST_WHITE = Color("#F8F8FF")
+GOLD = Color("#FFD700")
+GOLDEN_ROD = Color("#DAA520")
+GRAY = Color("#808080")
+GREEN = Color("#00ff00")
+GREEN_YELLOW = Color("#ADFF2F")
+GREY = Color("#808080")
+HONEY_DEW = Color("#F0FFF0")
+HOT_PINK = Color("#FF69B4")
+INDIAN_RED = Color("#CD5C5C")
+INDIGO = Color("#4B0082")
+IVORY = Color("#FFFFF0")
+KHAKI = Color("#F0E68C")
+LAVENDER = Color("#E6E6FA")
+LAVENDER_BLUSH = Color("#FFF0F5")
+LAWN_GREEN = Color("#7CFC00")
+LEMON_CHIFFON = Color("#FFFACD")
+LIGHT_BLUE = Color("#ADD8E6")
+LIGHT_CORAL = Color("#F08080")
+LIGHT_CYAN = Color("#E0FFFF")
+LIGHT_GOLDEN_ROD_YELLOW = Color("#FAFAD2")
+LIGHT_GRAY = Color("#D3D3D3")
+LIGHT_GREEN = Color("#90EE90")
+LIGHT_GREY = Color("#D3D3D3")
+LIGHT_PINK = Color("#FFB6C1")
+LIGHT_SALMON = Color("#FFA07A")
+LIGHT_SEA_GREEN = Color("#20B2AA")
+LIGHT_SKY_BLUE = Color("#87CEFA")
+LIGHT_SLATE_GRAY = Color("#778899")
+LIGHT_SLATE_GREY = Color("#778899")
+LIGHT_STEEL_BLUE = Color("#B0C4DE")
+LIGHT_YELLOW = Color("#FFFFE0")
+LIME = Color("#00FF00")
+LIME_GREEN = Color("#32CD32")
+LINEN = Color("#FAF0E6")
+MAGENTA = Color("#FF00FF")
+MAROON = Color("#800000")
+MEDIUM_AQUA_MARINE = Color("#66CDAA")
+MEDIUM_BLUE = Color("#0000CD")
+MEDIUM_ORCHID = Color("#BA55D3")
+MEDIUM_PURPLE = Color("#9370DB")
+MEDIUM_SEA_GREEN = Color("#3CB371")
+MEDIUM_SLATE_BLUE = Color("#7B68EE")
+MEDIUM_SPRING_GREEN = Color("#00FA9A")
+MEDIUM_TURQUOISE = Color("#48D1CC")
+MEDIUM_VIOLET_RED = Color("#C71585")
+MIDNIGHT_BLUE = Color("#191970")
+MINT_CREAM = Color("#F5FFFA")
+MISTY_ROSE = Color("#FFE4E1")
+MOCCASIN = Color("#FFE4B5")
+NAVAJO_WHITE = Color("#FFDEAD")
+NAVY = Color("#000080")
+OLD_LACE = Color("#FDF5E6")
+OLIVE = Color("#808000")
+OLIVE_DRAB = Color("#6B8E23")
+ORANGE = Color("#FFA500")
+ORANGE_RED = Color("#FF4500")
+ORCHID = Color("#DA70D6")
+PALE_GOLDEN_ROD = Color("#EEE8AA")
+PALE_GREEN = Color("#98FB98")
+PALE_TURQUOISE = Color("#AFEEEE")
+PALE_VIOLET_RED = Color("#DB7093")
+PAPAYA_WHIP = Color("#FFEFD5")
+PEACH_PUFF = Color("#FFDAB9")
+PERU = Color("#CD853F")
+PINK = Color("#FFC0CB")
+PLUM = Color("#DDA0DD")
+POWDER_BLUE = Color("#B0E0E6")
+PURPLE = Color("#800080")
+REBECCA_PURPLE = Color("#663399")
+RED = Color("#FF0000")
+ROSY_BROWN = Color("#BC8F8F")
+ROYAL_BLUE = Color("#4169E1")
+SADDLE_BROWN = Color("#8B4513")
+SALMON = Color("#FA8072")
+SANDY_BROWN = Color("#F4A460")
+SEA_GREEN = Color("#2E8B57")
+SEA_SHELL = Color("#FFF5EE")
+SIENNA = Color("#A0522D")
+SILVER = Color("#C0C0C0")
+SKY_BLUE = Color("#87CEEB")
+SLATE_BLUE = Color("#6A5ACD")
+SLATE_GRAY = Color("#708090")
+SLATE_GREY = Color("#708090")
+SNOW = Color("#FFFAFA")
+SPRING_GREEN = Color("#00FF7F")
+STEEL_BLUE = Color("#4682B4")
+TAN = Color("#D2B48C")
+TEAL = Color("#008080")
+THISTLE = Color("#D8BFD8")
+TOMATO = Color("#FF6347")
+TURQUOISE = Color("#40E0D0")
+VIOLET = Color("#EE82EE")
+WHEAT = Color("#F5DEB3")
+WHITE = Color("#FFFFFF")
+WHITE_SMOKE = Color("#F5F5F5")
+YELLOW = Color("#FFFF00")
+YELLOW_GREEN = Color("#9ACD32")
