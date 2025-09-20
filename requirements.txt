@@ -1,3 +1,3 @@
-pygame-ce>=2.5.3
 singleton-decorator==1.0.0
-pywin32==310
+pygame-ce>=2.5.3
+pywin32>=310
