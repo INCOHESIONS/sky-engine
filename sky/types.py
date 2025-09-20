@@ -199,5 +199,5 @@ type KeyLike = Key | KeyLiteral | int
 type MouseButtonLike = MouseButton | MouseButtonLiteral | int
 type CursorLike = Cursor | CursorLiteral | int
 
-type Coroutine = Generator[type[Yieldable] | Yieldable | None, None, None]
+type Coroutine = Generator[type[Yieldable] | Yieldable | None]
 """A `Generator` that yields a `Yieldable`, its type (as long as it can be instanced with no arguments) or `None`."""
