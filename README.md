@@ -103,7 +103,7 @@ class RenderPipeline(Component):
         self._ctx.end_frame()
 
 
-spec = AppSpec(window_spec=WindowSpec(backend=Backend.opengl))
+spec = AppSpec(window_spec=WindowSpec(backend="opengl"))
 app = App(spec=spec)
 app.add_component(RenderPipeline).mainloop()
 ```

@@ -5,7 +5,7 @@ import pygame
 import win32gui
 
 from ..core import Component
-from ..spec import Backend, WindowSpec
+from ..spec import WindowSpec
 from ..utils import Vector2
 
 __all__ = ["Windowing"]
@@ -18,13 +18,13 @@ class Windowing(Component):
     _magic_size_offset = Vector2(16, 39)
 
     def __init__(self) -> None:
-        self._window = None
+        self._main = None
 
         if self.spec is None:
             self._should_flip = False
             self._fullscreen = False
         else:
-            self._should_flip = self.spec.backend.is_software()
+            self._should_flip = self.spec.is_software()
             self._fullscreen = self.spec.fullscreen
 
         self._main_monitor_index = 0
@@ -51,16 +51,16 @@ class Windowing(Component):
         return self.app.spec.window_spec
 
     @property
-    def window(self) -> pygame.Window | None:
+    def main(self) -> pygame.Window | None:
         """The main window, or None if the app is not running."""
 
-        return self._window
+        return self._main
 
     @property
     def surface(self) -> pygame.Surface | None:
         """The main window's surface."""
 
-        return self.window.get_surface() if self.window else None
+        return self.main.get_surface() if self.main else None
 
     @property
     def position(self) -> Vector2:
@@ -73,8 +73,8 @@ class Windowing(Component):
             If the main window is not set.
         """
 
-        assert self._window is not None
-        return Vector2(self._window.position)
+        assert self._main is not None
+        return Vector2(self._main.position)
 
     @position.setter
     def position(self, value: Vector2) -> None:
@@ -95,8 +95,8 @@ class Windowing(Component):
         # this is based on some old code i wrote to fix fullscreening problems with pygame.
         # i don't really know what the magic numbers mean, i just know that they work.
         # well, mostly. at least they do on my machine
-        assert self._window is not None
-        handle = win32gui.FindWindow(None, self._window.title)
+        assert self._main is not None
+        handle = win32gui.FindWindow(None, self._main.title)
         windll.user32.MoveWindow(
             handle,
             *value.to_int_tuple(),
@@ -108,9 +108,7 @@ class Windowing(Component):
         """The current size of the main window if the app is running, or the size in the spec otherwise."""
 
         assert self.spec is not None
-        return Vector2(
-            self._window.size if self._window is not None else self.spec.size
-        )
+        return Vector2(self._main.size if self._main is not None else self.spec.size)
 
     @size.setter
     def size(self, value: Vector2) -> None:
@@ -128,8 +126,8 @@ class Windowing(Component):
             If the main window is not set.
         """
 
-        assert self._window is not None
-        self._window.size = value
+        assert self._main is not None
+        self._main.size = value
 
     @property
     def fullscreen(self) -> bool:
@@ -154,7 +152,7 @@ class Windowing(Component):
             If the main window is not set.
         """
 
-        assert self._window is not None and self.spec is not None
+        assert self._main is not None and self.spec is not None
         self._fullscreen = value
         self.position = (
             self._magic_fullscreen_position if value else self._centered_window_pos
@@ -170,22 +168,22 @@ class Windowing(Component):
         if self.spec is None:
             return
 
-        self._window = pygame.Window(
+        self._main = pygame.Window(
             self.spec.title,
             self.spec.size,
             position=(self.spec.position or self._centered_window_pos),
             fullscreen=self._fullscreen,
             resizable=self.spec.resizable,
-            opengl=self.spec.backend == Backend.opengl,
-            vulkan=self.spec.backend == Backend.vulkan,
+            opengl=self.spec.backend == "opengl",
+            vulkan=self.spec.backend == "vulkan",
         )
 
-        self._window.get_surface()
+        self._main.get_surface()
 
     @override
     def stop(self) -> None:
-        if self._window is not None:
-            self._window.destroy()
+        if self._main is not None:
+            self._main.destroy()
 
     def toggle_fullscreen(self) -> None:
         """Toggles fullscreen mode."""
@@ -194,12 +192,12 @@ class Windowing(Component):
 
     # uses post_update to guarantee the window is flipped after any user-added components update
     def _post_update(self) -> None:
-        if self._window is None:
+        if self._main is None:
             return
 
-        self._window.flip()
+        self._main.flip()
 
         if evt := self.app.events.get(pygame.WINDOWCLOSE):
-            if evt.window == self._window:
-                self._window.destroy()  # type: ignore
+            if evt.window == self._main:
+                self._main.destroy()  # type: ignore
                 self.app.quit()

@@ -1,38 +1,30 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from enum import Enum, auto
+from typing import Literal
 
 from .utils import Vector2
 
-__all__ = ["AppSpec", "Backend", "WindowSpec"]
-
-
-class Backend(Enum):
-    """What backend to use for the window. Should be set according to what rendering backend is used."""
-
-    software = auto()
-    opengl = auto()
-    vulkan = auto()
-
-    def is_software(self) -> bool:
-        return self == Backend.software
-
-    def is_hardware(self) -> bool:
-        return not self.is_software()
+__all__ = ["AppSpec", "WindowSpec"]
 
 
 @dataclass
 class WindowSpec:
-    """Defines information the window needs to have before mainloop."""
+    """Defines information the window needs to have before mainloop.If position is None, the window will be centered on the screen."""
 
     _: KW_ONLY
     title: str = "Sky Engine"
     position: Vector2 | None = None
     size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
-    resizable: bool = True
+    resizable: bool = False
     fullscreen: bool = False
-    backend: Backend = Backend.software
+    backend: Literal["software", "opengl", "vulkan"] = "software"
+
+    def is_software(self) -> bool:
+        return self.backend == "software"
+
+    def is_hardware(self) -> bool:
+        return not self.is_software()
 
 
 @dataclass
