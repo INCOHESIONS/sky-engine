@@ -66,7 +66,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     on_something.notify()
     ```
 
-    Can also be used as a decorator in a coroutine, as long as TListener is `Callable[[], None]`:
+    Can also be used as a decorator in a coroutine:
     ```python
     from sky import App, WaitForSeconds
     from sky.colors import BLUE, RED
@@ -102,7 +102,11 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         """Allows listenables to be used as decorators."""
 
         if get_type_hints(listener)["return"] is Coroutine:
-            self.add_listener(lambda: self.app.executor.start_coroutine(listener))  # type: ignore
+
+            def __add(*args: Any, **kwargs: Any) -> None:
+                self.app.executor.start_coroutine(listener)
+
+            self.add_listener(__add)  # type: ignore
             return self
 
         self.add_listener(listener)  # type: ignore
