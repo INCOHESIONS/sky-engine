@@ -66,10 +66,13 @@ class Executor(Component):
             value = next(coroutine)
         except StopIteration:
             return None
-        return (
-            value()
-            if isinstance(value, type)
-            else WaitForFrames(1)
-            if value is None
-            else value
-        )
+
+        if isinstance(value, type):
+            try:
+                return value()
+            except TypeError:
+                raise RuntimeError(
+                    f"The coroutine {coroutine} returned a type ({value}) that can't be instanced without arguments."
+                )
+
+        return value or WaitForFrames(1)
