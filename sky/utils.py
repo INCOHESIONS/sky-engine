@@ -1,5 +1,7 @@
-from typing import Any, Iterable, Iterator, overload
+from random import randint
+from typing import Any, Iterable, Iterator, Self, overload
 
+from pygame import Color as PygameColor
 from pygame import Vector2 as PygameVector2
 
 __all__ = ["filter_by_attrs", "first", "get_by_attrs", "last", "Vector2"]
@@ -10,6 +12,25 @@ class Vector2(PygameVector2):
 
     def to_int_tuple(self) -> tuple[int, int]:
         return tuple(map(int, self))  # type: ignore
+
+    def normalize(self):
+        try:
+            return super().normalize()
+        except ValueError:
+            return Vector2()
+
+    def direction_to(self, other: Self, /) -> Self:
+        return (other - self).normalize()  # type: ignore
+
+
+class Color(PygameColor):
+    @classmethod
+    def random(cls, minimum: int = 0, maximum: int = 255) -> Self:
+        return cls(
+            randint(minimum, maximum),
+            randint(minimum, maximum),
+            randint(minimum, maximum),
+        )
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
