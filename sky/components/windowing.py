@@ -1,5 +1,4 @@
 import os
-from ctypes import windll
 from typing import override
 
 import pygame
@@ -9,6 +8,8 @@ from ..spec import WindowSpec
 from ..utils import Vector2
 
 if os.name == "nt":
+    from ctypes import windll
+
     import win32gui
 
 
