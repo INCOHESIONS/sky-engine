@@ -6,6 +6,9 @@ import pygame
 
 from ..core import Component
 
+if os.name == "nt":
+    import win32api
+
 __all__ = ["Chrono"]
 
 
@@ -52,11 +55,9 @@ class Chrono(Component):
         self.frames += 1
 
     def _get_main_monitor_refrate(self) -> float:
-        if os.name != "nt":
-            return 60
+        if os.name == "nt":
+            device = win32api.EnumDisplayDevices(DevNum=0)
+            settings = win32api.EnumDisplaySettings(device.DeviceName, -1)
+            return settings.DisplayFrequency
 
-        import win32api
-
-        device = win32api.EnumDisplayDevices(DevNum=0)
-        settings = win32api.EnumDisplaySettings(device.DeviceName, -1)
-        return settings.DisplayFrequency
+        return 60

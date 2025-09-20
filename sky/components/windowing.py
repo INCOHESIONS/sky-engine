@@ -94,16 +94,15 @@ class Windowing(Component):
         # well, mostly. at least they do on my machine
         assert self._main is not None
 
-        if os.name != "nt":
-            self.main.position = value
+        if os.name == "nt":
+            windll.user32.MoveWindow(
+                win32gui.FindWindow(None, self._main.title),
+                *value.to_int_tuple(),
+                *(self.size + self._magic_size_offset).to_int_tuple(),
+            )
             return
 
-        handle = win32gui.FindWindow(None, self._main.title)
-        windll.user32.MoveWindow(
-            handle,
-            *value.to_int_tuple(),
-            *(self.size + self._magic_size_offset).to_int_tuple(),
-        )
+        self._main.position = value
 
     @property
     def size(self) -> Vector2:
@@ -158,7 +157,7 @@ class Windowing(Component):
         self._fullscreen = value
 
         if os.name != "nt":
-            self.main.set_fullscreen(value)
+            self._main.set_fullscreen(value)
 
         self.position = (
             self._magic_fullscreen_position if value else self._centered_window_pos
