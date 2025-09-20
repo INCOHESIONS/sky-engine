@@ -1,18 +1,34 @@
 from random import randint
-from typing import Any, Iterable, Iterator, Self, overload
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Self,
+    overload,
+    override,
+)
 
 from pygame import Color as PygameColor
 from pygame import Vector2 as PygameVector2
+from pygame.typing import SequenceLike
 
-__all__ = ["filter_by_attrs", "first", "get_by_attrs", "last", "Vector2"]
+__all__ = [
+    "animate",
+    "Color",
+    "filter_by_attrs",
+    "first",
+    "get_by_attrs",
+    "last",
+    "Vector2",
+]
 
 
 class Vector2(PygameVector2):
     """A 2D vector. Should be used instead of pygame.math.Vector2."""
 
-    def to_int_tuple(self) -> tuple[int, int]:
-        return tuple(map(int, self))  # type: ignore
-
+    @override
     def normalize(self):
         try:
             return super().normalize()
@@ -21,6 +37,9 @@ class Vector2(PygameVector2):
 
     def direction_to(self, other: Self, /) -> Self:
         return (other - self).normalize()  # type: ignore
+
+    def to_int_tuple(self) -> tuple[int, int]:
+        return tuple(map(int, self))  # type: ignore
 
 
 class Color(PygameColor):
@@ -31,6 +50,16 @@ class Color(PygameColor):
             randint(minimum, maximum),
             randint(minimum, maximum),
         )
+
+    @override
+    def lerp(
+        self, color: PygameColor | SequenceLike[int] | str | int, amount: float
+    ) -> PygameColor:
+        if amount < 0:
+            return self
+        if amount > 1:
+            return Color(color)
+        return super().lerp(color, amount)
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
@@ -156,3 +185,10 @@ def last[T](i: Iterable[T], /, *, default: T | None = None) -> T | None:
         return next(reversed(tuple(i)))
     except StopIteration:
         return default
+
+
+def animate(*, duration: float, step: Callable[[], float]) -> Generator[float]:
+    start = 0
+    while start < duration:
+        yield start / duration
+        start += step()

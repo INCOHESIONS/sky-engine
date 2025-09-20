@@ -1,4 +1,4 @@
-from pygame import Color
+from .utils import Color
 
 __all__ = [
     "TRANSPARENT",
