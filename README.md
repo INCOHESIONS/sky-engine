@@ -1,12 +1,14 @@
 # Sky Engine
 
-More like a wrapper than an engine. Makes `pygame` less painful to use. Fully typed with Pylance on strict mode. Probably won't actually publish this on PyPI, but it's here for now.
+More like a wrapper than an engine. Makes `pygame` less painful to use. Fully typed with Pylance on strict mode.
+
+Generally cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
 
 Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, as well as one using `pygame`'s software renderer with `pygame.draw`.
 
 ## Usage
 
-Rendering example (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame-ce example):
+Rendering example (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame example):
 
 ```py
 from typing import override
@@ -152,9 +154,10 @@ app.mainloop()
 Coroutine example (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
 
 ```python
-from sky import App, WaitForSeconds
+from sky import App
 from sky.colors import BLUE, RED
 from sky.types import Coroutine
+from sky.utils import animate
 
 app = App()
 
@@ -162,9 +165,10 @@ app = App()
 @app.setup
 def change_bg_color() -> Coroutine:
     assert app.windowing.surface is not None
-    app.windowing.surface.fill(RED)
-    yield WaitForSeconds(3)
-    app.windowing.surface.fill(BLUE)
+
+    for t in animate(duration=3, step=lambda: app.chrono.deltatime):
+        app.windowing.surface.fill(RED.lerp(BLUE, t))
+        yield None
 
 
 app.mainloop()
