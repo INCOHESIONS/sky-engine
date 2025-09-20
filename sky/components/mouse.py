@@ -1,13 +1,17 @@
-from typing import override
+from typing import Callable, override
 
 import pygame
 
 from ..core import Component
 from ..enums import MouseButton, State
+from ..listenable import Listenable
 from ..types import MouseButtonLike
 from ..utils import Vector2
 
 __all__ = ["Mouse"]
+
+type _StatefulMouseButtonListener = Callable[[MouseButton, State], None]
+type _MouseButtonListener = Callable[[MouseButton], None]
 
 
 class Mouse(Component):
@@ -18,6 +22,11 @@ class Mouse(Component):
         self._vel = Vector2()
         self._states: list[State] = []
         self._num_buttons = 3
+
+        self.on_mouse_button = Listenable[_StatefulMouseButtonListener]()
+        self.on_mouse_button_pressed = Listenable[_MouseButtonListener]()
+        self.on_mouse_button_downed = Listenable[_MouseButtonListener]()
+        self.on_mouse_button_released = Listenable[_MouseButtonListener]()
 
     @property
     def position(self) -> Vector2:
@@ -54,6 +63,11 @@ class Mouse(Component):
             )
             for i in range(0, self._num_buttons)
         ]
+
+        for button, state in zip(MouseButton, self._states):
+            if state != State.none:
+                self.on_mouse_button.notify(button, state)
+                getattr(self, f"on_mouse_button_{state.name}").notify(button)
 
     def get_state(self, button: MouseButtonLike, /) -> State:
         """
