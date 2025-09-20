@@ -8,6 +8,20 @@ A wrapper around pygame that makes it less painful to use.
 :license: MIT, see LICENSE for more details.
 """
 
+__title__ = "sky-engine"
+__description__ = "A wrapper around pygame that makes it less painful to use."
+__author__ = "iNCOHESiONS"
+__version__ = "0.0.1"
+__url__ = "https://github.com/incohesions/sky-engine"
+__license__ = "MIT"
+
+
+from os import environ
+
+environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "true"
+
+del environ
+
 import pygame
 
 from .app import App
@@ -21,13 +35,6 @@ if not getattr(pygame, "IS_CE", False):
         "Please use pygame-ce (https://pypi.org/project/pygame-ce/) instead of pygame."
     )
     exit(-1)
-
-__title__ = "sky-engine"
-__description__ = "A wrapper around pygame that makes it less painful to use."
-__url__ = "https://github.com/incohesions/sky-engine"
-__version__ = "0.0.1"
-__author__ = "iNCOHESiONS"
-__license__ = "MIT"
 
 __all__ = [
     "App",
