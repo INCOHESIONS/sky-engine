@@ -28,7 +28,8 @@ from .app import App
 from .core import Component, WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
 from .enums import Cursor, Key, MouseButton, State
 from .listenable import Listenable
-from .spec import AppSpec, Backend, WindowSpec
+from .spec import AppSpec, WindowSpec
+from .utils import Color, Vector2
 
 if not getattr(pygame, "IS_CE", False):
     print(
@@ -39,13 +40,14 @@ if not getattr(pygame, "IS_CE", False):
 __all__ = [
     "App",
     "AppSpec",
-    "Backend",
+    "Color",
     "Component",
     "Cursor",
     "Key",
     "Listenable",
     "MouseButton",
     "State",
+    "Vector2",
     "WaitForFrames",
     "WaitForSeconds",
     "WaitUntil",
