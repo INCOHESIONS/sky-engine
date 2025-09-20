@@ -26,10 +26,16 @@ class App:
         self.spec = spec
 
         self.setup = Listenable()
+        """Executes after components are started up, and before the first frame."""
+
         self.teardown = Listenable()
+        """Executes before components are stopped, and after the last frame."""
 
         self.pre_update = Listenable()
+        """Executes before components are updated."""
+
         self.post_update = Listenable()
+        """Executes after components are updated."""
 
         self.events = Events()
         self.keyboard = Keyboard()
@@ -50,13 +56,7 @@ class App:
         for component in self._components:
             component._internal = True  # type: ignore
 
-        self._is_running = True
-
-    @property
-    def is_running(self) -> bool:
-        """Whether the app is running."""
-
-        return self._is_running
+        self.is_running = True
 
     def mainloop(self) -> None:
         """
@@ -82,7 +82,7 @@ class App:
 
         self.setup.notify()
 
-        self._is_running = True
+        self.is_running = True
 
         while not self._should_quit():
             self.events._events = pygame.event.get()  # type: ignore
@@ -99,7 +99,7 @@ class App:
         for component in self._components:
             component.stop()
 
-        self._is_running = False
+        self.is_running = False
 
         pygame.quit()
 
@@ -162,12 +162,20 @@ class App:
             The component, if found.
         """
 
-        if isinstance(component, str):
-            return first(
-                filter(lambda c: c.__class__.__name__ == component, self._components)  # type: ignore
-            )
+        return (
+            first(components)
+            if (components := self.get_components(component)) is not None
+            else None
+        )
 
-        return first(filter(lambda c: isinstance(c, component), self._components))  # type: ignore
+    def get_components[T: Component](
+        self, component: type[T] | str, /
+    ) -> list[T] | None:
+        return list(
+            filter(lambda c: c.__class__.__name__ == component, self._components)  # type: ignore
+            if isinstance(component, str)
+            else filter(lambda c: isinstance(c, component), self._components)  # type: ignore
+        )
 
     def quit(self) -> None:
         """Closes the app in the next frame."""
