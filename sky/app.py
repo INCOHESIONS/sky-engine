@@ -14,7 +14,26 @@ __all__ = ["App"]
 
 @singleton
 class App:
-    """The singleton app class."""
+    """
+    The singleton `App` class.\n
+    Pre-execution configuration is defined with `AppSpec`, such as the main window's title and size.
+
+    Components:
+        - `Events` (handles pygame events)
+        - `Keyboard` (handles keyboard input)
+        - `Mouse` (handles mouse input)
+        - `Windowing` (handles windowing)
+        - `Chrono` (handles time)
+        - `Executor` (handles coroutines)
+
+    User-defined components can be added by subclassing `Component` and using the `add_component` method (can be used as a class decorator).
+
+    Listenables:
+        - `setup` (executed after components are started up, and before the first frame)
+        - `teardown` (executed before components are stopped, and after the last frame)
+        - `pre_update` (executed before components are updated)
+        - `post_update` (executed after components are updated)
+    """
 
     def __init__(self, /, *, spec: AppSpec = AppSpec()) -> None:
         pygame.init()
@@ -24,6 +43,7 @@ class App:
         Component.app = self
 
         self.spec = spec
+        """The app's specification, i.e., pre-execution configuration."""
 
         self.setup = Listenable()
         """Executes after components are started up, and before the first frame."""
@@ -38,11 +58,22 @@ class App:
         """Executes after components are updated."""
 
         self.events = Events()
+        """Handles pygame events."""
+
         self.keyboard = Keyboard()
+        """Handles keyboard input."""
+
         self.mouse = Mouse()
+        """Handles mouse input."""
+
         self.windowing = Windowing()
+        """Handles windowing."""
+
         self.chrono = Chrono()
+        """Handles time."""
+
         self.executor = Executor()
+        """Handles coroutines."""
 
         self._components: list[Component] = [
             self.events,
@@ -134,18 +165,20 @@ class App:
         component: type[Component] | Component
             The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
             If the component is an internal component (such as `Events` or `Windowing`), an error will be raised.
+
+        Raises
+        ------
+        ValueError
+            If the component is an internal component or if the component was not found.
         """
+
+        if isinstance(component, type):
+            component = self.get_component(component)  # type: ignore
 
         if getattr(component, "_internal", False):
             raise ValueError("Cannot remove internal component")
 
-        if isinstance(component, type):
-            self._components.remove(
-                first(filter(lambda c: isinstance(c, component), self._components))  # type: ignore
-            )
-            return
-
-        self._components.remove(component)
+        self._components.remove(component)  # type: ignore
 
     def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
         """
