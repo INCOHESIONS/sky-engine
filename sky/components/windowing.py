@@ -163,6 +163,11 @@ class Windowing(Component):
 
         assert self._main is not None and self.spec is not None
         self._fullscreen = value
+
+        if value and os.name != "nt":
+            self.main.set_fullscreen(True)
+            return
+
         self.position = (
             self._magic_fullscreen_position if value else self._centered_window_pos
         )
