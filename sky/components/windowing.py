@@ -54,16 +54,10 @@ class Windowing(Component):
         return self.app.spec.window_spec
 
     @property
-    def main(self) -> pygame.Window | None:
-        """The main window, or None if the app is not running."""
-
-        return self._main
-
-    @property
     def surface(self) -> pygame.Surface | None:
         """The main window's surface."""
 
-        return self.main.get_surface() if self.main else None
+        return self._main.get_surface() if self._main else None
 
     @property
     def position(self) -> Vector2:
@@ -186,6 +180,7 @@ class Windowing(Component):
             position=(self.spec.position or self._centered_window_pos),
             fullscreen=self._fullscreen,
             resizable=self.spec.resizable,
+            borderless=self.spec.borderless,
             opengl=self.spec.backend == "opengl",
             vulkan=self.spec.backend == "vulkan",
         )

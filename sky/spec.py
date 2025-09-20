@@ -19,6 +19,7 @@ class WindowSpec:
     size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
     resizable: bool = False
     fullscreen: bool = False
+    borderless: bool = False
     backend: Literal["software", "opengl", "vulkan"] = "software"
 
     def is_software(self) -> bool:
