@@ -127,7 +127,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
         Parameters
         ----------
-        listener: TListener
+        listener: `TListener`
             The listener to add.
         """
 
@@ -139,7 +139,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
         Parameters
         ----------
-        listener: TListener
+        listener: `TListener`
             The listener to remove.
         """
 

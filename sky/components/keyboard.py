@@ -88,16 +88,16 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        keys: KeyLike | tuple[KeyLike, ...]
+        keys: `KeyLike | tuple[KeyLike, ...]`
             The key or keys to bind the action to.
-        action: Callable[[], None]
+        action: `Callable[[], None]`
             The action to bind.
-        state: State
+        state: `State`
             The state the action should be triggered in.
 
         Returns
         -------
-        Self
+        `Self`
             The keyboard, for chaining.
         """
 
@@ -117,12 +117,12 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        keybindings: dict[KeyLike | tuple[KeyLike, ...], Callable[[], None]]
+        keybindings: `dict[KeyLike | tuple[KeyLike, ...], Callable[[], None]]`
             The keybindings to add.
 
         Returns
         -------
-        Self
+        `Self`
             The keyboard, for chaining.
         """
 
@@ -136,7 +136,7 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        keys: Key | tuple[Key, ...]
+        keys: `Key | tuple[Key, ...]`
             The key or keys used by the keybinding.
         """
 
@@ -155,12 +155,12 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        key: KeyLike
+        key: `KeyLike`
             The key to get the state of.
 
         Returns
         -------
-        State
+        `State`
             The key's state.
         """
 
@@ -172,9 +172,9 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        key: KeyLike
+        key: `KeyLike`
             The key to set the state of.
-        state: State
+        state: `State`
             The state to set.
         """
 
@@ -188,14 +188,14 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        key: KeyLike
+        key: `KeyLike`
             The key to check.
-        state: State
+        state: `State`
             The state to check for.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the key is in the specified state.
         """
 
@@ -207,12 +207,12 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        key: KeyLike
+        key: `KeyLike`
             The key to check.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the key is pressed.
         """
 
@@ -224,12 +224,12 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        key: KeyLike
+        key: `KeyLike`
             The key to check.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the key is downed.
         """
 
@@ -241,12 +241,12 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        key: KeyLike
+        key: `KeyLike`
             The key to check.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the key is released.
         """
 
@@ -258,13 +258,13 @@ class Keyboard(Component):
 
         Parameters
         ----------
-        state: State
+        state: `State`
             The state to check for.
             If no state is specified (and as such `state` is `State.none`), checks if any key is being interacted with at all, i.e., in any state.
 
         Returns
         -------
-        bool
+        `bool`
             Whether any key is in the specified state.
         """
 

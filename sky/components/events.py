@@ -50,9 +50,9 @@ class Events(Component):
 
         Parameters
         ----------
-        type: int
+        type: `int`
             The type of event the handler should respond to.
-        handler: Callable[[PygameEvent], None]
+        handler: `Callable[[pygame.event.Event], None]`
             The function to call to handle the event.
         """
 
@@ -64,7 +64,7 @@ class Events(Component):
 
         Parameters
         ----------
-        type: int
+        type: `int`
             The type of event the handler responds to.
         """
 
@@ -76,12 +76,12 @@ class Events(Component):
 
         Parameters
         ----------
-        type: int
+        type: `int`
             The type of event to get.
 
         Returns
         -------
-        PygameEvent | None
+        `pygame.event.Event | None`
             The event of the specified type, or None if no event of that type was found.
         """
         return first(self.get_all(type))
@@ -92,12 +92,12 @@ class Events(Component):
 
         Parameters
         ----------
-        type: int
+        type: `int`
             The type of event to get.
 
         Returns
         -------
-        list[PygameEvent]
+        `list[pygame.event.Event]`
             The events of the specified type.
         """
         return list(filter_by_attrs(self._events, type=type))

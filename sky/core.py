@@ -34,7 +34,7 @@ class Component:
 
 
 class Yieldable(ABC):
-    """Base class for yieldables: values that tell the coroutine executor to wait or continue executing a coroutine."""
+    """Base class for `Yieldables`: values that tell the `Executor` to wait or continue executing a `Coroutine`."""
 
     app: App
 

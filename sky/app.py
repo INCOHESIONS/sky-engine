@@ -1,3 +1,4 @@
+from inspect import signature
 from typing import Self
 
 import pygame
@@ -139,21 +140,30 @@ class App:
     def add_component(self, component: type[Component] | Component, /) -> Self:
         """
         Adds a component to the app. Can be used as a class decorator.
+        If a type is passed, it will be immediately initialized with no arguments as long as its constructor takes no arguments, otherwise an error will be raised.
 
         Parameters
         ----------
-        component: type[Component] | Component
+        component: `type[Component] | Component`
             The component, or its type, to add. Will be instanced immediately if a type is passed.
 
         Returns
         -------
         Self
             The app, for chaining.
+
+        Raises
+        ------
+        `ValueError`
+            If a type is passed that has a constructor that takes arguments.
         """
 
-        self._components.append(
-            component() if isinstance(component, type) else component
-        )
+        if callable(component) and len(signature(component).parameters) > 0:
+            raise ValueError(
+                f"Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: {component.__name__})."
+            )
+
+        self._components.append(component() if callable(component) else component)
         return self
 
     def remove_component(self, component: type[Component] | Component, /) -> None:
@@ -162,13 +172,13 @@ class App:
 
         Parameters
         ----------
-        component: type[Component] | Component
-            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
+        component: `type[Component] | Component`
+            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.\n
             If the component is an internal component (such as `Events` or `Windowing`), an error will be raised.
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the component is an internal component or if the component was not found.
         """
 
@@ -186,12 +196,12 @@ class App:
 
         Parameters
         ----------
-        component: type[Component] | str
+        component: `type[Component] | str`
             The component's type's name, or the type itself.
 
         Returns
         -------
-        Component | None
+        `Component | None`
             The component, if found.
         """
 

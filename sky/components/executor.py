@@ -41,7 +41,7 @@ class Executor(Component):
 
         Raises
         ------
-        KeyError
+        `KeyError`
             If the `Coroutine` is not found.
         """
 
@@ -75,4 +75,4 @@ class Executor(Component):
                     f"The coroutine {coroutine} returned a type ({value}) that can't be instanced without arguments."
                 )
 
-        return value or WaitForFrames(1)
+        return value or WaitForFrames()

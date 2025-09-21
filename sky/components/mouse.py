@@ -75,12 +75,12 @@ class Mouse(Component):
 
         Parameters
         ----------
-        button: MouseButtonLike
+        button: `MouseButtonLike`
             The button to get the state of.
 
         Returns
         -------
-        State
+        `State`
             The button's state.
         """
 
@@ -89,19 +89,19 @@ class Mouse(Component):
     def is_state(self, button: MouseButtonLike, state: State, /) -> bool:
         """
         Checks if a button is in a certain state.
-        State can be State.none to check if the button is not being interacted with at all.\n
+        State can be `State.none` to check if the button is not being interacted with at all.\n
         Equivalent to `self.get_state(button) == state`.
 
         Parameters
         ----------
         button: MouseButtonLike
             The button to check.
-        state: State
+        state: `State`
             The state to check for.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the button is in the specified state.
         """
         return self.get_state(button) == state
@@ -112,12 +112,12 @@ class Mouse(Component):
 
         Parameters
         ----------
-        button: MouseButtonLike
+        button: `MouseButtonLike`
             The button to check.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the button is pressed.
         """
         return self.is_state(button, State.pressed)
@@ -128,12 +128,12 @@ class Mouse(Component):
 
         Parameters
         ----------
-        button: MouseButtonLike
+        button: `MouseButtonLike`
             The button to check.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the button is downed.
         """
         return self.is_state(button, State.downed)
@@ -144,12 +144,12 @@ class Mouse(Component):
 
         Parameters
         ----------
-        button: MouseButtonLike
+        button: `MouseButtonLike`
             The button to check.
 
         Returns
         -------
-        bool
+        `bool`
             Whether the button is released.
         """
         return self.is_state(button, State.released)
@@ -160,13 +160,13 @@ class Mouse(Component):
 
         Parameters
         ----------
-        state: State
+        state: `State`
             The state to check for.
             If no state is specified (and as such `state` is `State.none`), checks if any button is being interacted with at all, i.e., in any state.
 
         Returns
         -------
-        bool
+        `bool`
             Whether any button is in the specified state.
         """
         return (

@@ -66,7 +66,7 @@ class Windowing(Component):
 
         Raises
         ------
-        AssertionError
+        `AssertionError`
             If the main window is not set.
         """
 
@@ -80,12 +80,12 @@ class Windowing(Component):
 
         Parameters
         ----------
-        value: Vector2
+        value: `Vector2`
             The new position.
 
         Raises
         ------
-        AssertionError
+        `AssertionError`
             If the main window is not set.
         """
 
@@ -118,12 +118,12 @@ class Windowing(Component):
 
         Parameters
         ----------
-        value: Vector2
+        value: `Vector2`
             The new size.
 
         Raises
         ------
-        AssertionError
+        `AssertionError`
             If the main window is not set.
         """
 
@@ -144,12 +144,12 @@ class Windowing(Component):
 
         Parameters
         ----------
-        value: bool
+        value: `bool`
             Whether to set the window to fullscreen or not.
 
         Raises
         ------
-        AssertionError
+        `AssertionError`
             If the main window is not set.
         """
 
