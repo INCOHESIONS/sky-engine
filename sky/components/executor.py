@@ -26,7 +26,7 @@ class Executor(Component):
             coroutine = coroutine()
 
         if coroutine in self._coroutines:
-            raise RuntimeError("Tried adding the same exact coroutine twice")
+            raise RuntimeError("Tried adding the same exact coroutine twice.")
 
         self._step_coroutine(coroutine)
 

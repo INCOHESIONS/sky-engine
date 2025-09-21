@@ -145,7 +145,7 @@ class Keyboard(Component):
         )
 
         if keybinding is None:
-            raise ValueError(f"No keybinding found for {keys}")
+            raise ValueError(f"No keybinding found for {keys}.")
 
         self._keybindings.remove(keybinding)
 

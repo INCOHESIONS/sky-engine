@@ -186,7 +186,7 @@ class App:
             component = self.get_component(component)  # type: ignore
 
         if getattr(component, "_internal", False):
-            raise ValueError("Cannot remove internal component")
+            raise ValueError("Cannot remove internal component.")
 
         self._components.remove(component)  # type: ignore
 
