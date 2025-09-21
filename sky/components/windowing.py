@@ -62,7 +62,26 @@ class Windowing(Component):
     @property
     def position(self) -> Vector2:
         """
-        The position of the main window.
+        Gets or sets the position of the main window.
+
+        # Getter
+
+        Returns
+        -------
+        `Vector2`
+            The position of the main window.
+
+        Raises
+        ------
+        `AssertionError`
+            If the main window is not set.
+
+        # Setter
+
+        Parameters
+        ----------
+        value: `Vector2`
+            The new position. Uses some magic to fix fullscreening problems.
 
         Raises
         ------
@@ -75,20 +94,6 @@ class Windowing(Component):
 
     @position.setter
     def position(self, value: Vector2) -> None:
-        """
-        Sets the position of the main window, with some magic to fix fullscreening problems.
-
-        Parameters
-        ----------
-        value: `Vector2`
-            The new position.
-
-        Raises
-        ------
-        `AssertionError`
-            If the main window is not set.
-        """
-
         # this is based on some old code i wrote to fix fullscreening problems with pygame.
         # i don't really know what the magic numbers mean, i just know that they work.
         # well, mostly. at least they do on my machine
@@ -106,15 +111,23 @@ class Windowing(Component):
 
     @property
     def size(self) -> Vector2:
-        """The current size of the main window if the app is running, or the size in the spec otherwise."""
-
-        assert self.spec is not None
-        return Vector2(self._main.size if self._main is not None else self.spec.size)
-
-    @size.setter
-    def size(self, value: Vector2) -> None:
         """
-        Sets the size of the main window.
+        Gets or sets the current size of the main window.
+
+        # Getter
+        If the app is running, or the size in the spec otherwise.
+
+        Returns
+        -------
+        `Vector2`
+            The current size of the main window.
+
+        Raises
+        ------
+        `AssertionError`
+            If the spec is not set.
+
+        # Setter
 
         Parameters
         ----------
@@ -127,20 +140,28 @@ class Windowing(Component):
             If the main window is not set.
         """
 
+        assert self.spec is not None
+        return Vector2(self._main.size if self._main is not None else self.spec.size)
+
+    @size.setter
+    def size(self, value: Vector2) -> None:
         assert self._main is not None
         self._main.size = value
 
     @property
     def fullscreen(self) -> bool:
-        """Whether the main window is fullscreen or not."""
-
-        return self._fullscreen
-
-    @fullscreen.setter
-    def fullscreen(self, value: bool) -> None:
         """
-        Sets whether the main window is fullscreen or not.
-        Probably the only part in the library that's currently not cross-platform.
+        Gets or sets the main window's fullscreen state.
+
+        # Getter
+
+        Returns
+        -------
+        `bool`
+            Whether the main window is fullscreen or not.\n
+            Returns whatever is on the spec if the app is not running, or `False` if in headless mode.
+
+        # Setter
 
         Parameters
         ----------
@@ -153,6 +174,10 @@ class Windowing(Component):
             If the main window is not set.
         """
 
+        return self._fullscreen
+
+    @fullscreen.setter
+    def fullscreen(self, value: bool) -> None:
         assert self._main is not None and self.spec is not None
         self._fullscreen = value
 
