@@ -156,7 +156,14 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         self._listeners.clear()
 
     def notify(self, *args: Any, **kwargs: Any) -> None:
-        """Notifies all listeners"""
+        """
+        Notifies all listeners
+
+        Raises
+        ------
+        `RuntimeError`
+            If the `Listenable` was set to `once` and was already called.
+        """
 
         if self._once and self._called:
             raise RuntimeError("Listenable with `once` set to True was already called.")
