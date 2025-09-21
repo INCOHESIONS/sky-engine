@@ -28,6 +28,9 @@ class Chrono(Component):
         self.deltatime = 0
         """The time since the last frame."""
 
+        self.framerate = 0
+        """The current framerate."""
+
         self.frames = 0
         """The number of frames since the start of the app."""
 
@@ -52,6 +55,7 @@ class Chrono(Component):
     @override
     def update(self) -> None:
         self.deltatime = self._internal_clock.tick(self.target_framerate) / 1000
+        self.framerate = self._internal_clock.get_fps()
         self.frames += 1
 
     def _get_main_monitor_refrate(self) -> float:
