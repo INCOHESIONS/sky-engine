@@ -78,8 +78,8 @@ class App:
 
         self._components: list[Component] = [
             self.events,
-            self.keyboard,
             self.mouse,
+            self.keyboard,
             self.windowing,
             self.chrono,
             self.executor,
