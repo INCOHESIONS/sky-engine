@@ -121,11 +121,7 @@ class Color(PygameColor):
     ) -> PygameColor:
         """Exception-less version of `pygame.Color.lerp`."""
 
-        if amount < 0:
-            return self
-        if amount > 1:
-            return Color(color)
-        return super().lerp(color, amount)
+        return super().lerp(color, clamp(amount, 0, 1))
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
@@ -249,6 +245,8 @@ def last[T](i: Iterable[T], /, *, default: T | None = None) -> T | None:
 
     Returns
     -------
+    `T | None`
+        The last element of the `Iterable`, or `None` if the `Iterable` is empty.
     """
 
     try:
@@ -257,10 +255,38 @@ def last[T](i: Iterable[T], /, *, default: T | None = None) -> T | None:
         return default
 
 
-def animate(*, duration: float, step: Callable[[], float]) -> Generator[float]:
+def animate(
+    *, duration: float, step: Callable[[], float], normalize: bool = True
+) -> Generator[float]:
     """
-    Generates a sequence of floats from 0 to 1, with a step size of 1/duration.\n
+    Generates a sequence of floats from 0 to `duration`, with a step size defined by `step`.\n
+    If normalize is `True`, the sequence will be normalized to the range [0, 1].
     Useful for interpolating between two colors over time, for example.
+
+    Guaranteed to always yield both 0 and `duration`. Might yield `duration` (or 1 if `normalize` is `True`) twice.
+
+    Examples
+    --------
+    ```python
+    from sky import App
+    from sky.colors import BLUE, RED
+    from sky.types import Coroutine
+    from sky.utils import animate
+
+    app = App()
+
+
+    @app.setup
+    def lerp_color() -> Coroutine:
+        assert app.windowing.surface is not None
+
+        for t in animate(duration=3, step=lambda: app.chrono.deltatime):
+            app.windowing.surface.fill(RED.lerp(BLUE, t))
+            yield None  # same as WaitForFrames(1)
+
+
+    app.mainloop()
+    ```
 
     Parameters
     ----------
@@ -269,15 +295,61 @@ def animate(*, duration: float, step: Callable[[], float]) -> Generator[float]:
     step : `Callable[[], float]`
         A function that returns the next step of the animation.\n
         For general real-time based animations, use `app.chrono.deltatime`.
+    normalize : `bool`
+        Whether to normalize the animation to the range [0, 1].\n
 
     Yields
     ------
     `float`
         The next step of the animation, per the `step` function.
+
+    Raises
+    ------
+    `ValueError`
+        If `duration` is less than or equal to 0.
     """
+
+    if duration <= 0:
+        raise ValueError("`duration` must be greater than 0.")
 
     start = 0
 
     while start < duration:
-        yield start / duration
-        start += step()
+        if normalize:
+            yield start / duration
+        else:
+            yield start
+
+        start = clamp(start + step(), 0, duration)
+
+    # this is done to guarantee `duration` or 1 will always be yielded, but may cause it to be yielded twice, or almost
+    # example: step = lambda: 0.49; the function will yield 0, step, 0.98 and 1 again
+    # if we didn't do this, `duration` might not be yielded, and could cause strange behaviour while interpolating values since the stop value would never be used
+    # this is a fine trade-off
+
+    yield 1 if normalize else duration
+
+
+def clamp(value: float, minimum: float, maximum: float, /) -> float:
+    """
+    Clamps a value between a minimum and maximum.
+
+    Parameters
+    ----------
+    value : `float`
+        The value to be clamped.
+    minimum : `float`
+        The minimum value.
+    maximum : `float`
+        The maximum value.
+
+    Returns
+    -------
+    `float`
+        The clamped value.
+    """
+
+    return max(minimum, min(value, maximum))
+
+
+constrain = clamp
