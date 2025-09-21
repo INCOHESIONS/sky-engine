@@ -141,6 +141,11 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         ----------
         listener: `TListener`
             The listener to remove.
+
+        Raises
+        ------
+        `ValueError`
+            If the listener wasn't found.
         """
 
         self._listeners.remove(listener)
@@ -154,11 +159,14 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         """Notifies all listeners"""
 
         if self._once and self._called:
-            return
+            raise RuntimeError("Listenable with `once` set to True was already called.")
 
         for listener in self:
             if listener(*args, **kwargs) and self._cancellable:
                 break
+
+        if self._once:
+            self.clear()
 
         self._called = True
 
