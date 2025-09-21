@@ -225,10 +225,7 @@ class Windowing(Component):
 
     # uses post_update to guarantee the window is flipped after any user-added components update
     def _post_update(self) -> None:
-        if self._main is None:
-            return
-
-        self._main.flip()
+        self._main.flip()  # type: ignore
 
         if evt := self.app.events.get(pygame.WINDOWCLOSE):
             if evt.window == self._main:
