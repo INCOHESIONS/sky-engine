@@ -324,7 +324,6 @@ class Cursor(Enum):
     hand = pygame.SYSTEM_CURSOR_HAND
     arrow = pygame.SYSTEM_CURSOR_ARROW
     ibeam = pygame.SYSTEM_CURSOR_IBEAM
-    text = pygame.SYSTEM_CURSOR_IBEAM
     crosshair = pygame.SYSTEM_CURSOR_CROSSHAIR
     wait = pygame.SYSTEM_CURSOR_WAIT
     size_nw_se = pygame.SYSTEM_CURSOR_SIZENWSE
@@ -334,10 +333,20 @@ class Cursor(Enum):
     size_all = pygame.SYSTEM_CURSOR_SIZEALL
     no = pygame.SYSTEM_CURSOR_NO
 
+    default = arrow  # alias
+    text = ibeam  # alias
+    deny = no  # alias
+
     @staticmethod
-    def convert(value: CursorLike, /) -> int:
-        if isinstance(value, int):
-            return value
-        if isinstance(value, Cursor):
-            return value.value
-        return Cursor[value.lower()].value
+    def convert(value: CursorLike, /) -> pygame.Cursor:
+        return (
+            value
+            if isinstance(value, pygame.Cursor)
+            else pygame.Cursor(
+                value
+                if isinstance(value, int)
+                else Cursor[value.lower()].value
+                if isinstance(value, str)
+                else value.value
+            )
+        )

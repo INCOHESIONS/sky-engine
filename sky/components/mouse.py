@@ -3,7 +3,7 @@ from typing import Callable, override
 import pygame
 
 from ..core import Component
-from ..enums import MouseButton, State
+from ..enums import Cursor, CursorLike, MouseButton, State
 from ..listenable import Listenable
 from ..types import MouseButtonLike
 from ..utils import Vector2
@@ -12,6 +12,7 @@ __all__ = ["Mouse"]
 
 type _StatefulMouseButtonListener = Callable[[MouseButton, State], None]
 type _MouseButtonListener = Callable[[MouseButton], None]
+type _MouseWheelListener = Callable[[Vector2], None]
 
 
 class Mouse(Component):
@@ -20,6 +21,8 @@ class Mouse(Component):
     def __init__(self) -> None:
         self._pos = Vector2()
         self._vel = Vector2()
+        self._wheel_delta = Vector2()
+
         self._states: list[State] = []
         self._num_buttons = 3
 
@@ -27,6 +30,8 @@ class Mouse(Component):
         self.on_mouse_button_pressed = Listenable[_MouseButtonListener]()
         self.on_mouse_button_downed = Listenable[_MouseButtonListener]()
         self.on_mouse_button_released = Listenable[_MouseButtonListener]()
+
+        self.on_mouse_wheel = Listenable[_MouseWheelListener]()
 
     @property
     def position(self) -> Vector2:
@@ -41,10 +46,73 @@ class Mouse(Component):
         return self._vel
 
     @property
+    def wheel_delta(self) -> Vector2:
+        """The change in the mouse's scroll wheel position since the last frame."""
+
+        return self._wheel_delta
+
+    @property
     def states(self) -> list[State]:
         """The current state of all buttons listed in the `MouseButton` enum."""
 
         return self._states
+
+    @property
+    def cursor(self) -> pygame.Cursor:
+        """
+        Gets or sets the cursor.
+
+        # Getter
+
+        Returns
+        -------
+        `pygame.Cursor`
+            The cursor.
+
+        # Setter
+
+        Parameters
+        ----------
+        cursor: `CursorLike`
+            The cursor to set.
+
+        Returns
+        -------
+        `pygame.Cursor`
+            The cursor.
+        """
+
+        return pygame.mouse.get_cursor()
+
+    @cursor.setter
+    def cursor(self, cursor: CursorLike, /) -> None:
+        pygame.mouse.set_cursor(Cursor.convert(cursor))
+
+    @property
+    def relative_mode(self) -> bool:
+        """
+        Gets or sets whether the mouse is in relative mode.
+
+        # Getter
+
+        Returns
+        -------
+        `bool`
+            Whether the mouse is in relative mode.
+
+        # Setter
+
+        Parameters
+        ----------
+        enable: `bool`
+            Whether to enable relative mode.
+        """
+
+        return pygame.mouse.get_relative_mode()
+
+    @relative_mode.setter
+    def relative_mode(self, enable: bool, /) -> None:
+        pygame.mouse.set_relative_mode(enable)
 
     @override
     def update(self) -> None:
@@ -69,6 +137,10 @@ class Mouse(Component):
                 self.on_mouse_button.notify(button, state)
                 getattr(self, f"on_mouse_button_{state.name}").notify(button)
 
+        if evt := self.app.events.get(pygame.MOUSEWHEEL):
+            self.on_mouse_wheel.notify(delta := Vector2(evt.precise_x, evt.precise_x))
+            self._wheel_delta = delta
+
     def get_state(self, button: MouseButtonLike, /) -> State:
         """
         Gets the state of a button.
@@ -85,6 +157,20 @@ class Mouse(Component):
         """
 
         return self._states[MouseButton.convert(button).value]
+
+    def set_state(self, button: MouseButtonLike, state: State, /) -> None:
+        """
+        Sets the state of a button.
+
+        Parameters
+        ----------
+        button: `MouseButtonLike`
+            The button to set the state of.
+        state: `State`
+            The state to set.
+        """
+
+        self._states[MouseButton.convert(button).value] = state
 
     def is_state(self, button: MouseButtonLike, state: State, /) -> bool:
         """
