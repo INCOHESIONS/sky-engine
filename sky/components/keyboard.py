@@ -70,11 +70,11 @@ class Keyboard(Component):
 
             self._states[key] = state
 
+        self._text = "".join(e.unicode for e in self.app.events.get_all(pygame.KEYDOWN))
+
         for keybinding in self._keybindings:
             if all(self.get_state(key) == keybinding.state for key in keybinding.keys):
                 keybinding.action()
-
-        self._text = "".join(e.unicode for e in self.app.events.get_all(pygame.KEYDOWN))
 
     def add_keybinding(
         self,
