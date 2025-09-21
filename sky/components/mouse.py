@@ -129,7 +129,7 @@ class Mouse(Component):
                 released=_released[i],
                 down=_downed[i],
             )
-            for i in range(0, self._num_buttons)
+            for i in range(self._num_buttons)
         ]
 
         for button, state in zip(MouseButton, self._states):
