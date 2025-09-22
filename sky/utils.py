@@ -180,14 +180,14 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
 
 
 @overload
-def first[T](i: Iterable[T], /, *, default: T) -> T | None: ...
+def first[T, DT](i: Iterable[T], /, *, default: DT) -> T | DT: ...
 
 
 @overload
-def first[T](i: Iterable[T], /, *, default: T | None = None) -> T | None: ...
+def first[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT: ...
 
 
-def first[T](i: Iterable[T], /, *, default: T | None = None) -> T | None:
+def first[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT:
     """
     Gets the first element of an `Iterable`.
 
@@ -218,14 +218,14 @@ def first[T](i: Iterable[T], /, *, default: T | None = None) -> T | None:
 
 
 @overload
-def last[T](i: Iterable[T], /, *, default: T) -> T: ...
+def last[T, DT](i: Iterable[T], /, *, default: DT) -> T | DT: ...
 
 
 @overload
-def last[T](i: Iterable[T], /, *, default: T | None = None) -> T | None: ...
+def last[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT: ...
 
 
-def last[T](i: Iterable[T], /, *, default: T | None = None) -> T | None:
+def last[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT:
     """
     Gets the last element of an `Iterable`.
 
