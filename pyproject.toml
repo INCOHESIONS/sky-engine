@@ -26,6 +26,7 @@ classifiers = [
 python = "^3.13"
 pygame-ce = "^2.5.3"
 singleton-decorator = "^1.0.0"
+screeninfo = "^0.8.1"
 
 [build-system]
 requires = ["poetry-core"]

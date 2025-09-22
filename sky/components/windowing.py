@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, final, override
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Self, final, override
 
 import pygame
+from screeninfo import Monitor, get_monitors
 
 from ..core import Component
 from ..spec import WindowSpec
@@ -14,6 +16,37 @@ if TYPE_CHECKING:
 
 
 __all__ = ["Windowing"]
+
+
+# kind of assuming both pygame and screeninfo use the same indexing system here to match monitors to refresh rates
+# i don't have more than one monitor to be able to test this so idk
+# pretty ugly but screeninfo doesn't provide refresh rates so it is what it is
+@dataclass
+class _MonitorInfo:
+    name: str
+    position: Vector2
+    size: Vector2
+    is_primary: bool
+    index: int
+
+    @classmethod
+    def from_monitor(cls, monitor: Monitor, /, *, index: int) -> Self:
+        return cls(
+            monitor.name or "Unnamed Monitor",
+            Vector2(monitor.x, monitor.y),
+            Vector2(monitor.width, monitor.height),
+            monitor.is_primary or index == 0,
+            index,
+        )
+
+    @property
+    def refresh_rate(self) -> int:
+        """The refresh rate of the monitor. Returns -1 if the video system hasn't been initialized."""
+
+        try:
+            return pygame.display.get_desktop_refresh_rates()[self.index]
+        except pygame.error:
+            return -1
 
 
 @final
@@ -42,51 +75,24 @@ class _WindowWrapper:
         if spec.position is None:
             self.center()
 
+    @property
     def underlying(self) -> pygame.Window:
         """
         The underlying pygame window.\n
         Position, size and fullscreen state should not be modified through this property.
-
-        Returns
-        -------
-        `pygame.Window`
-            The underlying pygame window.
         """
 
         return self._underlying
 
     @property
     def surface(self) -> pygame.Surface:
-        """
-        The main window's surface.
-
-        Returns
-        -------
-        `pygame.Surface`
-            The main window's surface.
-        """
+        """The main window's surface."""
 
         return self._underlying.get_surface()
 
     @property
     def position(self) -> Vector2:
-        """
-        Gets or sets the position of the main window.
-
-        # Getter
-
-        Returns
-        -------
-        `Vector2`
-            The position of the main window.
-
-        # Setter
-
-        Parameters
-        ----------
-        value: `Vector2`
-            The new position. Uses some magic to fix fullscreening problems.
-        """
+        """Gets or sets the position of the main window."""
 
         return Vector2(self._underlying.position)
 
@@ -96,23 +102,7 @@ class _WindowWrapper:
 
     @property
     def size(self) -> Vector2:
-        """
-        Gets or sets the current size of the main window.
-
-        # Getter
-
-        Returns
-        -------
-        `Vector2`
-            The current size of the main window.
-
-        # Setter
-
-        Parameters
-        ----------
-        value: `Vector2`
-            The new size.
-        """
+        """Gets or sets the current size of the main window."""
 
         return Vector2(self._underlying.size)
 
@@ -125,20 +115,6 @@ class _WindowWrapper:
         """
         Gets or sets the main window's fullscreen state.\n
         Does some extra magic on Windows to get fullscreening to work, unlike `pygame.Window`'s `set_fullscreen` method.
-
-        # Getter
-
-        Returns
-        -------
-        `bool`
-            Whether the main window is fullscreen or not.
-
-        # Setter
-
-        Parameters
-        ----------
-        value: `bool`
-            Whether to set the window to fullscreen or not.
         """
 
         return self._fullscreen
@@ -155,7 +131,7 @@ class _WindowWrapper:
         # well, mostly. at least they do on my machine
 
         self.size = (
-            (self.app.windowing.main_monitor_size + self._magic_size_offset)
+            (self.app.windowing.primary_monitor.size + self._magic_size_offset)
             if value
             else self._spec.size
         )
@@ -174,7 +150,8 @@ class _WindowWrapper:
         `Vector2`
             The position of the window.
         """
-        return self.app.windowing.main_monitor_size / 2 - self.size / 2
+
+        return self.app.windowing.primary_monitor.size / 2 - self.size / 2
 
     def toggle_fullscreen(self) -> None:
         """Toggles fullscreen mode."""
@@ -205,8 +182,10 @@ class Windowing(Component):
         self._main = None
         self._extras: list[_WindowWrapper] = []
 
-        self._main_monitor_index = 0
-        self._monitors = pygame.display.get_desktop_sizes()
+        self._monitors = [
+            _MonitorInfo.from_monitor(monitor, index=i)
+            for i, monitor in enumerate(get_monitors())
+        ]
 
     @property
     def main_window(self) -> _WindowWrapper | None:
@@ -224,16 +203,16 @@ class Windowing(Component):
         return self.app.spec.window_spec
 
     @property
-    def main_monitor_size(self) -> Vector2:
-        """The size of the main monitor."""
+    def monitors(self) -> list[_MonitorInfo]:
+        """Information about all connected monitors."""
 
-        return self.monitor_sizes[self._main_monitor_index]
+        return self._monitors
 
     @property
-    def monitor_sizes(self) -> tuple[Vector2, ...]:
-        """The sizes of all connected monitors."""
+    def primary_monitor(self) -> _MonitorInfo:
+        """Information about the primary monitor."""
 
-        return tuple(map(Vector2, self._monitors))
+        return self._monitors[0]
 
     @override
     def start(self) -> None:
