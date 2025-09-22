@@ -1,23 +1,16 @@
-from dataclasses import dataclass
-from typing import Callable, Final, Iterator, final, override
+from typing import Callable, Iterator
 
 import pygame
 from pygame.event import Event as PygameEvent
 
 from ..core import Component
+from ..listenable import Listenable
 from ..utils import filter_by_attrs, first
 
 __all__ = ["Events"]
 
 
-@final
-@dataclass
-class _Handler:
-    type: Final[int]
-    func: Final[Callable[[PygameEvent], None]]
-
-    def __call__(self, event: PygameEvent) -> None:
-        self.func(event)
+type _EventListener = Callable[[PygameEvent], None]
 
 
 class Events(Component):
@@ -25,7 +18,7 @@ class Events(Component):
 
     def __init__(self) -> None:
         self._events: list[PygameEvent] = []
-        self._handlers: list[_Handler] = []
+        self.on_event = Listenable[_EventListener]()
 
     def __iter__(self) -> Iterator[PygameEvent]:
         return iter(self._events)
@@ -36,39 +29,13 @@ class Events(Component):
 
         return self._events.copy()
 
-    @override
-    def update(self) -> None:
-        for event in self._events:
-            map(
-                lambda handler: handler(event),
-                filter_by_attrs(self._handlers, type=event.type),
-            )
+    def handle_events(self) -> None:
+        """Handles all events in the event queue. Called before `app.pre_update`."""
 
-    def add_handler(self, type: int, handler: Callable[[PygameEvent], None], /) -> None:
-        """
-        Adds a handler to the list of handlers.
+        self._events = pygame.event.get()
 
-        Parameters
-        ----------
-        type: `int`
-            The type of event the handler should respond to.
-        handler: `Callable[[pygame.event.Event], None]`
-            The function to call to handle the event.
-        """
-
-        self._handlers.append(_Handler(type, handler))
-
-    def remove_handler(self, type: int, /) -> None:
-        """
-        Removes a handler from the list of handlers.
-
-        Parameters
-        ----------
-        type: `int`
-            The type of event the handler responds to.
-        """
-
-        map(self._handlers.remove, filter_by_attrs(self._handlers, type=type))
+        for event in self:
+            self.on_event.notify(event)
 
     def get(self, type: int, /) -> PygameEvent | None:
         """
@@ -84,6 +51,7 @@ class Events(Component):
         `pygame.event.Event | None`
             The event of the specified type, or None if no event of that type was found.
         """
+
         return first(self.get_all(type))
 
     def get_all(self, type: int, /) -> list[PygameEvent]:
@@ -100,11 +68,32 @@ class Events(Component):
         `list[pygame.event.Event]`
             The events of the specified type.
         """
+
         return list(filter_by_attrs(self._events, type=type))
 
     def post(self, event: PygameEvent | int, /) -> None:
+        """
+        Posts an event to the event queue to be handled next frame.
+
+        Parameters
+        ----------
+        event: `pygame.event.Event | int`
+            The event to post.
+        """
+
         pygame.event.post(PygameEvent(event) if isinstance(event, int) else event)
 
     def cancel(self, event: PygameEvent | int, /) -> None:
+        """
+        Removes an event from the event queue.
+
+        Parameters
+        ----------
+        event: `pygame.event.Event | int`
+            The event to remove.
+        """
+
         pygame.event.clear(type := event if isinstance(event, int) else event.type)
-        map(self._events.remove, filter_by_attrs(self._events, type=type))
+
+        for event in filter_by_attrs(self, type=type):
+            self._events.remove(event)

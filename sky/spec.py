@@ -21,6 +21,8 @@ class WindowSpec:
     fullscreen: bool = False
     borderless: bool = False
     backend: Literal["software", "opengl", "vulkan"] = "software"
+    initialization: Literal["immediate", "deferred"] = "immediate"
+    """Only valid for the main window. Whether to initialize the window immediately or wait until mainloop is called. This is useful for adding listeners to the window before the app is started."""
 
     def is_software(self) -> bool:
         """Whether the window is running on a software backend."""

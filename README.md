@@ -6,9 +6,9 @@ Generally cross-platform, but mostly tested on Windows. May have some window man
 
 Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, as well as one using `pygame`'s software renderer with `pygame.draw`.
 
-## Usage
+## Examples
 
-Rendering example (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame example):
+Rendering using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame example:
 
 ```py
 from typing import override
@@ -85,7 +85,7 @@ app.add_component(RenderPipeline)
 app.mainloop()
 ```
 
-More involved, interactive example (using pygame's drawing functions):
+Interactivity (rendering done with pygame's drawing functions):
 
 ```py
 from dataclasses import dataclass, field
@@ -155,7 +155,42 @@ def on_mouse_button_downed() -> None:
 app.mainloop()
 ```
 
-Coroutine example (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
+Multiple windows:
+
+```python
+from pygame import freetype
+
+from sky import App, WindowSpec
+from sky.colors import BLACK, WHITE
+
+app = App()
+app.register_module(freetype)
+
+extra_window = app.windowing.add_extra(spec=WindowSpec(title="Extra window!"))
+
+font = freetype.SysFont("Arial", 32)
+
+
+@app.window.on_render
+def render() -> None:
+    app.window.surface.fill(BLACK)
+    font.render_to(
+        app.window.surface, app.window.center, f"{app.chrono.deltatime:.2f}", WHITE
+    )
+
+
+@extra_window.on_render
+def extra_render() -> None:
+    extra_window.surface.fill(BLACK)
+    font.render_to(
+        extra_window.surface, extra_window.center, f"{app.chrono.framerate:.2f}", WHITE
+    )
+
+
+app.mainloop()
+```
+
+Coroutines (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
 
 ```python
 from sky import App
@@ -171,6 +206,25 @@ def lerp_color() -> Coroutine:
     for t in animate(duration=3, step=lambda: app.chrono.deltatime):
         app.window.surface.fill(RED.lerp(BLUE, t))
         yield None  # same as WaitForFrames(1)
+
+
+app.mainloop()
+```
+
+Event cancelling:
+
+```python
+import pygame
+
+from sky import App
+
+app = App()
+
+
+@app.pre_update
+def pre_handling() -> None:
+    # prevents the app from closing. use CTRL + C instead
+    app.events.cancel(pygame.QUIT)
 
 
 app.mainloop()

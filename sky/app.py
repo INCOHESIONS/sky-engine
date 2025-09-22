@@ -1,5 +1,6 @@
 from inspect import signature
-from typing import Self
+from types import ModuleType
+from typing import Any, Self
 
 import pygame
 
@@ -50,6 +51,9 @@ class App:
 
         self.teardown = Listenable()
         """Executes before components are stopped, and after the last frame."""
+
+        self.cleanup = Listenable()
+        """Executes after components are stopped, and before the app is destroyed."""
 
         self.pre_update = Listenable()
         """Executes before components are updated."""
@@ -130,7 +134,7 @@ class App:
         self.is_running = True
 
         while not self._should_quit():
-            self.events._events = pygame.event.get()  # type: ignore
+            self.events.handle_events()
 
             self.pre_update.notify()
 
@@ -139,12 +143,14 @@ class App:
 
             self.post_update.notify()
 
+        self.is_running = False
+
         self.teardown.notify()
 
         for component in self._components:
             component.stop()
 
-        self.is_running = False
+        self.cleanup.notify()
 
         pygame.quit()
 
@@ -233,10 +239,42 @@ class App:
             else filter(lambda c: isinstance(c, component), self._components)  # type: ignore
         )
 
+    def register_module(self, module: ModuleType, /) -> Self:
+        """
+        Registers a module to be initialized and cleaned up when the app is started and stopped.
+        Useful for pygame modules such as freetype and mixer.\n
+        Modules must have `init` and `quit` functions.
+
+        Parameters
+        ----------
+        module: `ModuleType`
+            The module to register.
+
+        Returns
+        -------
+        `Self`
+            The app, for chaining.
+
+        Raises
+        ------
+        `ValueError`
+            If the module doesn't have `init` and `quit` functions.
+        """
+        if not self._has_callables(module, "init", "quit"):
+            raise ValueError("Module must have `init` and `quit` functions.")
+
+        module.init()
+        self.cleanup += module.quit
+
+        return self
+
     def quit(self) -> None:
         """Closes the app in the next frame."""
 
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    def _has_callables(self, obj: Any, /, *attrs: str) -> bool:
+        return all(callable(getattr(obj, attr, False)) for attr in attrs)
 
     def _should_quit(self) -> bool:
         return get_by_attrs(self.events, type=pygame.QUIT) is not None

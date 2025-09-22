@@ -8,6 +8,7 @@ import pygame
 from screeninfo import Monitor, get_monitors
 
 from ..core import Component
+from ..listenable import Listenable
 from ..spec import WindowSpec
 from ..utils import Vector2, filter_by_attrs, first, get_by_attrs
 
@@ -52,6 +53,7 @@ class _MonitorInfo:
 @final
 class _WindowWrapper:
     app: App
+    windowing: Windowing
 
     _magic_fullscreen_position = Vector2(-8, -31)
     _magic_size_offset = Vector2(16, 39)
@@ -72,8 +74,10 @@ class _WindowWrapper:
         self._spec = spec
         self._fullscreen = spec.fullscreen
 
+        self.on_render = Listenable()
+
         if spec.position is None:
-            self.center()
+            self.center_on_monitor()
 
     @property
     def underlying(self) -> pygame.Window:
@@ -89,6 +93,17 @@ class _WindowWrapper:
         """The main window's surface."""
 
         return self._underlying.get_surface()
+
+    @property
+    def is_closed(self) -> bool:
+        """Whether the window is closed."""
+
+        try:
+            _ = self.surface
+        except pygame.error:
+            return True
+
+        return False
 
     @property
     def position(self) -> Vector2:
@@ -111,6 +126,12 @@ class _WindowWrapper:
         self._underlying.size = value
 
     @property
+    def center(self) -> Vector2:
+        """Gets the center position, in pixel coordinates, of this window."""
+
+        return self.size / 2
+
+    @property
     def fullscreen(self) -> bool:
         """
         Gets or sets the main window's fullscreen state.\n
@@ -131,43 +152,37 @@ class _WindowWrapper:
         # well, mostly. at least they do on my machine
 
         self.size = (
-            (self.app.windowing.primary_monitor.size + self._magic_size_offset)
+            (self.windowing.primary_monitor.size + self._magic_size_offset)
             if value
             else self._spec.size
         )
 
-        self.position = (
-            self._magic_fullscreen_position if value else self.centered_position
-        )
-
-    @property
-    def centered_position(self) -> Vector2:
-        """
-        The position of the window, centered on the main monitor.
-
-        Returns
-        -------
-        `Vector2`
-            The position of the window.
-        """
-
-        return self.app.windowing.primary_monitor.size / 2 - self.size / 2
+        if value:
+            self.position = self._magic_fullscreen_position
+        else:
+            self.center_on_monitor()
 
     def toggle_fullscreen(self) -> None:
         """Toggles fullscreen mode."""
 
         self.fullscreen = not self._fullscreen
 
-    def center(self) -> None:
-        """Centers the window."""
-        self.position = self.centered_position
+    def center_on_monitor(self, monitor: _MonitorInfo | None = None, /) -> None:
+        """Centers the window on the specified monitor, or the primary monitor if `None` is provided."""
+
+        self.position = (
+            monitor or self.windowing.primary_monitor
+        ).size / 2 - self.size / 2
 
     def destroy(self) -> None:
         """Destroys the window."""
+
         self._underlying.destroy()
+        self.on_render.clear()
 
     def flip(self) -> None:
         """Updates the window."""
+
         self._underlying.flip()
 
     update = flip
@@ -178,6 +193,7 @@ class Windowing(Component):
 
     def __init__(self) -> None:
         _WindowWrapper.app = self.app
+        _WindowWrapper.windowing = self
 
         self._main = None
         self._extras: list[_WindowWrapper] = []
@@ -186,6 +202,9 @@ class Windowing(Component):
             _MonitorInfo.from_monitor(monitor, index=i)
             for i, monitor in enumerate(get_monitors())
         ]
+
+        if self.spec and self.spec.initialization == "immediate":
+            self._initialize()
 
     @property
     def main_window(self) -> _WindowWrapper | None:
@@ -221,9 +240,16 @@ class Windowing(Component):
         if self.spec is None:
             return
 
-        self._main = _WindowWrapper(spec=self.spec)
+        if self.spec.initialization == "deferred":
+            self._initialize()
 
-        self.app.post_update += self._post_update
+    @override
+    def update(self) -> None:
+        if self._main is not None:
+            self._main.on_render.notify()
+
+        for window in self._extras:
+            window.on_render.notify()
 
     @override
     def stop(self) -> None:
@@ -279,6 +305,16 @@ class Windowing(Component):
         for window in self._extras:
             self.remove_extra(window)
 
+    def _initialize(self) -> None:
+        assert self.spec
+
+        self._main = _WindowWrapper(spec=self.spec)
+
+        self.app.post_update += self._post_update
+        self.app.teardown += self.clear_extras
+
+        self.app.events.on_event += self._handle_close
+
     # uses post_update to guarantee the window is flipped after any user-added components update
     def _post_update(self) -> None:
         self._main.flip()  # type: ignore
@@ -286,14 +322,11 @@ class Windowing(Component):
         for window in self._extras:
             window.flip()
 
-        if evt := self.app.events.get(pygame.WINDOWCLOSE):
-            if evt.window == self._main._underlying:  # type: ignore
+    def _handle_close(self, event: pygame.event.Event, /) -> None:
+        if event.type != pygame.WINDOWCLOSE:
+            return
 
-                def _cleanup() -> None:
-                    self.clear_extras()
-                    self.app.quit()
-
-                self.app.teardown += _cleanup
-                self.app.quit()
-            else:
-                self.remove_extra(evt.window)
+        if event.window == self._main._underlying:  # type: ignore
+            self.app.quit()
+        else:
+            self.remove_extra(event.window)
