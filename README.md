@@ -155,36 +155,24 @@ def on_mouse_button_downed() -> None:
 app.mainloop()
 ```
 
-Multiple windows (and `register_module`):
+Multiple windows:
 
 ```python
-from pygame import freetype
+from sky import App, AppSpec, WindowSpec
+from sky.colors import BLUE, RED
 
-from sky import App, WindowSpec
-from sky.colors import BLACK, WHITE
-
-app = App()
-app.register_module(freetype)
-
-extra_window = app.windowing.add_extra(spec=WindowSpec(title="Extra window!"))
-
-font = freetype.SysFont("Arial", 32)
+app = App(spec=AppSpec(window_spec=WindowSpec(title="Main Window!")))
+extra_window = app.windowing.add_extra(spec=WindowSpec(title="Extra Window!"))
 
 
 @app.window.on_render
 def render() -> None:
-    app.window.surface.fill(BLACK)
-    font.render_to(
-        app.window.surface, app.window.center, f"{app.chrono.deltatime:.2f}", WHITE
-    )
+    app.window.surface.fill(RED)
 
 
 @extra_window.on_render
 def extra_render() -> None:
-    extra_window.surface.fill(BLACK)
-    font.render_to(
-        extra_window.surface, extra_window.center, f"{app.chrono.framerate:.2f}", WHITE
-    )
+    extra_window.surface.fill(BLUE)
 
 
 app.mainloop()
