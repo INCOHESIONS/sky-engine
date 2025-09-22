@@ -99,7 +99,9 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     def __iter__(self) -> Iterator[TListener]:
         return iter(self._listeners)
 
-    def __call__(self, listener: TListener | Callable[[], Coroutine]) -> Self:
+    def __call__[V: Callable[[], Coroutine]](
+        self, listener: TListener | V
+    ) -> TListener | V:
         """Allows listenables to be used as decorators."""
 
         if get_type_hints(listener)["return"] is Coroutine:
@@ -108,10 +110,10 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
                 self.app.executor.start_coroutine(listener)
 
             self.add_listener(__add)  # type: ignore
-            return self
+        else:
+            self.add_listener(listener)  # type: ignore
 
-        self.add_listener(listener)  # type: ignore
-        return self
+        return listener
 
     def __iadd__(self, listener: TListener) -> Self:
         self.add_listener(listener)
