@@ -1,6 +1,6 @@
 # Sky Engine
 
-More like a wrapper than an engine. Makes `pygame` less painful to use. Fully typed with Pylance on strict mode.
+More like a wrapper than an engine. Makes `pygame` less painful to use. Fully typed with `Pylance` on strict mode.
 
 Generally cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
 
@@ -8,7 +8,7 @@ Rendering is yet to be implemented, and thus is up to the user. An OpenGL exampl
 
 ## Examples
 
-Rendering using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) pygame example:
+Rendering using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) `pygame` example:
 
 ```py
 from typing import override
@@ -85,7 +85,7 @@ app.add_component(RenderPipeline)
 app.mainloop()
 ```
 
-Interactivity (rendering done with pygame's drawing functions):
+Interactivity (rendering done with `pygame`'s drawing functions):
 
 ```py
 from dataclasses import dataclass, field
@@ -155,7 +155,7 @@ def on_mouse_button_downed() -> None:
 app.mainloop()
 ```
 
-Multiple windows:
+Multiple windows (and `register_module`):
 
 ```python
 from pygame import freetype
@@ -223,7 +223,7 @@ app = App()
 
 @app.pre_update
 def pre_handling() -> None:
-    # prevents the app from closing. use CTRL + C instead
+    # prevents the app from closing. use CTRL + C on your terminal instead
     app.events.cancel(pygame.QUIT)
 
 
