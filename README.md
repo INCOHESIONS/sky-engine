@@ -59,7 +59,7 @@ class RenderPipeline(Component):
     def start(self) -> None:
         self._ctx = zengl.context()
         self._image = self._ctx.image(
-            app.windowing.size.to_int_tuple(), "rgba8unorm", samples=4
+            app.window.size.to_int_tuple(), "rgba8unorm", samples=4
         )
         self._pipeline = self._ctx.pipeline(
             vertex_shader=self.VERTEX_SHADER,
@@ -96,10 +96,6 @@ import pygame
 from sky import App, Color, Key, MouseButton, Vector2
 
 app = App()
-app.keyboard.add_keybindings({
-    Key.escape: app.quit,
-    Key.f11: app.windowing.toggle_fullscreen,
-})  # fmt: skip
 
 
 @dataclass
@@ -124,7 +120,7 @@ class Circle:
 
     def render(self) -> None:
         pygame.draw.circle(
-            app.windowing.surface,  # type: ignore
+            app.window.surface,
             self.color,
             self.position,
             self.radius * 2,
@@ -134,9 +130,17 @@ class Circle:
 circles: list[Circle] = []
 
 
+@app.setup
+def setup() -> None:
+    app.keyboard.add_keybindings({
+        Key.escape: app.quit,
+        Key.f11: app.window.toggle_fullscreen,
+    })  # fmt: skip
+
+
 @app.pre_update
 def pre_update() -> None:
-    app.windowing.surface.fill("#141417")  # type: ignore
+    app.window.surface.fill("#141417")
 
     for circle in circles:
         circle.update()
@@ -164,10 +168,8 @@ app = App()
 
 @app.setup
 def lerp_color() -> Coroutine:
-    assert app.windowing.surface is not None
-
     for t in animate(duration=3, step=lambda: app.chrono.deltatime):
-        app.windowing.surface.fill(RED.lerp(BLUE, t))
+        app.window.surface.fill(RED.lerp(BLUE, t))
         yield None  # same as WaitForFrames(1)
 
 

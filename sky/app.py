@@ -3,10 +3,9 @@ from typing import Self
 
 import pygame
 
-from sky.listenable import Listenable
-
 from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import Component, Yieldable, singleton
+from .listenable import Listenable
 from .spec import AppSpec
 from .utils import first, get_by_attrs
 
@@ -89,6 +88,20 @@ class App:
             component._internal = True  # type: ignore
 
         self.is_running = True
+
+    @property
+    def window(self):
+        """
+        Short for `app.windowing.main_window`.
+
+        Raises
+        ------
+        `AssertionError`
+            If the main window is not set (app is in headless mode).
+        """
+
+        assert self.windowing.main_window is not None
+        return self.windowing.main_window
 
     def mainloop(self) -> None:
         """

@@ -1,13 +1,9 @@
-import os
 from datetime import datetime, timedelta
 from typing import override
 
 import pygame
 
 from ..core import Component
-
-if os.name == "nt":
-    import win32api
 
 __all__ = ["Chrono"]
 
@@ -22,8 +18,8 @@ class Chrono(Component):
         self.stop_time = None
         """The time the app stopped, or None if it hasn't stopped yet."""
 
-        self.target_framerate = self._get_main_monitor_refrate()
-        """The target framerate. Set to 0 to disable framerate limiting. Set to the main monitor's refresh rate by default, or 60 if not on Windows."""
+        self.target_framerate = pygame.display.get_desktop_refresh_rates()[0]
+        """The target framerate. Set to 0 to disable framerate limiting. Set to the main monitor's refresh rate by default."""
 
         self.deltatime = 0
         """The time since the last frame."""
@@ -57,11 +53,3 @@ class Chrono(Component):
         self.deltatime = self._internal_clock.tick(self.target_framerate) / 1000
         self.framerate = self._internal_clock.get_fps()
         self.frames += 1
-
-    def _get_main_monitor_refrate(self) -> float:
-        if os.name == "nt":
-            device = win32api.EnumDisplayDevices(DevNum=0)
-            settings = win32api.EnumDisplaySettings(device.DeviceName, -1)
-            return settings.DisplayFrequency
-
-        return 60

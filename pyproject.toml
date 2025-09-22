@@ -26,7 +26,6 @@ classifiers = [
 python = "^3.13"
 pygame-ce = "^2.5.3"
 singleton-decorator = "^1.0.0"
-pywin32 = { version = "^310", platform = "win32" }
 
 [build-system]
 requires = ["poetry-core"]
