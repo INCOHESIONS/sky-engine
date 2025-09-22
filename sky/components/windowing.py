@@ -9,7 +9,7 @@ from screeninfo import Monitor, get_monitors
 
 from ..core import Component
 from ..spec import WindowSpec
-from ..utils import Vector2, get_by_attrs
+from ..utils import Vector2, filter_by_attrs, first, get_by_attrs
 
 if TYPE_CHECKING:
     from ..app import App
@@ -212,7 +212,9 @@ class Windowing(Component):
     def primary_monitor(self) -> _MonitorInfo:
         """Information about the primary monitor."""
 
-        return self._monitors[0]
+        return first(
+            filter_by_attrs(self._monitors, is_primary=True), default=self.monitors[0]
+        )
 
     @override
     def start(self) -> None:
