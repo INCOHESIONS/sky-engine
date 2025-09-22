@@ -122,8 +122,7 @@ class App:
             Post-loop:
                 1. App.teardown
                 2. Component.stop
-
-        App.teardown is called before Component.stop since dependencies on it might need information that components have.
+                3. App.cleanup
         """
 
         for component in self._components:
