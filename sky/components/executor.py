@@ -1,7 +1,8 @@
 from typing import Callable, override
 
-from ..core import Component, WaitForFrames, Yieldable
+from ..core import Component
 from ..types import Coroutine
+from ..yieldable import WaitForFrames, Yieldable
 
 
 class Executor(Component):
@@ -50,7 +51,7 @@ class Executor(Component):
     @override
     def update(self) -> None:
         for coroutine, yieldable in list(self._coroutines.items()):
-            if yieldable.ready():
+            if yieldable.is_ready():
                 self._step_coroutine(coroutine)
 
     def _step_coroutine(self, coroutine: Coroutine, /) -> None:

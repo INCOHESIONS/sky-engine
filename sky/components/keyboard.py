@@ -3,10 +3,9 @@ from typing import Callable, Self, override
 
 import pygame
 
-from sky.listenable import Listenable
-
 from ..core import Component
 from ..enums import Key, State
+from ..listenable import Listenable
 from ..types import KeyLike
 from ..utils import get_by_attrs
 

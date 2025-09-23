@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Generator, Literal
 import pygame
 
 if TYPE_CHECKING:
-    from .core import Yieldable
     from .enums import Cursor, Key, MouseButton
+    from .yieldable import Yieldable
 
 
 __all__ = [

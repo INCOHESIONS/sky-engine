@@ -25,11 +25,12 @@ del environ
 import pygame
 
 from .app import App
-from .core import Component, WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
+from .core import AppSpec, Component, WindowSpec
 from .enums import Cursor, Key, MouseButton, State
 from .listenable import Listenable
-from .spec import AppSpec, WindowSpec
+from .types import Coroutine
 from .utils import Color, Vector2
+from .yieldable import WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
 
 if not getattr(pygame, "IS_CE", False):
     print(
@@ -42,6 +43,7 @@ __all__ = [
     "AppSpec",
     "Color",
     "Component",
+    "Coroutine",
     "Cursor",
     "Key",
     "Listenable",

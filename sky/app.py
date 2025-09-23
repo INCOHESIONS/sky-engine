@@ -5,10 +5,10 @@ from typing import Any, Self
 import pygame
 
 from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
-from .core import Component, Yieldable, singleton
+from .core import AppSpec, Component, singleton
 from .listenable import Listenable
-from .spec import AppSpec
 from .utils import first, get_by_attrs
+from .yieldable import Yieldable
 
 __all__ = ["App"]
 

@@ -180,14 +180,16 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
 
 
 @overload
-def first[T, DT](i: Iterable[T], /, *, default: DT) -> T | DT: ...
+def first[T, TDefault](i: Iterable[T], /, *, default: TDefault) -> T | TDefault: ...
 
 
 @overload
-def first[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT: ...
+def first[T, TDefault](
+    i: Iterable[T], /, *, default: TDefault = None
+) -> T | TDefault: ...
 
 
-def first[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT:
+def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
     """
     Gets the first element of an `Iterable`.
 
@@ -218,14 +220,16 @@ def first[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT:
 
 
 @overload
-def last[T, DT](i: Iterable[T], /, *, default: DT) -> T | DT: ...
+def last[T, TDefault](i: Iterable[T], /, *, default: TDefault) -> T | TDefault: ...
 
 
 @overload
-def last[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT: ...
+def last[T, TDefault](
+    i: Iterable[T], /, *, default: TDefault = None
+) -> T | TDefault: ...
 
 
-def last[T, DT](i: Iterable[T], /, *, default: DT = None) -> T | DT:
+def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
     """
     Gets the last element of an `Iterable`.
 
@@ -346,7 +350,9 @@ def clamp(value: float, minimum: float, maximum: float, /) -> float:
     Returns
     -------
     `float`
-        The clamped value.
+        The clamped value.\n
+        Note: doesn't actually always return a `float`. For example, `clamp(1.5, 0, 1)` returns `maximum`, which is an `int` here, not a `float`.
+        If you want it to always return a `float`, use upper and lower boundaries that are `floats`, or simply cast the result to a `float`.
     """
 
     return max(minimum, min(value, maximum))

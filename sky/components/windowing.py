@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING, Self, final, override
 import pygame
 from screeninfo import Monitor, get_monitors
 
-from ..core import Component
+from ..core import Component, WindowSpec
 from ..listenable import Listenable
-from ..spec import WindowSpec
 from ..utils import Vector2, filter_by_attrs, first, get_by_attrs
 
 if TYPE_CHECKING:
@@ -237,10 +236,7 @@ class Windowing(Component):
 
     @override
     def start(self) -> None:
-        if self.spec is None:
-            return
-
-        if self.spec.initialization == "deferred":
+        if self.spec and self.spec.initialization == "deferred":
             self._initialize()
 
     @override

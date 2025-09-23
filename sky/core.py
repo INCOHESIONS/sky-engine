@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from time import perf_counter
-from typing import TYPE_CHECKING, Callable, final, override
+from dataclasses import KW_ONLY, dataclass, field
+from typing import TYPE_CHECKING, Literal, final
 
 from singleton_decorator import singleton as untyped_singleton  # type: ignore
+
+from .utils import Vector2
 
 if TYPE_CHECKING:
     from .app import App
@@ -13,12 +13,49 @@ if TYPE_CHECKING:
 __all__ = [
     "Component",
     "singleton",
-    "WaitForFrames",
-    "WaitForSeconds",
-    "WaitUntil",
-    "WaitWhile",
-    "Yieldable",
 ]
+
+
+@final
+@dataclass
+class WindowSpec:
+    """Defines information the window needs to have before mainloop. If `position` is None, the window will be centered on the screen."""
+
+    _: KW_ONLY
+    title: str = "Sky Engine"
+    position: Vector2 | None = None
+    size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
+    resizable: bool = False
+    fullscreen: bool = False
+    borderless: bool = False
+    backend: Literal["software", "opengl", "vulkan"] = "software"
+    initialization: Literal["immediate", "deferred"] = "immediate"
+    """Only valid for the main window. Whether to initialize the window immediately or wait until mainloop is called. This is useful for adding listeners to the window before the app is started."""
+
+    def is_software(self) -> bool:
+        """Whether the window is running on a software backend."""
+
+        return self.backend == "software"
+
+    def is_hardware(self) -> bool:
+        """Whether the window is running on a hardware backend (OpenGL or Vulkan)."""
+
+        return not self.is_software()
+
+
+@final
+@dataclass
+class AppSpec:
+    """Defines information the app needs to have before mainloop. If `window_spec` is None, a window will not be created."""
+
+    _: KW_ONLY
+    window_spec: WindowSpec | None = field(default_factory=WindowSpec)
+
+    @classmethod
+    def headless(cls) -> AppSpec:
+        """Simply creates an `AppSpec` with `window_spec` set to None."""
+
+        return cls(window_spec=None)
 
 
 class Component:
@@ -31,72 +68,6 @@ class Component:
     def stop(self) -> None: ...
 
     def update(self) -> None: ...
-
-
-class Yieldable(ABC):
-    """Base class for `Yieldables`: values that tell the `Executor` to wait or continue executing a `Coroutine`."""
-
-    app: App
-
-    @abstractmethod
-    def ready(self) -> bool: ...
-
-
-@final
-@dataclass
-class WaitForFrames(Yieldable):
-    """
-    Waits for a certain amount of frames to pass. By default, it waits for 1 frame.
-    If None is returned from a coroutine, it will also wait for 1 frame.
-    """
-
-    frames: int = 1
-
-    def __post_init__(self) -> None:
-        self._frames_started = self.app.chrono.frames
-
-    @override
-    def ready(self) -> bool:
-        return self.app.chrono.frames - self._frames_started >= self.frames
-
-
-@final
-@dataclass
-class WaitForSeconds(Yieldable):
-    """Waits for a certain amount of seconds to pass."""
-
-    seconds: float
-
-    def __post_init__(self) -> None:
-        self._time_started = perf_counter()
-
-    @override
-    def ready(self) -> bool:
-        return perf_counter() - self._time_started >= self.seconds
-
-
-@final
-@dataclass
-class WaitWhile(Yieldable):
-    """Waits while a certain condition is not met."""
-
-    func: Callable[[], bool]
-
-    @override
-    def ready(self) -> bool:
-        return not self.func()
-
-
-@final
-@dataclass
-class WaitUntil(Yieldable):
-    """Waits until a certain condition is met."""
-
-    func: Callable[[], bool]
-
-    @override
-    def ready(self) -> bool:
-        return self.func()
 
 
 def singleton[T: type](cls: T) -> T:

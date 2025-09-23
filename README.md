@@ -181,9 +181,8 @@ app.mainloop()
 Coroutines (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
 
 ```python
-from sky import App
+from sky import App, Coroutine
 from sky.colors import BLUE, RED
-from sky.types import Coroutine
 from sky.utils import animate
 
 app = App()
