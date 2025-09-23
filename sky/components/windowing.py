@@ -125,6 +125,18 @@ class _WindowWrapper:
         self._underlying.size = value
 
     @property
+    def width(self) -> int:
+        """Gets the width of the main window."""
+
+        return int(self.size.x)
+
+    @property
+    def height(self) -> int:
+        """Gets the height of the main window."""
+
+        return int(self.size.y)
+
+    @property
     def center(self) -> Vector2:
         """Gets the center position, in pixel coordinates, of this window."""
 
