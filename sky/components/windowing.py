@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Self, final, override
 
 import pygame
+from pygame.event import Event as PygameEvent
 from screeninfo import Monitor, get_monitors
 
 from ..core import Component, WindowSpec
@@ -130,11 +131,19 @@ class _WindowWrapper:
 
         return int(self.size.x)
 
+    @width.setter
+    def width(self, value: int) -> None:
+        self._underlying.size = Vector2(value, self.height)
+
     @property
     def height(self) -> int:
         """Gets the height of the main window."""
 
         return int(self.size.y)
+
+    @height.setter
+    def height(self, value: int) -> None:
+        self._underlying.size = Vector2(self.width, value)
 
     @property
     def center(self) -> Vector2:
@@ -173,6 +182,10 @@ class _WindowWrapper:
         else:
             self.center_on_monitor()
 
+        self.app.events.post(
+            PygameEvent(self.windowing.WINDOWFULLSCREENED, dict(window=self.underlying))
+        )
+
     def toggle_fullscreen(self) -> None:
         """Toggles fullscreen mode."""
 
@@ -201,6 +214,8 @@ class _WindowWrapper:
 
 class Windowing(Component):
     """Handles windowing."""
+
+    WINDOWFULLSCREENED = pygame.USEREVENT + 1
 
     def __init__(self) -> None:
         _WindowWrapper.app = self.app
