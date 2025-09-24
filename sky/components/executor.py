@@ -21,6 +21,11 @@ class Executor(Component):
         ----------
         coroutine : `Callable[[], Coroutine] | Coroutine`
             A `Coroutine` or a `Callable` that returns a `Coroutine`.
+
+        Raises
+        ------
+        `RuntimeError`
+            If the coroutine is already running.
         """
 
         if callable(coroutine):
@@ -73,7 +78,7 @@ class Executor(Component):
                 return value()
             except TypeError:
                 raise RuntimeError(
-                    f"The coroutine {coroutine} returned a type ({value}) that can't be instanced without arguments."
+                    f"The coroutine {coroutine} returned a type ({value.__name__}) that can't be instanced without arguments."
                 )
 
         return value or WaitForFrames()
