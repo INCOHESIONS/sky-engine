@@ -37,6 +37,57 @@ class Events(Component):
         for event in self:
             self.on_event.notify(event)
 
+    def any(self, /, *args: int) -> bool:
+        """
+        Checks if any of the specified events are in the event queue.
+
+        Parameters
+        ----------
+        *args: `int`
+            The types of events to check for.
+
+        Returns
+        -------
+        `bool`
+            Whether any of the specified events are in the event queue.
+        """
+
+        return any(self.has(type) for type in args)
+
+    def all(self, /, *args: int) -> bool:
+        """
+        Checks if all of the specified events are in the event queue.
+
+        Parameters
+        ----------
+        *args: `int`
+            The types of events to check for.
+
+        Returns
+        -------
+        `bool`
+            Whether all of the specified events are in the event queue.
+        """
+
+        return all(self.has(type) for type in args)
+
+    def has(self, type: int, /) -> bool:
+        """
+        Checks if an event of a certain type is in the event queue.
+
+        Parameters
+        ----------
+        type: `int`
+            The type of event to check for.
+
+        Returns
+        -------
+        `bool`
+            Whether an event of the specified type is in the event queue.
+        """
+
+        return self.get(type) is not None
+
     def get(self, type: int, /) -> PygameEvent | None:
         """
         Gets an event of a certain type.
@@ -52,9 +103,9 @@ class Events(Component):
             The event of the specified type, or None if no event of that type was found.
         """
 
-        return first(self.get_all(type))
+        return first(self.get_many(type))
 
-    def get_all(self, type: int, /) -> list[PygameEvent]:
+    def get_many(self, type: int, /) -> list[PygameEvent]:
         """
         Gets all events of a certain type.
 
