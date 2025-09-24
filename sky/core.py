@@ -5,14 +5,17 @@ from typing import TYPE_CHECKING, Literal, final
 
 from singleton_decorator import singleton as untyped_singleton  # type: ignore
 
+from .types import Coroutine
 from .utils import Vector2
 
 if TYPE_CHECKING:
     from .app import App
 
 __all__ = [
+    "AppSpec",
     "Component",
     "singleton",
+    "WindowSpec",
 ]
 
 
@@ -63,14 +66,17 @@ class Component:
 
     app: App
 
-    def start(self) -> None: ...
+    def start(self) -> Coroutine | None:
+        """Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine."""
 
-    def stop(self) -> None: ...
+    def stop(self) -> Coroutine | None:
+        """Runs after the last frame, after `teardown` and before `cleanup`. Can be a Coroutine."""
 
-    def update(self) -> None: ...
+    def update(self) -> None:
+        """Runs every frame, after `pre_update` and before `post_update`."""
 
 
 def singleton[T: type](cls: T) -> T:
-    """Makes the decorated class a singleton while keeping its type."""
+    """Makes the decorated class a singleton while properly keeping its type."""
 
     return untyped_singleton(cls)  # type: ignore
