@@ -24,7 +24,6 @@ class Mouse(Component):
         self._wheel_delta = Vector2()
 
         self._states: list[State] = []
-        self._num_buttons = 3
 
         self.on_mouse_button = Listenable[_StatefulMouseButtonListener]()
         self.on_mouse_button_pressed = Listenable[_MouseButtonListener]()
@@ -91,7 +90,8 @@ class Mouse(Component):
     @property
     def relative_mode(self) -> bool:
         """
-        Gets or sets whether the mouse is in relative mode.
+        Gets or sets whether the mouse is in relative mode.\n
+        Effectively hides and constrains the mouse to the window, but still reports mouse movement even if the hidden mouse is at the edges of the window and not actually moving.
 
         # Getter
 
@@ -118,6 +118,7 @@ class Mouse(Component):
     def update(self) -> None:
         self._pos = Vector2(pygame.mouse.get_pos())
         self._vel = Vector2(pygame.mouse.get_rel())
+        self._wheel_delta = Vector2()
 
         _pressed = pygame.mouse.get_pressed()
         _downed = pygame.mouse.get_just_pressed()
@@ -129,7 +130,7 @@ class Mouse(Component):
                 released=_released[i],
                 down=_downed[i],
             )
-            for i in range(self._num_buttons)
+            for i in range(3)
         ]
 
         for button, state in zip(MouseButton, self._states):
@@ -137,9 +138,11 @@ class Mouse(Component):
                 self.on_mouse_button.notify(button, state)
                 getattr(self, f"on_mouse_button_{state.name}").notify(button)
 
-        if evt := self.app.events.get(pygame.MOUSEWHEEL):
-            self.on_mouse_wheel.notify(delta := Vector2(evt.precise_x, evt.precise_x))
-            self._wheel_delta = delta
+        for evt in self.app.events.get_many(pygame.MOUSEWHEEL):
+            self._wheel_delta += Vector2(evt.precise_x, evt.precise_y)
+
+        if self._wheel_delta != Vector2():
+            self.on_mouse_wheel.notify(self._wheel_delta)
 
     def get_state(self, button: MouseButtonLike, /) -> State:
         """
