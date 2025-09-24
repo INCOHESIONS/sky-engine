@@ -7,7 +7,7 @@ from ..core import Component
 from ..enums import Key, State
 from ..listenable import Listenable
 from ..types import KeyLike
-from ..utils import get_by_attrs
+from ..utils import Vector2, get_by_attrs
 
 __all__ = ["Keyboard"]
 
@@ -69,7 +69,9 @@ class Keyboard(Component):
 
             self._states[key] = state
 
-        self._text = "".join(e.unicode for e in self.app.events.get_all(pygame.KEYDOWN))
+        self._text = "".join(
+            e.unicode for e in self.app.events.get_many(pygame.KEYDOWN)
+        )
 
         for keybinding in self._keybindings:
             if all(self.get_state(key) == keybinding.state for key in keybinding.keys):
@@ -137,16 +139,18 @@ class Keyboard(Component):
         ----------
         keys: `Key | tuple[Key, ...]`
             The key or keys used by the keybinding.
+
+        Raises
+        ------
+        `ValueError`
+            If no keybinding was found for the specified keys.
         """
 
         keybinding = get_by_attrs(
             self._keybindings, keys=keys if isinstance(keys, tuple) else (keys,)
         )
 
-        if keybinding is None:
-            raise ValueError(f"No keybinding found for {keys}.")
-
-        self._keybindings.remove(keybinding)
+        self._keybindings.remove(keybinding)  # type: ignore
 
     def get_state(self, key: KeyLike, /) -> State:
         """
@@ -273,3 +277,77 @@ class Keyboard(Component):
             else self.get_state(key) != State.none
             for key in self._states
         )
+
+    def get_axis(
+        self, neg: KeyLike, pos: KeyLike, /, *, state: State = State.pressed
+    ) -> float:
+        """
+        Gets the axis value of a key.
+
+        Parameters
+        ----------
+        neg: `KeyLike`
+            The key to check for negative values.
+        pos: `KeyLike`
+            The key to check for positive values.
+        state: `State`
+            The state to check for. Cannot be `State.none`. Defaults to `State.pressed`.
+
+        Returns
+        -------
+        `float`
+            The axis value of the key.
+
+        Raises
+        ------
+        `AssertionError`
+            If `state` is `State.none`.
+        """
+
+        assert state != State.none
+
+        return int(self.is_state(pos, state)) - int(self.is_state(neg, state))
+
+    def get_movement(
+        self,
+        vertical_axis: tuple[KeyLike, KeyLike],
+        horizontal_axis: tuple[KeyLike, KeyLike],
+        /,
+        *,
+        state: State = State.pressed,
+        normalize: bool = True,
+    ) -> Vector2:
+        """
+        Two axis to use for movement.
+
+        Parameters
+        ----------
+        vertical_axis: `tuple[KeyLike, KeyLike]`
+            The keys to check for vertical movement.
+        horizontal_axis: `tuple[KeyLike, KeyLike]`
+            The keys to check for horizontal movement.
+        state: `State`
+            The state to check for. Cannot be `State.none`. Defaults to `State.pressed`.
+        normalize: `bool`
+            Whether to normalize the movement to the range [0, 1]. Defaults to `True`.
+
+        Returns
+        -------
+        `Vector2`
+            The movement of the keys.
+
+        Raises
+        ------
+        `AssertionError`
+            If `state` is `State.none`.
+        """
+
+        movement = Vector2(
+            self.get_axis(*vertical_axis, state=state),
+            self.get_axis(*horizontal_axis, state=state),
+        )
+
+        if normalize:
+            movement.normalize()
+
+        return movement
