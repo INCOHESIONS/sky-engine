@@ -76,6 +76,26 @@ class Vector2(PygameVector2):
         dist = unnormalized_dir.magnitude()
         return unnormalized_dir / dist, dist
 
+    def with_x(self, x: float) -> Self:
+        """Returns a new vector with the x-component set to `x`."""
+
+        return self.__class__(x, self.y)
+
+    def with_y(self, y: float) -> Self:
+        """Returns a new vector with the y-component set to `y`."""
+
+        return self.__class__(self.x, y)
+
+    def with_inverted_x(self) -> Self:
+        """Returns a new vector with the x-component inverted."""
+
+        return self.__class__(-self.x, self.y)
+
+    def with_inverted_y(self) -> Self:
+        """Returns a new vector with the y-component inverted."""
+
+        return self.__class__(self.x, -self.y)
+
     def to_int_tuple(self) -> tuple[int, int]:
         """
         Gets the vector as a tuple of integers.\n
@@ -150,7 +170,7 @@ def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
         If an attribute wasn't found in an object of the iterable.
     """
 
-    return next(filter_by_attrs(iterable, **attrs), None)
+    return first(filter_by_attrs(iterable, **attrs))
 
 
 def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
