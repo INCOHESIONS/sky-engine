@@ -36,9 +36,7 @@ class Chrono(Component):
     def time_since_start(self) -> timedelta | None:
         """The time since the start of the app, or None if it hasn't started yet."""
 
-        if self.start_time is None:
-            return None
-        return datetime.now() - self.start_time
+        return datetime.now() - self.start_time if self.start_time else None
 
     @override
     def start(self) -> None:
