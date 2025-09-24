@@ -43,7 +43,27 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     app.mainloop()
     ```
 
-    They can also be cancelled: if a listener returns a truthy value, execution of all following listeners is stopped. This is only the case if cancellable is set to True.
+    They can also be used as decorators in coroutines:
+    ```python
+    from sky import App, WaitForSeconds
+    from sky.colors import BLUE, RED
+    from sky.types import Coroutine
+
+    app = App()
+
+
+    @app.setup
+    def change_bg_color() -> Coroutine:
+        assert app.windowing.surface is not None
+        app.windowing.surface.fill(RED)
+        yield WaitForSeconds(3)
+        app.windowing.surface.fill(BLUE)
+
+
+    app.mainloop()
+    ```
+
+    They can also be cancelled: if a listener returns a truthy value, and `cancellable` is set to `True`, execution of all following listeners is stopped.
     ```python
     from typing import Callable
 
@@ -67,24 +87,19 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     on_something.notify()
     ```
 
-    Can also be used as a decorator in a coroutine:
+    They can also be set to only be able to be called once:
     ```python
-    from sky import App, WaitForSeconds
-    from sky.colors import BLUE, RED
-    from sky.types import Coroutine
+    from sky import Listenable
 
-    app = App()
+    on_something = Listenable(once=True)
 
 
-    @app.setup
-    def change_bg_color() -> Coroutine:
-        assert app.windowing.surface is not None
-        app.windowing.surface.fill(RED)
-        yield WaitForSeconds(3)
-        app.windowing.surface.fill(BLUE)
+    @on_something
+    def some_listener() -> None: ...
 
 
-    app.mainloop()
+    on_something.notify()
+    on_something.notify()  # raises RuntimeError. you can check if it's already been called at least once with the `on_something.called` property
     ```
     """
 
@@ -123,6 +138,12 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         self.remove_listener(listener)
         return self
 
+    @property
+    def called(self) -> bool:
+        """Whether or not this listenable has already notified its listeners at least once."""
+
+        return self._called
+
     def add_listener(self, listener: TListener, /) -> None:
         """
         Adds a listener to the list of listeners.
@@ -157,7 +178,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
         self._listeners.clear()
 
-    def notify(self, *args: Any, **kwargs: Any) -> None:
+    def notify(self, /, *args: Any, **kwargs: Any) -> None:
         """
         Notifies all listeners
 
@@ -208,7 +229,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         Returns
         -------
         `Callable[[Callable[[], None]], Callable[[TListener], None]]`
-            Blah blah blah. It's a decorator with arguments. No one knows how to type these.
+            The decorated function.
         """
 
         def decorator(func: Callable[[], None]) -> Callable[[TListener], None]:
