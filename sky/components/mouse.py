@@ -36,19 +36,19 @@ class Mouse(Component):
     def position(self) -> Vector2:
         """The mouse's position, in pixel coordinates."""
 
-        return self._pos
+        return self._pos.copy()
 
     @property
     def velocity(self) -> Vector2:
         """The relative change in the mouse's position since the last frame, in pixel coordinates."""
 
-        return self._vel
+        return self._vel.copy()
 
     @property
     def wheel_delta(self) -> Vector2:
         """The change in the mouse's scroll wheel position since the last frame."""
 
-        return self._wheel_delta
+        return self._wheel_delta.copy()
 
     @property
     def states(self) -> list[State]:
