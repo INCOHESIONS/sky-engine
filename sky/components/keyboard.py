@@ -310,8 +310,8 @@ class Keyboard(Component):
 
     def get_movement(
         self,
-        vertical_axis: tuple[KeyLike, KeyLike],
         horizontal_axis: tuple[KeyLike, KeyLike],
+        vertical_axis: tuple[KeyLike, KeyLike],
         /,
         *,
         state: State = State.pressed,
@@ -343,8 +343,8 @@ class Keyboard(Component):
         """
 
         movement = Vector2(
-            self.get_axis(*vertical_axis, state=state),
             self.get_axis(*horizontal_axis, state=state),
+            self.get_axis(*vertical_axis, state=state),
         )
 
         if normalize:
