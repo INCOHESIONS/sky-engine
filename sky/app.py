@@ -173,7 +173,11 @@ class App:
     run = mainloop  # alias
 
     def add_component(
-        self, component: type[Component] | Component, /, *, immediate: bool = True
+        self,
+        component: type[Component] | Component,
+        /,
+        *,
+        when: Listenable | None = None,
     ) -> Self:
         """
         Adds a component to the app. Can be used as a class decorator.
@@ -182,8 +186,9 @@ class App:
         ----------
         component: `type[Component] | Component`
             The component, or its `type`, to add. Will be instanced immediately if a `type` is passed.
-        immediate: `bool`
-            Whether to add (and instance, if it's a `type`) the component immediately or wait until `mainloop` is called and `entrypoint` is notified.
+        when: `Listenable | None`
+            The listenable to use as a trigger for adding the component. If `None`, the component will be added immediately.\n
+            Basically a shorthand for `when += lambda: app.add_component(component)`.
 
         Returns
         -------
@@ -204,10 +209,10 @@ class App:
         def _add():
             self._components.append(component() if callable(component) else component)
 
-        if immediate:
+        if when is None:
             _add()
         else:
-            self.entrypoint += _add
+            when += _add
 
         return self
 
