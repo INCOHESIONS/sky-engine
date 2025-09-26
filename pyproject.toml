@@ -28,6 +28,9 @@ pygame-ce = "^2.5.3"
 singleton-decorator = "^1.0.0"
 screeninfo = "^0.8.1"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

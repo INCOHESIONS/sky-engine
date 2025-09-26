@@ -211,7 +211,8 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         ```python
         @app.mouse.on_button_downed
         def on_button_downed(button: MouseButton) -> None:
-            if button == MouseButton.left: ...
+            if button == MouseButton.left:
+                ...
         ```
 
         Can be rewritten as:
