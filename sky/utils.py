@@ -150,7 +150,11 @@ def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
 
     Examples
     --------
-    >>> people = [Person("Lucas", age=14), Person("Marcus", age=51), Person("Mary", age=23)]
+    >>> people = [
+    ...     Person("Lucas", age=14),
+    ...     Person("Marcus", age=51),
+    ...     Person("Mary", age=23),
+    ... ]
     >>> aged_twenty_three = get(people, age=23)
     Person('Mary', age=23)
 
