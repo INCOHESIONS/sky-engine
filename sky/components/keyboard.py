@@ -26,7 +26,8 @@ class Keyboard(Component):
     """Handles keyboard input."""
 
     def __init__(self) -> None:
-        self._states: dict[Key, State] = {}
+        self._states: dict[Key, State] = {key: State.none for key in Key}
+
         self._text = ""
 
         self.on_key = Listenable[_StatefulKeyListener]()
