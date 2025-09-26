@@ -26,11 +26,19 @@ __all__ = [
 
 
 class Vector2(PygameVector2):
-    """A 2D vector. Should be used instead of pygame.math.Vector2."""
+    """A 2D vector. Should be used instead of `pygame.math.Vector2`."""
 
     @override
     def normalize(self):
-        """Exception-less version of `pygame.Vector2.normalize`."""
+        """
+        Normalizes the vector.\n
+        Exception-less version of `pygame.Vector2.normalize`.
+
+        Returns
+        -------
+        `Vector2`
+            The normalized vector.
+        """
 
         try:
             return super().normalize()
@@ -76,12 +84,12 @@ class Vector2(PygameVector2):
         dist = unnormalized_dir.magnitude()
         return unnormalized_dir / dist, dist
 
-    def with_x(self, x: float) -> Self:
+    def with_x(self, x: float, /) -> Self:
         """Returns a new vector with the x-component set to `x`."""
 
         return self.__class__(x, self.y)
 
-    def with_y(self, y: float) -> Self:
+    def with_y(self, y: float, /) -> Self:
         """Returns a new vector with the y-component set to `y`."""
 
         return self.__class__(self.x, y)
@@ -111,6 +119,8 @@ class Vector2(PygameVector2):
 
 
 class Color(PygameColor):
+    """A color. Should be used instead of `pygame.Color`."""
+
     @classmethod
     def random(cls, minimum: int = 0, maximum: int = 255) -> Self:
         """
@@ -139,9 +149,63 @@ class Color(PygameColor):
     def lerp(
         self, color: PygameColor | SequenceLike[int] | str | int, amount: float
     ) -> PygameColor:
-        """Exception-less version of `pygame.Color.lerp`."""
+        """
+        Interpolates between this color and another color.\n
+        Exception-less version of `pygame.Color.lerp`.
+
+        Parameters
+        ----------
+        color : `Color` | `SequenceLike[int]` | `str` | `int`
+            The color to interpolate to.
+        amount : `float`
+            The amount to interpolate by.
+
+        Returns
+        -------
+        `Color`
+            The interpolated color.
+        """
 
         return super().lerp(color, clamp(amount, 0, 1))
+
+    def brighten(self, amount: int, /) -> Self:
+        """
+        Brightens the color by the specified amount.
+
+        Parameters
+        ----------
+        amount : `int`
+            The amount to brighten the color by.
+
+        Returns
+        -------
+        `Color`
+            The brightened color.
+        """
+
+        return self.__class__(
+            clamp(self.r + amount, 0, 255),  # type: ignore
+            clamp(self.g + amount, 0, 255),  # type: ignore
+            clamp(self.b + amount, 0, 255),  # type: ignore
+            self.a,
+        )
+
+    def darken(self, amount: int, /) -> Self:
+        """
+        Darkens the color by the specified amount.
+
+        Parameters
+        ----------
+        amount : `int`
+            The amount to darken the color by.
+
+        Returns
+        -------
+        `Color`
+            The darkened color.
+        """
+
+        return self.brighten(-amount)
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
@@ -382,4 +446,4 @@ def clamp(value: float, minimum: float, maximum: float, /) -> float:
     return max(minimum, min(value, maximum))
 
 
-constrain = clamp
+constrain = clamp  # alias
