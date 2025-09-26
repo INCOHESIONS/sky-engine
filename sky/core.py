@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import KW_ONLY, dataclass, field
 from typing import TYPE_CHECKING, Literal, final
 
+from pygame import Surface
 from singleton_decorator import singleton as untyped_singleton  # type: ignore
 
 from .types import Coroutine
@@ -28,6 +29,7 @@ class WindowSpec:
     title: str = "Sky Engine"
     position: Vector2 | None = None
     size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
+    icon: Surface | None = None
     resizable: bool = False
     fullscreen: bool = False
     borderless: bool = False

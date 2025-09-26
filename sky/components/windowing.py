@@ -72,12 +72,16 @@ class _WindowWrapper:
         self._underlying.get_surface()
 
         self._spec = spec
+        self._icon = spec.icon
         self._fullscreen = spec.fullscreen
 
         self.on_render = Listenable()
 
         if spec.position is None:
             self.center_on_monitor()
+
+        if spec.icon is not None:
+            self.icon = spec.icon
 
     @property
     def underlying(self) -> pygame.Window:
@@ -124,6 +128,20 @@ class _WindowWrapper:
     @size.setter
     def size(self, value: Vector2) -> None:
         self._underlying.size = value
+
+    @property
+    def icon(self) -> pygame.Surface | None:
+        """
+        Gets or sets the icon of the main window.\n
+        Returns `None` if the default icon is being used.
+        """
+
+        return self._icon
+
+    @icon.setter
+    def icon(self, value: pygame.Surface) -> None:
+        self._icon = value
+        self._underlying.set_icon(value)
 
     @property
     def width(self) -> int:
