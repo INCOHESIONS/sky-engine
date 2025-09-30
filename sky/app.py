@@ -3,10 +3,8 @@ from typing import Callable, Protocol, Self, Sequence, runtime_checkable
 
 import pygame
 
-from sky import WindowSpec
-
 from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
-from .core import AppSpec, Component, singleton
+from .core import AppSpec, Component, WindowSpec, singleton
 from .listenable import Listenable
 from .types import Coroutine
 from .utils import first, get_by_attrs
