@@ -33,19 +33,24 @@ class WindowSpec:
     resizable: bool = False
     fullscreen: bool = False
     borderless: bool = False
-    backend: Literal["software", "opengl", "vulkan"] = "software"
-    initialization: Literal["immediate", "deferred"] = "immediate"
-    """Only valid for the main window. Whether to initialize the window immediately or wait until mainloop is called. This is useful for adding listeners to the window before the app is started."""
 
+    backend: Literal["software", "opengl", "vulkan"] = "software"
+    """The backend to use for the window. Software by default."""
+
+    initialization: Literal["immediate", "deferred"] = "immediate"
+    """Only valid for the main window. Whether to initialize the window immediately or wait until `mainloop` is called. This is useful for adding listeners to the window before the app is started."""
+
+    @property
     def is_software(self) -> bool:
         """Whether the window is running on a software backend."""
 
         return self.backend == "software"
 
+    @property
     def is_hardware(self) -> bool:
         """Whether the window is running on a hardware backend (OpenGL or Vulkan)."""
 
-        return not self.is_software()
+        return not self.is_software
 
 
 @final
