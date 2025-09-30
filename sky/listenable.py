@@ -200,6 +200,8 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
         self._called = True
 
+    invoke = notify  # alias
+
     def equals(
         self, *args: Any
     ) -> Callable[[Callable[[], None]], Callable[[TListener], None]]:
