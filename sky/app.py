@@ -1,17 +1,25 @@
 from inspect import isgeneratorfunction, signature
-from types import ModuleType
-from typing import Callable, Self
+from typing import Callable, Protocol, Self, Sequence, runtime_checkable
 
 import pygame
+
+from sky import WindowSpec
 
 from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import AppSpec, Component, singleton
 from .listenable import Listenable
 from .types import Coroutine
-from .utils import first
+from .utils import first, get_by_attrs
 from .yieldable import Yieldable
 
 __all__ = ["App"]
+
+
+@runtime_checkable
+class _CompatibleModule(Protocol):
+    def init(self) -> None: ...
+
+    def quit(self) -> None: ...
 
 
 @singleton
@@ -28,7 +36,7 @@ class App:
         - `Chrono` (handles time)
         - `Executor` (handles coroutines)
 
-    User-defined components can be added by subclassing `Component` and using the `add_component` method (can be used as a class decorator).
+    User-defined components can be added by subclassing `Component` and using the `add_component` method (or `component` as a class decorator).
 
     Listenables:
         Pre-loop:
@@ -42,14 +50,14 @@ class App:
             2. `cleanup` (executed after components are stopped, and before the app is destroyed. Cleans up any registered modules)
     """
 
-    def __init__(self, /, *, spec: AppSpec = AppSpec()) -> None:
+    def __init__(self, /, *, spec: AppSpec | WindowSpec = AppSpec()) -> None:
         pygame.init()
 
         Listenable.app = self
         Yieldable.app = self
         Component.app = self
 
-        self.spec = spec
+        self.spec = spec if isinstance(spec, AppSpec) else AppSpec(window_spec=spec)
         """The app's specification, i.e., pre-execution configuration."""
 
         self.entrypoint = Listenable()
@@ -88,7 +96,7 @@ class App:
         self.executor = Executor()
         """Handles coroutines."""
 
-        self._components: list[Component] = [
+        self._internal_components: list[Component] = [
             self.events,
             self.mouse,
             self.keyboard,
@@ -97,10 +105,29 @@ class App:
             self.executor,
         ]  # do not change ordering
 
-        for component in self._components:
-            component._internal = True  # type: ignore
+        self._components = self._internal_components.copy()
 
         self.is_running = True
+
+    def __contains__(self, component: type[Component] | Component, /) -> bool:
+        return (
+            get_by_attrs(self._components, __class__=component) is not None
+            if isinstance(component, type)
+            else component in self._components
+        )
+
+    @property
+    def components(self) -> Sequence[Component]:
+        """
+        A copy of the app's components.
+
+        Returns
+        -------
+        `Sequence[Component]`
+            The components.
+        """
+
+        return self._components.copy()
 
     @property
     def window(self):
@@ -149,9 +176,7 @@ class App:
 
         self.is_running = True
 
-        while not self.events.has(pygame.QUIT):
-            self.events.handle_events()
-
+        while self.events.handle_events().lacks(pygame.QUIT):
             self.pre_update.notify()
 
             for component in self._components:
@@ -180,14 +205,16 @@ class App:
         when: Listenable | None = None,
     ) -> Self:
         """
-        Adds a component to the app. Can be used as a class decorator.
+        Adds a component to the app.\n
+        If you wish to use this as a class decorator, use `app.component` instead.
 
         Parameters
         ----------
         component: `type[Component] | Component`
             The component, or its `type`, to add. Will be instanced immediately if a `type` is passed.
         when: `Listenable | None`
-            The listenable to use as a trigger for adding the component. If `None`, the component will be added immediately.\n
+            The listenable to use as a trigger for adding the component.
+            If `None` (the default), the component will be added immediately.\n
             Basically a shorthand for `when += lambda: app.add_component(component)`.
 
         Returns
@@ -203,7 +230,7 @@ class App:
 
         if callable(component) and len(signature(component).parameters) > 0:
             raise ValueError(
-                f"Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: {component.__name__})."
+                f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
 
         def _add():
@@ -215,6 +242,55 @@ class App:
             when += _add
 
         return self
+
+    def add_components(self, /, *components: type[Component] | Component) -> Self:
+        """
+        Adds multiple components to the app.
+
+        Parameters
+        ----------
+        *components: `type[Component] | Component`
+            The components, or their `type`, to add. Will be instanced immediately if a `type` is passed.
+
+        Returns
+        -------
+        `Self`
+            The app, for chaining.
+
+        Raises
+        ------
+        `ValueError`
+            If a type is passed that has a constructor that takes arguments.
+        """
+
+        for component in components:
+            self.add_component(component)
+
+        return self
+
+    def component[T: type[Component]](self, component: T, /) -> T:
+        """
+        Adds a component to the app. Can be used as a class decorator.\n
+        Preserves the component' type properly, returning `T` instead of `Self`.
+        Should be used for class decoration instead of `app.add_component`.
+
+        Parameters
+        ----------
+        component: `type[Component]`
+            The type. Will be instanced immediately. Use `app.add_component` for finer control.
+
+        Returns
+        -------
+        `T`
+            The component, for chaining.
+
+        Raises
+        ------
+        `ValueError`
+            If a type is passed that has a constructor that takes arguments.
+        """
+        self.add_component(component)
+        return component
 
     def remove_component(self, component: type[Component] | Component, /) -> None:
         """
@@ -229,13 +305,13 @@ class App:
         Raises
         ------
         `ValueError`
-            If the component is an internal component or if the component was not found.
+            If the component is internal or wasn't found.
         """
 
         if isinstance(component, type):
             component = self.get_component(component)  # type: ignore
 
-        if getattr(component, "_internal", False):
+        if component in self._internal_components:
             raise ValueError("Cannot remove internal component.")
 
         self._components.remove(component)  # type: ignore
@@ -257,13 +333,11 @@ class App:
 
         return (
             first(components)
-            if (components := self.get_components(component)) is not None
+            if (components := self.get_components(component))
             else None
         )
 
-    def get_components[T: Component](
-        self, component: type[T] | str, /
-    ) -> list[T] | None:
+    def get_components[T: Component](self, component: type[T] | str, /) -> list[T]:
         """
         Gets a list of components from the app.
 
@@ -274,7 +348,7 @@ class App:
 
         Returns
         -------
-        `list[Component] | None`
+        `list[Component]`
             The list of components, if found.
         """
         return list(
@@ -283,7 +357,7 @@ class App:
             else filter(lambda c: isinstance(c, component), self._components)  # type: ignore
         )
 
-    def register_module(self, module: ModuleType, /) -> Self:
+    def register_module(self, module: _CompatibleModule, /) -> Self:
         """
         Registers a module to be initialized and cleaned up when the app is started and stopped.
         Useful for pygame modules such as freetype and mixer.\n
@@ -291,7 +365,7 @@ class App:
 
         Parameters
         ----------
-        module: `ModuleType`
+        module: `_CompatibleModule`
             The module to register.
 
         Returns
@@ -301,18 +375,16 @@ class App:
 
         Raises
         ------
-        `ValueError`
-            If the module doesn't have `init` and `quit` functions.
+        `AssertionError`
+            If the module does not have `init` and `quit` functions.
         """
-        if not self._is_module_valid(module):
-            raise ValueError("Module must have `init` and `quit` functions.")
 
+        assert isinstance(module, _CompatibleModule)
         module.init()
         self.cleanup += module.quit
-
         return self
 
-    def register_modules(self, /, *modules: ModuleType) -> Self:
+    def register_modules(self, /, *modules: _CompatibleModule) -> Self:
         """
         Registers multiple modules to be initialized and cleaned up when the app is started and stopped.
         Useful for pygame modules such as freetype and mixer.\n
@@ -320,7 +392,7 @@ class App:
 
         Parameters
         ----------
-        *modules: `ModuleType`
+        *modules: `_CompatibleModule`
             The modules to register.
 
         Returns
@@ -330,8 +402,8 @@ class App:
 
         Raises
         ------
-        `ValueError`
-            If a module doesn't have `init` and `quit` functions.
+        `AssertionError`
+            If the module does not have `init` and `quit` functions.
         """
 
         for module in modules:
@@ -340,7 +412,7 @@ class App:
         return self
 
     def quit(self) -> None:
-        """Closes the app in the next frame."""
+        """Posts a pygame.QUIT event telling the app to close in the next frame."""
 
         pygame.event.post(pygame.event.Event(pygame.QUIT))
 
@@ -351,6 +423,3 @@ class App:
             self.executor.start_coroutine(func)
         else:
             func()
-
-    def _is_module_valid(self, module: ModuleType, /) -> bool:
-        return all(callable(getattr(module, c, False)) for c in ("init", "quit"))

@@ -15,7 +15,7 @@ from typing import override
 
 import zengl
 
-from sky import App, AppSpec, Component, WindowSpec
+from sky import App, Component, WindowSpec
 
 
 class RenderPipeline(Component):
@@ -78,9 +78,7 @@ class RenderPipeline(Component):
         self._ctx.end_frame()
 
 
-spec = AppSpec(window_spec=WindowSpec(backend="opengl"))
-
-app = App(spec=spec)
+app = App(spec=WindowSpec(backend="opengl"))
 app.add_component(RenderPipeline)
 app.mainloop()
 ```
@@ -161,7 +159,7 @@ Multiple windows:
 from sky import App, AppSpec, WindowSpec
 from sky.colors import BLUE, RED
 
-app = App(spec=AppSpec(window_spec=WindowSpec(title="Main Window!")))
+app = App(spec=WindowSpec(title="Main Window!"))
 extra_window = app.windowing.add_extra(spec=WindowSpec(title="Extra Window!"))
 
 

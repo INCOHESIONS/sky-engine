@@ -1,4 +1,4 @@
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Self
 
 import pygame
 from pygame.event import Event as PygameEvent
@@ -23,19 +23,31 @@ class Events(Component):
     def __iter__(self) -> Iterator[PygameEvent]:
         return iter(self._events)
 
+    def __contains__(self, event: PygameEvent | int) -> bool:
+        return self.has(event)
+
     @property
     def events(self) -> list[PygameEvent]:
         """The list of events collected this frame."""
 
         return self._events.copy()
 
-    def handle_events(self) -> None:
-        """Handles all events in the event queue. Called before `app.pre_update`."""
+    def handle_events(self) -> Self:
+        """
+        Handles all events in the event queue. Called before `app.pre_update`.
+
+        Returns
+        -------
+        `Self`
+            The events, for chaining.
+        """
 
         self._events = pygame.event.get()
 
         for event in self:
             self.on_event.notify(event)
+
+        return self
 
     def any(self, /, *args: int) -> bool:
         """
@@ -71,7 +83,7 @@ class Events(Component):
 
         return all(self.has(type) for type in args)
 
-    def has(self, type: int, /) -> bool:
+    def has(self, type: PygameEvent | int, /) -> bool:
         """
         Checks if an event of a certain type is in the event queue.
 
@@ -86,7 +98,24 @@ class Events(Component):
             Whether an event of the specified type is in the event queue.
         """
 
-        return self.get(type) is not None
+        return self.get(type if isinstance(type, int) else type.type) is not None
+
+    def lacks(self, type: PygameEvent | int, /) -> bool:
+        """
+        Checks if an event of a certain type is not in the event queue.
+
+        Parameters
+        ----------
+        type: `pygame.event.Event | int`
+            The type of event to check for.
+
+        Returns
+        -------
+        `bool`
+            Whether an event of the specified type is not in the event queue.
+        """
+
+        return not self.has(type)
 
     def get(self, type: int, /) -> PygameEvent | None:
         """
