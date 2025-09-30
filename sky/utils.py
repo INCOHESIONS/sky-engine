@@ -6,7 +6,6 @@ from typing import (
     Iterable,
     Iterator,
     Self,
-    overload,
     override,
 )
 
@@ -267,16 +266,6 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
     )
 
 
-@overload
-def first[T, TDefault](i: Iterable[T], /, *, default: TDefault) -> T | TDefault: ...
-
-
-@overload
-def first[T, TDefault](
-    i: Iterable[T], /, *, default: TDefault = None
-) -> T | TDefault: ...
-
-
 def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
     """
     Gets the first element of an `Iterable`.
@@ -305,16 +294,6 @@ def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TD
         return next(iter(i))
     except StopIteration:
         return default
-
-
-@overload
-def last[T, TDefault](i: Iterable[T], /, *, default: TDefault) -> T | TDefault: ...
-
-
-@overload
-def last[T, TDefault](
-    i: Iterable[T], /, *, default: TDefault = None
-) -> T | TDefault: ...
 
 
 def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
