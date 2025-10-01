@@ -60,20 +60,19 @@ class _WindowWrapper:
 
     def __init__(self, /, *, spec: WindowSpec) -> None:
         self._underlying = pygame.Window(
-            spec.title,
-            spec.size,
             position=spec.position or (0, 0),
-            fullscreen=spec.fullscreen,
-            resizable=spec.resizable,
-            borderless=spec.borderless,
             opengl=spec.backend == "opengl",
             vulkan=spec.backend == "vulkan",
+            **spec._attrs(),  # type: ignore
         )
         self._underlying.get_surface()
 
         self._spec = spec
         self._icon = spec.icon
+
         self._fullscreen = spec.fullscreen
+        self._minimized = False
+        self._maximized = False
 
         self.on_render = Listenable()
 
@@ -84,10 +83,16 @@ class _WindowWrapper:
             self.icon = spec.icon
 
     @property
+    def spec(self) -> WindowSpec:
+        """The window spec."""
+
+        return self._spec
+
+    @property
     def underlying(self) -> pygame.Window:
         """
         The underlying pygame window.\n
-        Position, size and fullscreen state should not be modified through this property.
+        Position, size and fullscreen, minimized and maximized states should not be modified directly through this property.
         """
 
         return self._underlying
@@ -116,7 +121,7 @@ class _WindowWrapper:
         return Vector2(self._underlying.position)
 
     @position.setter
-    def position(self, value: Vector2) -> None:
+    def position(self, value: Vector2, /) -> None:
         self._underlying.position = value
 
     @property
@@ -126,8 +131,40 @@ class _WindowWrapper:
         return Vector2(self._underlying.size)
 
     @size.setter
-    def size(self, value: Vector2) -> None:
+    def size(self, value: Vector2, /) -> None:
         self._underlying.size = value
+
+    @property
+    def width(self) -> int:
+        """Gets the width of the main window."""
+
+        return int(self.size.x)
+
+    @width.setter
+    def width(self, value: int, /) -> None:
+        self._underlying.size = Vector2(value, self.height)
+
+    @property
+    def height(self) -> int:
+        """Gets the height of the main window."""
+
+        return int(self.size.y)
+
+    @height.setter
+    def height(self, value: int, /) -> None:
+        self._underlying.size = Vector2(self.width, value)
+
+    @property
+    def rect(self) -> pygame.Rect:
+        """The main window's rect."""
+
+        return self.surface.get_rect()
+
+    @property
+    def center(self) -> Vector2:
+        """Gets the center position, in pixel coordinates, of this window."""
+
+        return self.size / 2
 
     @property
     def icon(self) -> pygame.Surface | None:
@@ -139,35 +176,9 @@ class _WindowWrapper:
         return self._icon
 
     @icon.setter
-    def icon(self, value: pygame.Surface) -> None:
+    def icon(self, value: pygame.Surface, /) -> None:
         self._icon = value
         self._underlying.set_icon(value)
-
-    @property
-    def width(self) -> int:
-        """Gets the width of the main window."""
-
-        return int(self.size.x)
-
-    @width.setter
-    def width(self, value: int) -> None:
-        self._underlying.size = Vector2(value, self.height)
-
-    @property
-    def height(self) -> int:
-        """Gets the height of the main window."""
-
-        return int(self.size.y)
-
-    @height.setter
-    def height(self, value: int) -> None:
-        self._underlying.size = Vector2(self.width, value)
-
-    @property
-    def center(self) -> Vector2:
-        """Gets the center position, in pixel coordinates, of this window."""
-
-        return self.size / 2
 
     @property
     def fullscreen(self) -> bool:
@@ -179,7 +190,7 @@ class _WindowWrapper:
         return self._fullscreen
 
     @fullscreen.setter
-    def fullscreen(self, value: bool) -> None:
+    def fullscreen(self, value: bool, /) -> None:
         self._fullscreen = value
 
         if os.name != "nt":
@@ -204,10 +215,46 @@ class _WindowWrapper:
             PygameEvent(self.windowing.WINDOWFULLSCREENED, dict(window=self.underlying))
         )
 
+    @property
+    def minimized(self) -> bool:
+        return self._minimized
+
+    @minimized.setter
+    def minimized(self, value: bool, /) -> None:
+        self._minimized = value
+
+        if value:
+            self.underlying.minimize()
+        else:
+            self.underlying.restore()
+
+    @property
+    def maximized(self) -> bool:
+        return self._maximized
+
+    @maximized.setter
+    def maximized(self, value: bool, /) -> None:
+        self._maximized = value
+
+        if value:
+            self.underlying.maximize()
+        else:
+            self.underlying.restore()
+
     def toggle_fullscreen(self) -> None:
         """Toggles fullscreen mode."""
 
         self.fullscreen = not self._fullscreen
+
+    def toggle_minimized(self) -> None:
+        """Toggles minimized mode."""
+
+        self.minimized = not self._minimized
+
+    def toggle_maximized(self) -> None:
+        """Toggles maximized mode."""
+
+        self.maximized = not self._maximized
 
     def center_on_monitor(self, monitor: _MonitorInfo | None = None, /) -> None:
         """Centers the window on the specified monitor, or the primary monitor if `None` is provided."""
