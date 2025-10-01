@@ -22,8 +22,9 @@ class Mouse(Component):
         self._pos = Vector2()
         self._vel = Vector2()
         self._wheel_delta = Vector2()
+        self._num_buttons = len(MouseButton)
 
-        self._states: list[State] = []
+        self._states: list[State] = [State.none for _ in range(self._num_buttons)]
 
         self.on_mouse_button = Listenable[_StatefulMouseButtonListener]()
         self.on_mouse_button_pressed = Listenable[_MouseButtonListener]()
@@ -91,7 +92,8 @@ class Mouse(Component):
     def relative_mode(self) -> bool:
         """
         Gets or sets whether the mouse is in relative mode.\n
-        Effectively hides and constrains the mouse to the window, but still reports mouse movement even if the hidden mouse is at the edges of the window and not actually moving.
+        Effectively hides and constrains the mouse to the window, but still reports mouse movement even if the hidden mouse is at the edges of the window and not actually moving.\n
+        Useful for 3D games where the player moves the camera with the mouse.
 
         # Getter
 
@@ -130,7 +132,7 @@ class Mouse(Component):
                 released=_released[i],
                 down=_downed[i],
             )
-            for i in range(3)
+            for i in range(self._num_buttons)
         ]
 
         for button, state in zip(MouseButton, self._states):
