@@ -27,7 +27,7 @@ class Keyboard(Component):
 
     def __init__(self) -> None:
         self._states: dict[Key, State] = {key: State.none for key in Key}
-
+        self._keybindings: list[_Keybinding] = []
         self._text = ""
 
         self.on_key = Listenable[_StatefulKeyListener]()
@@ -35,8 +35,6 @@ class Keyboard(Component):
         self.on_key_pressed = Listenable[_KeyListener]()
         self.on_key_downed = Listenable[_KeyListener]()
         self.on_key_released = Listenable[_KeyListener]()
-
-        self._keybindings: list[_Keybinding] = []
 
     @property
     def states(self) -> dict[Key, State]:
@@ -349,6 +347,6 @@ class Keyboard(Component):
         )
 
         if normalize:
-            movement.normalize()
+            return movement.normalize()
 
         return movement
