@@ -23,7 +23,8 @@ class Yieldable(ABC):
     app: App
 
     @abstractmethod
-    def is_ready(self) -> bool: ...
+    def is_ready(self) -> bool:
+        raise NotImplementedError()
 
 
 @final
