@@ -189,7 +189,9 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
         """
 
         if self._once and self._called:
-            raise RuntimeError("Listenable with `once` set to True was already called.")
+            raise RuntimeError(
+                "Listenable with `once` set to `True` was already called."
+            )
 
         for listener in self:
             if listener(*args, **kwargs) and self._cancellable:

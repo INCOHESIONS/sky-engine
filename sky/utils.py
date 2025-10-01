@@ -1,3 +1,5 @@
+"""Utilities, and extensions of `pygame` classes that replace certain methods with expection-less versions for ease of use."""
+
 from random import randint
 from typing import (
     Any,

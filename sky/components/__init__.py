@@ -1,3 +1,5 @@
+"""All of the engine's internal components."""
+
 from .chrono import Chrono
 from .events import Events
 from .executor import Executor

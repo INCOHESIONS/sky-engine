@@ -2,7 +2,7 @@
 Sky Engine
 ----------
 
-A wrapper around pygame that makes it less painful to use.
+A wrapper around `pygame` that makes it less painful to use.
 
 :copyright: (c) 2025 by iNCOHESiONS.
 :license: MIT, see LICENSE for more details.
@@ -10,9 +10,9 @@ A wrapper around pygame that makes it less painful to use.
 
 __title__ = "sky-engine"
 __description__ = "A wrapper around pygame that makes it less painful to use."
+__url__ = "https://github.com/incohesions/sky-engine"
 __author__ = "iNCOHESiONS"
 __version__ = "0.0.1"
-__url__ = "https://github.com/incohesions/sky-engine"
 __license__ = "MIT"
 
 
