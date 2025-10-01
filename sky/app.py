@@ -8,7 +8,6 @@ from .core import AppSpec, Component, WindowSpec, singleton
 from .listenable import Listenable
 from .types import Coroutine
 from .utils import first, get_by_attrs
-from .yieldable import Yieldable
 
 __all__ = ["App"]
 
@@ -52,7 +51,6 @@ class App:
         pygame.init()
 
         Listenable.app = self
-        Yieldable.app = self
         Component.app = self
 
         self.spec = spec if isinstance(spec, AppSpec) else AppSpec(window_spec=spec)
@@ -108,6 +106,20 @@ class App:
         self.is_running = True
 
     def __contains__(self, component: type[Component] | Component, /) -> bool:
+        """
+        Checks if the app contains a component.\n
+        If a type is passed, checks if the app contains any component of that type. Does not instance the type.
+
+        Parameters
+        ----------
+        component: `type[Component] | Component`
+            The component to check for.
+
+        Returns
+        -------
+        `bool`
+            Whether the app contains the component.
+        """
         return (
             get_by_attrs(self._components, __class__=component) is not None
             if isinstance(component, type)
@@ -358,8 +370,8 @@ class App:
     def register_module(self, module: _CompatibleModule, /) -> Self:
         """
         Registers a module to be initialized and cleaned up when the app is started and stopped.
-        Useful for pygame modules such as freetype and mixer.\n
-        Modules must have `init` and `quit` functions.
+        Initializes the module immediately. Modules must have `init` and `quit` functions.\n
+        Useful for pygame modules such as `freetype` and `mixer`.\n
 
         Parameters
         ----------
@@ -384,9 +396,9 @@ class App:
 
     def register_modules(self, /, *modules: _CompatibleModule) -> Self:
         """
-        Registers multiple modules to be initialized and cleaned up when the app is started and stopped.
-        Useful for pygame modules such as freetype and mixer.\n
-        Modules must have `init` and `quit` functions.
+        Registers a module to be initialized and cleaned up when the app is started and stopped.
+        Initializes the module immediately. Modules must have `init` and `quit` functions.\n
+        Useful for pygame modules such as `freetype` and `mixer`.\n
 
         Parameters
         ----------
@@ -410,7 +422,7 @@ class App:
         return self
 
     def quit(self) -> None:
-        """Posts a pygame.QUIT event telling the app to close in the next frame."""
+        """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
 
         pygame.event.post(pygame.event.Event(pygame.QUIT))
 

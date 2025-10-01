@@ -9,6 +9,8 @@ class Executor(Component):
     """Handles coroutines."""
 
     def __init__(self) -> None:
+        Yieldable.app = self.app
+
         self._coroutines: dict[Coroutine, Yieldable] = {}
 
     def start_coroutine(

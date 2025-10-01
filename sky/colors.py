@@ -1,3 +1,5 @@
+"""Contains all CSS colors."""
+
 from .utils import Color
 
 __all__ = [
