@@ -1,3 +1,5 @@
+"""All of the engine's most important enums. Mostly input-related."""
+
 from __future__ import annotations
 
 from enum import Enum, IntEnum, auto
@@ -14,80 +16,6 @@ __all__ = [
     "MouseButton",
     "State",
 ]
-
-
-_keyname_mapping: dict[str, str] = {
-    "alpha_0": "0",
-    "alpha_1": "1",
-    "alpha_2": "2",
-    "alpha_3": "3",
-    "alpha_4": "4",
-    "alpha_5": "5",
-    "alpha_6": "6",
-    "alpha_7": "7",
-    "alpha_8": "8",
-    "alpha_9": "9",
-    "keypad0": "0",
-    "keypad1": "1",
-    "keypad2": "2",
-    "keypad3": "3",
-    "keypad4": "4",
-    "keypad5": "5",
-    "keypad6": "6",
-    "keypad7": "7",
-    "keypad8": "8",
-    "keypad9": "9",
-    "a": "a",
-    "b": "b",
-    "c": "c",
-    "d": "d",
-    "e": "e",
-    "f": "f",
-    "g": "g",
-    "h": "h",
-    "i": "i",
-    "j": "j",
-    "k": "k",
-    "l": "l",
-    "m": "m",
-    "n": "n",
-    "o": "o",
-    "p": "p",
-    "q": "q",
-    "r": "r",
-    "s": "s",
-    "t": "t",
-    "u": "u",
-    "v": "v",
-    "w": "w",
-    "x": "x",
-    "y": "y",
-    "z": "z",
-    "colon": ":",
-    "comma": ",",
-    "dollar": "$",
-    "escape": "",
-    "greater": ">",
-    "hash": "#",
-    "left_bracket": "]",
-    "left_parenthesis": ")",
-    "less": "<",
-    "minus": "-",
-    "percent": "%",
-    "period": ".",
-    "plus": "+",
-    "quote": "'",
-    "quotedbl": '"',
-    "return_": "\n",
-    "right_bracket": "]",
-    "right_parenthesis": ")",
-    "semicolon": ";",
-    "slash": "/",
-    "space": " ",
-    "underscore": "_",
-    "tilde": "~",
-    "ç": "ç",
-}
 
 
 class InputEnum(IntEnum):
@@ -293,10 +221,6 @@ class Key(InputEnum):
     ç = 231
     _ = 180
     tilde = 126
-
-    def to_char(self) -> str:
-        c = _keyname_mapping.get(self.name, None)
-        return c if c is not None else ""
 
 
 class State(Enum):
