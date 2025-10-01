@@ -197,6 +197,9 @@ type CursorLiteral = Literal[
     "size_we",
     "size_all",
     "no",
+    "default",  # alias
+    "text",  # alias
+    "deny",  # alias
 ]
 
 type KeyLike = Key | KeyLiteral | int
