@@ -47,9 +47,7 @@ class InputEnum(IntEnum):
         `KeyError`
             If the value is not among the keys defined.
         """
-        if isinstance(value, int):
-            return cls(value)
-        return cls[value.lower()]  # type: ignore
+        return cls(value) if isinstance(value, int) else cls[value.lower()]
 
 
 class MouseButton(InputEnum):
@@ -246,6 +244,8 @@ class State(Enum):
 
 
 class Cursor(Enum):
+    """Utility for accessing system cursors."""
+
     hand = pygame.SYSTEM_CURSOR_HAND
     arrow = pygame.SYSTEM_CURSOR_ARROW
     ibeam = pygame.SYSTEM_CURSOR_IBEAM
@@ -263,7 +263,7 @@ class Cursor(Enum):
     deny = no  # alias
 
     @staticmethod
-    def convert(value: CursorLike, /) -> pygame.Cursor:
+    def as_cursor(value: CursorLike, /) -> pygame.Cursor:
         return (
             value
             if isinstance(value, pygame.Cursor)

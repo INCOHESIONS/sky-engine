@@ -59,20 +59,25 @@ class _WindowWrapper:
     _magic_size_offset = Vector2(16, 39)
 
     def __init__(self, /, *, spec: WindowSpec) -> None:
+        self._fullscreen = False
+        self._minimized = False
+        self._maximized = False
+
+        if spec.state != "windowed":
+            setattr(self, f"_{spec.state}", True)
+
         self._underlying = pygame.Window(
             position=spec.position or (0, 0),
             opengl=spec.backend == "opengl",
             vulkan=spec.backend == "vulkan",
-            **spec._attrs(),  # type: ignore
+            **{spec.state: True} if spec.state != "windowed" else {},
+            **{attr: getattr(spec, attr) for attr in WindowSpec._DIRECT_PROPERTIES},  # type: ignore
         )
-        self._underlying.get_surface()
+
+        _ = self._underlying.get_surface()  # necessary
 
         self._spec = spec
         self._icon = spec.icon
-
-        self._fullscreen = spec.fullscreen
-        self._minimized = False
-        self._maximized = False
 
         self.on_render = Listenable()
 
@@ -307,6 +312,18 @@ class Windowing(Component):
         return self._main
 
     @property
+    def all_windows(self) -> list[_WindowWrapper]:
+        """All windows, including the main window."""
+
+        return self._extras if self._main is None else [self._main] + self._extras
+
+    @property
+    def extra_windows(self) -> list[_WindowWrapper]:
+        """All extra windows."""
+
+        return self._extras
+
+    @property
     def spec(self) -> WindowSpec | None:
         """The window spec, or `None` if the app is headless."""
 
@@ -333,18 +350,12 @@ class Windowing(Component):
 
     @override
     def update(self) -> None:
-        if self._main is not None:
-            self._main.on_render.notify()
-
-        for window in self._extras:
+        for window in self.all_windows:
             window.on_render.notify()
 
     @override
     def stop(self) -> None:
-        if self._main is not None:
-            self._main.destroy()
-
-        for window in self._extras:
+        for window in self.all_windows:
             window.destroy()
 
     def add_extra(self, /, *, spec: WindowSpec) -> _WindowWrapper:
@@ -405,9 +416,7 @@ class Windowing(Component):
 
     # uses post_update to guarantee the window is flipped after any user-added components update
     def _post_update(self) -> None:
-        self._main.flip()  # type: ignore
-
-        for window in self._extras:
+        for window in self.all_windows:
             window.flip()
 
     def _handle_close(self, event: pygame.event.Event, /) -> None:

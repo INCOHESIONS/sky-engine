@@ -22,11 +22,13 @@ class Mouse(Component):
         self._pos = Vector2()
         self._vel = Vector2()
         self._wheel_delta = Vector2()
+
         self._num_buttons = len(MouseButton)
 
         self._states: list[State] = [State.none for _ in range(self._num_buttons)]
 
         self.on_mouse_button = Listenable[_StatefulMouseButtonListener]()
+
         self.on_mouse_button_pressed = Listenable[_MouseButtonListener]()
         self.on_mouse_button_downed = Listenable[_MouseButtonListener]()
         self.on_mouse_button_released = Listenable[_MouseButtonListener]()
@@ -86,7 +88,7 @@ class Mouse(Component):
 
     @cursor.setter
     def cursor(self, cursor: CursorLike, /) -> None:
-        pygame.mouse.set_cursor(Cursor.convert(cursor))
+        pygame.mouse.set_cursor(Cursor.as_cursor(cursor))
 
     @property
     def relative_mode(self) -> bool:
@@ -120,6 +122,7 @@ class Mouse(Component):
     def update(self) -> None:
         self._pos = Vector2(pygame.mouse.get_pos())
         self._vel = Vector2(pygame.mouse.get_rel())
+
         self._wheel_delta = Vector2()
 
         _pressed = pygame.mouse.get_pressed()

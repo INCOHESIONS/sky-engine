@@ -11,8 +11,8 @@ from ..utils import Vector2, get_by_attrs
 
 __all__ = ["Keyboard"]
 
-type _KeyListener = Callable[[Key], None]
 type _StatefulKeyListener = Callable[[Key, State], None]
+type _KeyListener = Callable[[Key], None]
 
 
 @dataclass

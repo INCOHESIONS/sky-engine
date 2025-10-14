@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, final
+from typing import TYPE_CHECKING, ClassVar, Literal, final
 
 from pygame import Surface
 from singleton_decorator import singleton as untyped_singleton  # type: ignore
@@ -27,6 +27,13 @@ __all__ = [
 class WindowSpec:
     """Defines information the window needs to have before mainloop. If `position` is None, the window will be centered on the screen."""
 
+    _DIRECT_PROPERTIES: ClassVar = (
+        "title",
+        "size",
+        "resizable",
+        "borderless",
+    )
+
     _: KW_ONLY
 
     title: str = "Sky Engine"
@@ -37,30 +44,14 @@ class WindowSpec:
     resizable: bool = False
     borderless: bool = False
 
-    fullscreen: bool = False
-    maximized: bool = False
-    minimized: bool = False
+    state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
+    """What state the window should be initialized at. Defaults to windowed."""
 
     backend: Literal["software", "opengl", "vulkan"] = "software"
     """The backend to use for the window. Software by default."""
 
     initialization: Literal["immediate", "deferred"] = "immediate"
     """Only valid for the main window. Whether to initialize the window immediately or wait until `mainloop` is called. This is useful for adding listeners to the window before the app is started."""
-
-    # rest of the attrs needed for pygame.Window
-    def _attrs(self) -> dict[str, Any]:
-        return {
-            attr: getattr(self, attr)
-            for attr in (
-                "title",
-                "size",
-                "resizable",
-                "borderless",
-                "fullscreen",
-                "maximized",
-                "minimized",
-            )
-        }
 
     @property
     def is_software(self) -> bool:
