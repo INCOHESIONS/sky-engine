@@ -26,6 +26,10 @@ class Events(Component):
     def __contains__(self, event: PygameEvent | int) -> bool:
         return self.has(event)
 
+    def __imatmul__(self, event: PygameEvent | int) -> Self:
+        self.post(event)
+        return self
+
     @property
     def events(self) -> list[PygameEvent]:
         """The list of events collected this frame."""
