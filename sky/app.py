@@ -120,6 +120,7 @@ class App:
         `bool`
             Whether the app contains the component.
         """
+
         return (
             get_by_attrs(self._components, __class__=component) is not None
             if isinstance(component, type)
@@ -206,6 +207,7 @@ class App:
         pygame.quit()
 
     run = mainloop  # alias
+    __call__ = mainloop
 
     def add_component(
         self,
@@ -341,11 +343,7 @@ class App:
             The component, if found.
         """
 
-        return (
-            first(components)
-            if (components := self.get_components(component))
-            else None
-        )
+        return first(self.get_components(component), default=None)
 
     def get_components[T: Component](self, component: type[T] | str, /) -> list[T]:
         """
@@ -367,16 +365,22 @@ class App:
             else filter(lambda c: isinstance(c, component), self._components)  # type: ignore
         )
 
-    def register_module(self, module: _CompatibleModule, /) -> Self:
+    def register_module(
+        self, module: _CompatibleModule, /, *, when: Listenable | None = None
+    ) -> Self:
         """
         Registers a module to be initialized and cleaned up when the app is started and stopped.
-        Initializes the module immediately. Modules must have `init` and `quit` functions.\n
+        Initializes the module immediately if `when` is None, otherwise initializes it when `when` is triggered.\n
+        Modules must have `init` and `quit` functions.\n
         Useful for pygame modules such as `freetype` and `mixer`.\n
 
         Parameters
         ----------
         module: `_CompatibleModule`
             The module to register.
+        when: `Listenable | None`
+            The listenable to use as a trigger for initializing the module.
+            If `None` (the default), the module will be initialized immediately.\n
 
         Returns
         -------
@@ -390,7 +394,12 @@ class App:
         """
 
         assert isinstance(module, _CompatibleModule)
-        module.init()
+
+        if when is None:
+            module.init()
+        else:
+            when += module.init
+
         self.cleanup += module.quit
         return self
 
