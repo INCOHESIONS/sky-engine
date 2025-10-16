@@ -1,14 +1,14 @@
 # Sky Engine
 
-More like a wrapper than an engine. Makes `pygame` less painful to use. Fully typed with `Pylance` on strict mode.
+Makes `pygame` ([pygame-ce](https://github.com/pygame-community/pygame-ce), more specifically) less painful to use. More like a wrapper than an engine. Fully typed with [basedpyright](https://github.com/DetachHead/basedpyright).
 
-Generally cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
+Theoretically cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
 
-Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, as well as one using `pygame`'s software renderer with `pygame.draw`.
+Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, as well as one using `pygame`'s software rendering with `pygame.draw`.
 
 ## Examples
 
-Rendering using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/bilhox/pygame-ce/blob/main/examples/window_opengl.py) `pygame` example:
+Hello Triangle (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/pygame-community/pygame-ce/blob/main/examples/window_opengl.py) `pygame` example):
 
 ```py
 from typing import override
@@ -83,7 +83,7 @@ app.add_component(RenderPipeline)
 app.mainloop()
 ```
 
-Interactivity (rendering done with `pygame`'s drawing functions):
+Interactivity (rendering done with `pygame.draw`):
 
 ```py
 from dataclasses import dataclass, field
@@ -176,7 +176,7 @@ def extra_render() -> None:
 app.mainloop()
 ```
 
-Coroutines (based on [Unity's coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
+Coroutines (based on [Unity's Coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
 
 ```python
 from sky import App, Coroutine
