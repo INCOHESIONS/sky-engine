@@ -378,11 +378,12 @@ class Windowing(Component):
 
     def remove_extra(self, window: _WindowWrapper | pygame.Window, /) -> None:
         """
-        Removes and destroys the specified extra window.
+        Removes and destroys the specified extra window.\n
+        Finds a window using its `underlying` property if a `pygame.Window` is passed.
 
         Parameters
         ----------
-        window: `WindowWrapper`
+        window: `WindowWrapper | pygame.Window`
             The window to remove.
 
         Raises
