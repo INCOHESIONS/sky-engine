@@ -1,4 +1,5 @@
-from typing import Callable, Iterator, Self
+from typing import Callable, Self
+from collections.abc import Iterator
 
 import pygame
 from pygame.event import Event as PygameEvent

@@ -6,7 +6,7 @@ from dataclasses import KW_ONLY, dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Literal, final
 
 from pygame import Surface
-from singleton_decorator import singleton as untyped_singleton  # type: ignore
+from singleton_decorator import singleton as untyped_singleton  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
 
 from .types import Coroutine
 from .utils import Vector2
@@ -26,13 +26,6 @@ __all__ = [
 @dataclass
 class WindowSpec:
     """Defines information the window needs to have before mainloop. If `position` is None, the window will be centered on the screen."""
-
-    _DIRECT_PROPERTIES: ClassVar = (
-        "title",
-        "size",
-        "resizable",
-        "borderless",
-    )
 
     _: KW_ONLY
 
@@ -84,7 +77,7 @@ class AppSpec:
 class Component:
     """Base class for components."""
 
-    app: App
+    app: ClassVar[App]
 
     def start(self) -> Coroutine | None:
         """Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine."""
@@ -99,4 +92,4 @@ class Component:
 def singleton[T: type](cls: T) -> T:
     """Makes the decorated class a singleton while properly keeping its type."""
 
-    return untyped_singleton(cls)  # type: ignore
+    return untyped_singleton(cls)  # pyright: ignore[reportReturnType]

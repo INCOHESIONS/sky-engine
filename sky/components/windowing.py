@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, final, override
+from typing import TYPE_CHECKING, ClassVar, Self, final, override
 
 import pygame
 from pygame.event import Event as PygameEvent
@@ -52,8 +52,8 @@ class _MonitorInfo:
 
 @final
 class _WindowWrapper:
-    app: App
-    windowing: Windowing
+    app: ClassVar[App]
+    windowing: ClassVar[Windowing]
 
     _magic_fullscreen_position = Vector2(-8, -31)
     _magic_size_offset = Vector2(16, 39)
@@ -71,7 +71,15 @@ class _WindowWrapper:
             opengl=spec.backend == "opengl",
             vulkan=spec.backend == "vulkan",
             **{spec.state: True} if spec.state != "windowed" else {},
-            **{attr: getattr(spec, attr) for attr in WindowSpec._DIRECT_PROPERTIES},  # type: ignore
+            **{
+                name: getattr(spec, name)
+                for name in (
+                    "title",
+                    "size",
+                    "resizable",
+                    "borderless",
+                )
+            },
         )
 
         _ = self._underlying.get_surface()  # necessary
@@ -393,9 +401,9 @@ class Windowing(Component):
         """
 
         self._extras.remove(
-            get_by_attrs(self._extras, _underlying=window)  # type: ignore
+            get_by_attrs(self._extras, _underlying=window)
             if isinstance(window, pygame.Window)
-            else window
+            else window  # pyright: ignore[reportArgumentType]
         )
         window.destroy()
 
@@ -424,7 +432,9 @@ class Windowing(Component):
         if event.type != pygame.WINDOWCLOSE:
             return
 
-        if event.window == self._main._underlying:  # type: ignore
+        assert self.main_window
+
+        if event.window == self.main_window.underlying:
             self.app.quit()
         else:
             self.remove_extra(event.window)

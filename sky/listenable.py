@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, get_type_hints
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, get_type_hints
 
 from .types import Coroutine
 
@@ -103,7 +104,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     ```
     """
 
-    app: App
+    app: ClassVar[App]
 
     def __init__(self, cancellable: bool = False, once: bool = False) -> None:
         self._listeners: list[TListener] = []
@@ -121,12 +122,12 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
         if get_type_hints(listener)["return"] is Coroutine:
 
-            def __add(*args: Any, **kwargs: Any) -> None:
+            def __add(*args: Any, **kwargs: Any) -> None:  # pyright: ignore[reportUnusedParameter]
                 self.app.executor.start_coroutine(listener)
 
-            self.add_listener(__add)  # type: ignore
+            self.add_listener(__add)  # pyright: ignore[reportArgumentType]
         else:
-            self.add_listener(listener)  # type: ignore
+            self.add_listener(listener)  # pyright: ignore[reportArgumentType]
 
         return listener
 
@@ -247,7 +248,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
             # there's no way to cast `wrapper` to `T` here, and since python doesn't support extracting
             # the type of the arguments of a callable in some crazy typescript-like way, we have to do this
-            self += wrapper  # type: ignore
+            self += wrapper  # pyright: ignore[reportUnknownVariableType, reportOperatorIssue]
 
             return wrapper
 

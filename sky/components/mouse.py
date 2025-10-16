@@ -3,9 +3,9 @@ from typing import Callable, override
 import pygame
 
 from ..core import Component
-from ..enums import Cursor, CursorLike, MouseButton, State
+from ..enums import Cursor, MouseButton, State
 from ..listenable import Listenable
-from ..types import MouseButtonLike
+from ..types import MouseButtonLike, CursorLike
 from ..utils import Vector2
 
 __all__ = ["Mouse"]

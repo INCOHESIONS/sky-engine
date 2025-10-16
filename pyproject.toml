@@ -28,6 +28,17 @@ pygame-ce = "^2.5.3"
 singleton-decorator = "^1.0.0"
 screeninfo = "^0.8.1"
 
+[tool.basedpyright]
+typeCheckingMode="all"
+pythonVersion="3.13"
+
+reportAny=false
+reportExplicitAny=false
+reportUnannotatedClassAttribute=false
+reportImportCycles=false  # handled by `if TYPE_CHECKING`, which basedpyright can't detect, apparently
+reportPropertyTypeMismatch=false
+reportUnusedCallResult=false
+
 [tool.ruff.format]
 docstring-code-format = true
 

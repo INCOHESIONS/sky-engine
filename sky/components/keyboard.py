@@ -149,7 +149,7 @@ class Keyboard(Component):
             self._keybindings, keys=keys if isinstance(keys, tuple) else (keys,)
         )
 
-        self._keybindings.remove(keybinding)  # type: ignore
+        self._keybindings.remove(keybinding)  # pyright: ignore[reportArgumentType]
 
     def get_state(self, key: KeyLike, /) -> State:
         """

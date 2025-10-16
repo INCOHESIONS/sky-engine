@@ -4,12 +4,10 @@ from random import randint
 from typing import (
     Any,
     Callable,
-    Generator,
-    Iterable,
-    Iterator,
     Self,
     override,
 )
+from collections.abc import Generator, Iterable, Iterator
 
 from pygame import Color as PygameColor
 from pygame import Vector2 as PygameVector2
@@ -61,7 +59,7 @@ class Vector2(PygameVector2):
             The direction from this vector to the other vector.
         """
 
-        return (other - self).normalize()  # type: ignore
+        return (other - self).normalize()  # pyright: ignore[reportReturnType]
 
     # probably premature optimization?
     # i mean, i'd look real stupid if this was slower just by virtue of being a python method as opposed to a c method
@@ -116,7 +114,7 @@ class Vector2(PygameVector2):
             The vector as a tuple of integers.
         """
 
-        return tuple(map(int, self))  # type: ignore
+        return (int(self.x), int(self.y))
 
 
 class Color(PygameColor):
@@ -185,9 +183,9 @@ class Color(PygameColor):
         """
 
         return self.__class__(
-            clamp(self.r + amount, 0, 255),  # type: ignore
-            clamp(self.g + amount, 0, 255),  # type: ignore
-            clamp(self.b + amount, 0, 255),  # type: ignore
+            clamp(self.r + amount, 0, 255),  # pyright: ignore [reportArgumentType]
+            clamp(self.g + amount, 0, 255),  # pyright: ignore [reportArgumentType]
+            clamp(self.b + amount, 0, 255),  # pyright: ignore [reportArgumentType]
             self.a,
         )
 

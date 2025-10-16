@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from inspect import isgeneratorfunction, signature
-from typing import Callable, Protocol, Self, Sequence, runtime_checkable
+from typing import Callable, Protocol, Self, runtime_checkable
 
 import pygame
 
@@ -47,13 +48,17 @@ class App:
             2. `cleanup` (executed after components are stopped, and before the app is destroyed. Cleans up any registered modules)
     """
 
-    def __init__(self, /, *, spec: AppSpec | WindowSpec = AppSpec()) -> None:
+    def __init__(self, /, *, spec: AppSpec | WindowSpec | None = None) -> None:
         pygame.init()
 
         Listenable.app = self
         Component.app = self
 
-        self.spec = spec if isinstance(spec, AppSpec) else AppSpec(window_spec=spec)
+        self.spec = (
+            AppSpec(window_spec=spec)
+            if isinstance(spec, WindowSpec)
+            else spec or AppSpec()
+        )
         """The app's specification, i.e., pre-execution configuration."""
 
         self.entrypoint = Listenable()
@@ -321,12 +326,12 @@ class App:
         """
 
         if isinstance(component, type):
-            component = self.get_component(component)  # type: ignore
+            component = self.get_component(component)  # pyright: ignore[reportAssignmentType]
 
         if component in self._internal_components:
             raise ValueError("Cannot remove internal component.")
 
-        self._components.remove(component)  # type: ignore
+        self._components.remove(component)  # pyright: ignore[reportArgumentType]
 
     def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
         """
@@ -360,10 +365,10 @@ class App:
             The list of components, if found.
         """
         return list(
-            filter(lambda c: c.__class__.__name__ == component, self._components)  # type: ignore
+            filter(lambda c: c.__class__.__name__ == component, self._components)
             if isinstance(component, str)
-            else filter(lambda c: isinstance(c, component), self._components)  # type: ignore
-        )
+            else filter(lambda c: isinstance(c, component), self._components)
+        )  # pyright: ignore[reportReturnType]
 
     def register_module(
         self, module: _CompatibleModule, /, *, when: Listenable | None = None

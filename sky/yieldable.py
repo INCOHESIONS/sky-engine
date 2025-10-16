@@ -1,9 +1,11 @@
+# pyright: reportUninitializedInstanceVariable=false
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from time import perf_counter
-from typing import TYPE_CHECKING, Callable, final, override
+from typing import TYPE_CHECKING, Callable, ClassVar, final, override
 
 if TYPE_CHECKING:
     from .app import App
@@ -20,7 +22,7 @@ __all__ = [
 class Yieldable(ABC):
     """Base class for `Yieldables`: values that tell the `Executor` to wait or continue executing a `Coroutine`."""
 
-    app: App
+    app: ClassVar[App]
 
     @abstractmethod
     def is_ready(self) -> bool:
