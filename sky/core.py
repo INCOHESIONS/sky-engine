@@ -23,19 +23,29 @@ __all__ = [
 
 
 @final
-@dataclass
+@dataclass(slots=True, frozen=True)
 class WindowSpec:
     """Defines information the window needs to have before mainloop. If `position` is None, the window will be centered on the screen."""
 
     _: KW_ONLY
 
     title: str = "Sky Engine"
+    """The window's title. "Sky Engine" by default."""
+
     position: Vector2 | None = None
+    """The window's position. Centers it on the main monitor by default."""
+
     size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
+    """The window's size. 800x600 by default."""
+
     icon: Surface | None = None
+    """The window's icon. Uses the default pygame icon if `None`."""
 
     resizable: bool = False
+    """Whether or not the window can be resized. Posts a pygame.WINDOWRESIZED event whenever resized."""
+
     borderless: bool = False
+    """Whether or not the window is borderless, which also means it has no decorations."""
 
     state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
     """What state the window should be initialized at. Defaults to windowed."""
@@ -60,12 +70,14 @@ class WindowSpec:
 
 
 @final
-@dataclass
+@dataclass(slots=True, frozen=True)
 class AppSpec:
     """Defines information the app needs to have before mainloop. If `window_spec` is None, a window will not be created."""
 
     _: KW_ONLY
+
     window_spec: WindowSpec | None = field(default_factory=WindowSpec)
+    """The app's `WindowSpec`"""
 
     @classmethod
     def headless(cls) -> AppSpec:
