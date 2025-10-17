@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Self, override
+from typing import Callable, Literal, Self, final, override
 
 import pygame
 
@@ -7,7 +7,7 @@ from ..core import Component
 from ..enums import Key, State
 from ..listenable import Listenable
 from ..types import KeyLike
-from ..utils import Vector2, get_by_attrs
+from ..utils import Vector2, Vector3, get_by_attrs
 
 __all__ = ["Keyboard"]
 
@@ -15,13 +15,15 @@ type _StatefulKeyListener = Callable[[Key, State], None]
 type _KeyListener = Callable[[Key], None]
 
 
-@dataclass
+@final
+@dataclass(slots=True)
 class _Keybinding:
     keys: tuple[Key, ...]
     action: Callable[[], None]
     state: State = State.downed
 
 
+@final
 class Keyboard(Component):
     """Handles keyboard input."""
 
@@ -307,7 +309,7 @@ class Keyboard(Component):
 
         return int(self.is_state(pos, state)) - int(self.is_state(neg, state))
 
-    def get_movement(
+    def get_movement_2d(
         self,
         horizontal_axis: tuple[KeyLike, KeyLike],
         vertical_axis: tuple[KeyLike, KeyLike],
@@ -346,7 +348,60 @@ class Keyboard(Component):
             self.get_axis(*vertical_axis, state=state),
         )
 
-        if normalize:
-            return movement.normalize()
+        return movement.normalize() if normalize else movement
 
-        return movement
+    def get_movement_3d(
+        self,
+        horizontal_axis: tuple[KeyLike, KeyLike],
+        vertical_axis: tuple[KeyLike, KeyLike],
+        forward_axis: tuple[KeyLike, KeyLike],
+        /,
+        *,
+        state: State = State.pressed,
+        order: Literal["XYZ", "XZY"] = "XYZ",
+        normalize: bool = True,
+    ) -> Vector3:
+        """
+        Three axis to use for movement.\n
+        Ordering defaults to "XYZ" (horizontal, vertical, forward) but can be changed to "XZY" (horizontal, forward, vertical).
+
+        Parameters
+        ----------
+        vertical_axis: `tuple[KeyLike, KeyLike]`
+            The keys to check for vertical movement.
+        horizontal_axis: `tuple[KeyLike, KeyLike]`
+            The keys to check for horizontal movement.
+        forward_axis: `tuple[KeyLike, KeyLike]`
+            The keys to check for forward movement.
+        state: `State`
+            The state to check for. Cannot be `State.none`. Defaults to `State.pressed`.
+        order: `Literal["XYZ", "XZY"]`
+            The order of the axes. Defaults to "XYZ".
+        normalize: `bool`
+            Whether to normalize the movement to the range [0, 1]. Defaults to `True`.
+
+        Returns
+        -------
+        `Vector3`
+            The movement of the keys.
+
+        Raises
+        ------
+        `AssertionError`
+            If `state` is `State.none`.
+        """
+
+        if order == "XYZ":
+            movement = Vector3(
+                self.get_axis(*horizontal_axis, state=state),
+                self.get_axis(*vertical_axis, state=state),
+                self.get_axis(*forward_axis, state=state),
+            )
+        elif order == "XZY":
+            movement = Vector3(
+                self.get_axis(*horizontal_axis, state=state),
+                self.get_axis(*forward_axis, state=state),
+                self.get_axis(*vertical_axis, state=state),
+            )
+
+        return movement.normalize() if normalize else movement
