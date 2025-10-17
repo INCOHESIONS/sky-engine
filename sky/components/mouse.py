@@ -1,4 +1,4 @@
-from typing import Callable, override
+from typing import Callable, final, override
 
 import pygame
 
@@ -15,6 +15,7 @@ type _MouseButtonListener = Callable[[MouseButton], None]
 type _MouseWheelListener = Callable[[Vector2], None]
 
 
+@final
 class Mouse(Component):
     """Handles mouse input."""
 

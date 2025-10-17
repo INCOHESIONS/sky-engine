@@ -1,4 +1,4 @@
-from typing import Callable, Self
+from typing import Callable, Self, final
 from collections.abc import Iterator
 
 import pygame
@@ -14,6 +14,7 @@ __all__ = ["Events"]
 type _EventListener = Callable[[PygameEvent], None]
 
 
+@final
 class Events(Component):
     """Handles pygame events."""
 

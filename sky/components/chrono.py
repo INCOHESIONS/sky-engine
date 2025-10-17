@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import override
+from typing import final, override
 
 import pygame
 
@@ -8,6 +8,7 @@ from ..core import Component
 __all__ = ["Chrono"]
 
 
+@final
 class Chrono(Component):
     """Handles time."""
 

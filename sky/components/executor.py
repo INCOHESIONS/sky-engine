@@ -1,10 +1,11 @@
-from typing import Callable, override
+from typing import Callable, final, override
 
 from ..core import Component
 from ..types import Coroutine
 from ..yieldable import WaitForFrames, Yieldable
 
 
+@final
 class Executor(Component):
     """Handles coroutines."""
 
