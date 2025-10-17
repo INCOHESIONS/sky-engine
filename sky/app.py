@@ -52,8 +52,9 @@ class App:
     def __init__(self, /, *, spec: AppSpec | WindowSpec | None = None) -> None:
         pygame.init()
 
-        Listenable.app = self
         Component.app = self
+        Listenable.app = self
+        Yieldable.app = self
 
         self.spec = (
             AppSpec(window_spec=spec)
