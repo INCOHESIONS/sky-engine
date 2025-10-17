@@ -22,7 +22,8 @@ __all__ = ["Windowing"]
 # kind of assuming both pygame and screeninfo use the same indexing system here to match monitors to refresh rates
 # i don't have more than one monitor to be able to test this so idk
 # pretty ugly but screeninfo doesn't provide refresh rates so it is what it is
-@dataclass
+@final
+@dataclass(slots=True, frozen=True)
 class _MonitorInfo:
     name: str
     position: Vector2
@@ -32,6 +33,8 @@ class _MonitorInfo:
 
     @classmethod
     def from_monitor(cls, monitor: Monitor, /, *, index: int) -> Self:
+        """Creates a _MonitorInfo object from a screeninfo.Monitor object."""
+
         return cls(
             monitor.name or "Unnamed Monitor",
             Vector2(monitor.x, monitor.y),
@@ -55,8 +58,8 @@ class _WindowWrapper:
     app: ClassVar[App]
     windowing: ClassVar[Windowing]
 
-    _magic_fullscreen_position = Vector2(-8, -31)
-    _magic_size_offset = Vector2(16, 39)
+    _magic_fullscreen_position: ClassVar = Vector2(-8, -31)
+    _magic_size_offset: ClassVar = Vector2(16, 39)
 
     def __init__(self, /, *, spec: WindowSpec) -> None:
         self._fullscreen = False
@@ -126,6 +129,14 @@ class _WindowWrapper:
             return True
 
         return False
+
+    @property
+    def title(self) -> str:
+        return self._underlying.title
+
+    @title.setter
+    def title(self, value: str) -> None:
+        self._underlying.title = value
 
     @property
     def position(self) -> Vector2:
@@ -254,10 +265,29 @@ class _WindowWrapper:
         else:
             self.underlying.restore()
 
-    def toggle_fullscreen(self) -> None:
+    @property
+    def borderless(self) -> bool:
+        return self._underlying.borderless
+
+    @borderless.setter
+    def borderless(self, value: bool) -> None:
+        self._underlying.borderless = value
+
+    @property
+    def resizable(self) -> bool:
+        return self._underlying.resizable
+
+    @resizable.setter
+    def resizable(self, value: bool) -> None:
+        self._underlying.resizable = value
+
+    def toggle_fullscreen(self, /, *, borderless: bool = False) -> None:
         """Toggles fullscreen mode."""
 
         self.fullscreen = not self._fullscreen
+
+        if borderless:
+            self.borderless = self.fullscreen
 
     def toggle_minimized(self) -> None:
         """Toggles minimized mode."""
@@ -290,6 +320,7 @@ class _WindowWrapper:
     update = flip
 
 
+@final
 class Windowing(Component):
     """Handles windowing."""
 
