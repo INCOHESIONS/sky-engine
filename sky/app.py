@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from inspect import isgeneratorfunction, signature
+from inspect import Parameter, isgeneratorfunction, signature
 from typing import Callable, Protocol, Self, runtime_checkable
 
 import pygame
@@ -8,7 +8,8 @@ from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import AppSpec, Component, WindowSpec, singleton
 from .listenable import Listenable
 from .types import Coroutine
-from .utils import first, get_by_attrs
+from .utils import first, get_by_attrs, ilen
+from .yieldable import Yieldable
 
 __all__ = ["App"]
 
@@ -109,6 +110,7 @@ class App:
         self._components = self._internal_components.copy()
 
         self.is_running = True
+        self.has_stopped = False
 
     def __contains__(self, component: type[Component] | Component, /) -> bool:
         """
@@ -183,10 +185,13 @@ class App:
                 3. `App.cleanup`
         """
 
+        if self.has_stopped:
+            raise ValueError("You cannot run this app instance again!")
+
         self.entrypoint.notify()
 
         for component in self._components:
-            self._handle_possible_coroutine(component.start)
+            self._start_component(component)
 
         self.setup.notify()
 
@@ -201,6 +206,7 @@ class App:
             self.post_update.notify()
 
         self.is_running = False
+        self.has_stopped = True
 
         self.teardown.notify()
 
@@ -223,6 +229,7 @@ class App:
     ) -> Self:
         """
         Adds a component to the app.\n
+        Calls the component's `start` method if the app is running and the component hadn't yet been started.\n
         If you wish to use this as a class decorator, use `app.component` instead.
 
         Parameters
@@ -242,16 +249,28 @@ class App:
         Raises
         ------
         `ValueError`
-            If a type is passed that has a constructor that takes arguments.
+            If a type is passed that cannot be instanced with no arguments or if the app has already stopped running.
         """
 
-        if callable(component) and len(signature(component).parameters) > 0:
+        if callable(component) and ilen(
+            param
+            for param in signature(component).parameters.values()
+            if param.default is Parameter.empty
+        ):
             raise ValueError(
                 f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
 
+        if self.has_stopped:
+            raise ValueError("The app has already stopped running!")
+
         def _add():
-            self._components.append(component() if callable(component) else component)
+            self._components.append(
+                comp := component() if callable(component) else component
+            )
+
+            if self.is_running and not getattr(comp, "_has_started", False):
+                self._start_component(comp)
 
         if when is None:
             _add()
@@ -277,7 +296,7 @@ class App:
         Raises
         ------
         `ValueError`
-            If a type is passed that has a constructor that takes arguments.
+            If a type is passed that cannot be instanced with no arguments or if the app has already stopped running.
         """
 
         for component in components:
@@ -287,8 +306,8 @@ class App:
 
     def component[T: type[Component]](self, component: T, /) -> T:
         """
-        Adds a component to the app. Can be used as a class decorator.\n
-        Preserves the component' type properly, returning `T` instead of `Self`.
+        Adds a component to the app.\n
+        Can be used as a class decorator as it properly preserves the component' type.
         Should be used for class decoration instead of `app.add_component`.
 
         Parameters
@@ -304,7 +323,7 @@ class App:
         Raises
         ------
         `ValueError`
-            If a type is passed that has a constructor that takes arguments.
+            If the type passed cannot be instanced with no arguments or if the app has already stopped running.
         """
         self.add_component(component)
         return component
@@ -329,7 +348,9 @@ class App:
             component = self.get_component(component)  # pyright: ignore[reportAssignmentType]
 
         if component in self._internal_components:
-            raise ValueError("Cannot remove internal component.")
+            raise ValueError(
+                f"Cannot remove internal component {component.__class__.__name__}."
+            )
 
         self._components.remove(component)  # pyright: ignore[reportArgumentType]
 
@@ -447,3 +468,7 @@ class App:
             self.executor.start_coroutine(func)
         else:
             func()
+
+    def _start_component(self, /, component: Component) -> None:
+        self._handle_possible_coroutine(component.start)
+        component._has_started = True  # pyright: ignore[reportAttributeAccessIssue]
