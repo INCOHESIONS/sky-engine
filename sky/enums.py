@@ -50,6 +50,7 @@ class InputEnum(IntEnum):
         return cls(value) if isinstance(value, int) else cls[value.lower()]
 
 
+@final
 class MouseButton(InputEnum):
     """Mouse button enum."""
 
@@ -58,6 +59,7 @@ class MouseButton(InputEnum):
     right = auto()
 
 
+@final
 class Key(InputEnum):
     """Key enum."""
 
@@ -221,6 +223,7 @@ class Key(InputEnum):
     tilde = 126
 
 
+@final
 class State(Enum):
     """
     State of a key or button.\n
@@ -243,6 +246,7 @@ class State(Enum):
         return State.none
 
 
+@final
 class Cursor(Enum):
     """Utility for accessing system cursors."""
 
