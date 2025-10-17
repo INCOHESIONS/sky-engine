@@ -11,6 +11,7 @@ from collections.abc import Generator, Iterable, Iterator
 
 from pygame import Color as PygameColor
 from pygame import Vector2 as PygameVector2
+from pygame import Vector3 as PygameVector3
 from pygame.typing import SequenceLike
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "filter_by_attrs",
     "first",
     "get_by_attrs",
+    "ilen",
     "last",
     "Vector2",
 ]
@@ -26,6 +28,36 @@ __all__ = [
 
 class Vector2(PygameVector2):
     """A 2D vector. Should be used instead of `pygame.math.Vector2`."""
+
+    @classmethod
+    def zero(cls) -> Self:
+        """Returns a zero `Vector2`. Same as `Vector2()`"""
+
+        return cls(0, 0)
+
+    @classmethod
+    def up(cls) -> Self:
+        """Returns a `Vector2` pointing upwards."""
+
+        return cls(0, -1)
+
+    @classmethod
+    def down(cls) -> Self:
+        """Returns a `Vector2` pointing downwards."""
+
+        return cls(0, 1)
+
+    @classmethod
+    def left(cls) -> Self:
+        """Returns a `Vector2` pointing left."""
+
+        return cls(-1, 0)
+
+    @classmethod
+    def right(cls) -> Self:
+        """Returns a `Vector2` pointing right."""
+
+        return cls(1, 0)
 
     @override
     def normalize(self):
@@ -105,7 +137,7 @@ class Vector2(PygameVector2):
 
     def to_int_tuple(self) -> tuple[int, int]:
         """
-        Gets the vector as a tuple of integers.\n
+        This `Vector2` as a tuple of integers.\n
         Useful for passing the vector to pygame or other libraries' functions that tend expect a tuple of integers.
 
         Returns
@@ -115,6 +147,151 @@ class Vector2(PygameVector2):
         """
 
         return (int(self.x), int(self.y))
+
+
+class Vector3(PygameVector3):
+    """A 3D vector. Should be used instead of `pygame.math.Vector3`."""
+
+    @classmethod
+    def zero(cls) -> Self:
+        """Returns a zero `Vector3`. Same as `Vector3()`"""
+
+        return cls(0, 0, 0)
+
+    @classmethod
+    def up(cls) -> Self:
+        """Returns a `Vector3` pointing upwards."""
+
+        return cls(0, 1, 0)
+
+    @classmethod
+    def down(cls) -> Self:
+        """Returns a `Vector3` pointing downwards."""
+
+        return cls(0, -1, 0)
+
+    @classmethod
+    def left(cls) -> Self:
+        """Returns a `Vector3` pointing left."""
+
+        return cls(-1, 0, 0)
+
+    @classmethod
+    def right(cls) -> Self:
+        """Returns a `Vector3` pointing right."""
+
+        return cls(1, 0, 0)
+
+    @classmethod
+    def forward(cls) -> Self:
+        """Returns a `Vector3` pointing forward."""
+
+        return cls(0, 0, 1)
+
+    @classmethod
+    def backward(cls) -> Self:
+        """Returns a `Vector3` pointing backward."""
+
+        return cls(0, 0, -1)
+
+    @override
+    def normalize(self):
+        """
+        Normalizes the vector.\n
+        Exception-less version of `pygame.Vector3.normalize`.
+
+        Returns
+        -------
+        `Vector3`
+            The normalized vector.
+        """
+
+        try:
+            return super().normalize()
+        except ValueError:
+            return Vector3()
+
+    def direction_to(self, other: Self, /) -> Self:
+        """
+        Calculates the direction from this vector to another vector.
+
+        Parameters
+        ----------
+        other : `Vector3`
+            The other vector.
+
+        Returns
+        -------
+        `Vector3`
+            The direction from this vector to the other vector.
+        """
+
+        return (other - self).normalize()  # pyright: ignore[reportReturnType]
+
+    # probably premature optimization?
+    # i mean, i'd look real stupid if this was slower just by virtue of being a python method as opposed to a c method
+    def dirdist(self, other: Self, /) -> tuple[Self, float]:
+        """
+        Calculates both the direction from this vector to another vector, and the distance between them.\n
+        Uses only one square root.
+
+        Parameters
+        ----------
+        other : `Vector3`
+            The other vector.
+
+        Returns
+        -------
+        `tuple[Vector3, float]`
+            The direction from this vector to the other vector, and the distance between them.
+        """
+
+        unnormalized_dir = other - self
+        dist = unnormalized_dir.magnitude()
+        return unnormalized_dir / dist, dist
+
+    def with_x(self, x: float, /) -> Self:
+        """Returns a new `Vector3` with the x-component set to `x`."""
+
+        return self.__class__(x, self.y, self.z)
+
+    def with_y(self, y: float, /) -> Self:
+        """Returns a new `Vector3` with the y-component set to `y`."""
+
+        return self.__class__(self.x, y, self.z)
+
+    def with_z(self, z: float, /) -> Self:
+        """Returns a new `Vector3` with the z-component set to `z`."""
+
+        return self.__class__(self.x, self.y, z)
+
+    def with_inverted_x(self) -> Self:
+        """Returns a new `Vector3` with the x-component inverted."""
+
+        return self.__class__(-self.x, self.y, self.z)
+
+    def with_inverted_y(self) -> Self:
+        """Returns a new `Vector3` with the y-component inverted."""
+
+        return self.__class__(self.x, -self.y, self.z)
+
+    def with_inverted_z(self) -> Self:
+        """Returns a new `Vector3` with the z-component inverted."""
+
+        return self.__class__(self.x, self.y, -self.z)
+
+    def to_int_tuple(self) -> tuple[int, int, int]:
+        """
+        This `Vector3` as a tuple of integers.\n
+        Useful for passing the vector to pygame or other libraries' functions that tend expect a tuple of integers.
+
+        Returns
+        -------
+        `tuple[int, int, int]`
+            The vector as a tuple of integers.
+        """
+
+        return (int(self.x), int(self.y), int(self.z))
 
 
 class Color(PygameColor):
@@ -324,6 +501,10 @@ def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDe
         return next(reversed(tuple(i)))
     except StopIteration:
         return default
+
+
+def ilen(i: Iterable[Any], /) -> int:
+    return sum(1 for _ in i)
 
 
 def animate(
