@@ -174,9 +174,10 @@ type KeyLiteral = Literal[
     "x",
     "y",
     "z",
+    "pre_accent",
+    "tilde",
     "ç",
     "_",
-    "tilde",
 ]
 
 type MouseButtonLiteral = Literal[

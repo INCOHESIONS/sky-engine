@@ -47,6 +47,7 @@ class InputEnum(IntEnum):
         `KeyError`
             If the value is not among the keys defined.
         """
+
         return cls(value) if isinstance(value, int) else cls[value.lower()]
 
 
@@ -81,14 +82,14 @@ class Key(InputEnum):
     backquote = pygame.K_BACKQUOTE
     backslash = pygame.K_BACKSLASH
     backspace = pygame.K_BACKSPACE
-    break_ = pygame.K_BREAK
+    break_ = pygame.K_BREAK  # alias to pause
     capslock = pygame.K_CAPSLOCK
     caret = pygame.K_CARET
     clear = pygame.K_CLEAR
     colon = pygame.K_COLON
     comma = pygame.K_COMMA
     currency_subunit = pygame.K_CURRENCYSUBUNIT
-    currency_unit = pygame.K_CURRENCYUNIT
+    currency_unit = pygame.K_CURRENCYUNIT  # alias to euro
     delete = pygame.K_DELETE
     dollar = pygame.K_DOLLAR
     down = pygame.K_DOWN
@@ -117,7 +118,7 @@ class Key(InputEnum):
     help = pygame.K_HELP
     home = pygame.K_HOME
     insert = pygame.K_INSERT
-    keypad0 = pygame.K_KP0  # what's the difference between these (↓) two?
+    keypad0 = pygame.K_KP0
     keypad1 = pygame.K_KP1
     keypad2 = pygame.K_KP2
     keypad3 = pygame.K_KP3
@@ -127,16 +128,16 @@ class Key(InputEnum):
     keypad7 = pygame.K_KP7
     keypad8 = pygame.K_KP8
     keypad9 = pygame.K_KP9
-    keypad_0 = pygame.K_KP_0  # what's the difference between these (↑) two?
-    keypad_1 = pygame.K_KP_1
-    keypad_2 = pygame.K_KP_2
-    keypad_3 = pygame.K_KP_3
-    keypad_4 = pygame.K_KP_4
-    keypad_5 = pygame.K_KP_5
-    keypad_6 = pygame.K_KP_6
-    keypad_7 = pygame.K_KP_7
-    keypad_8 = pygame.K_KP_8
-    keypad_9 = pygame.K_KP_9
+    keypad_0 = pygame.K_KP_0  # alias to keypad0
+    keypad_1 = pygame.K_KP_1  # alias to keypad1
+    keypad_2 = pygame.K_KP_2  # alias to keypad2
+    keypad_3 = pygame.K_KP_3  # alias to keypad3
+    keypad_4 = pygame.K_KP_4  # alias to keypad4
+    keypad_5 = pygame.K_KP_5  # alias to keypad5
+    keypad_6 = pygame.K_KP_6  # alias to keypad6
+    keypad_7 = pygame.K_KP_7  # alias to keypad7
+    keypad_8 = pygame.K_KP_8  # alias to keypad8
+    keypad_9 = pygame.K_KP_9  # alias to keypad9
     keypad_divide = pygame.K_KP_DIVIDE
     keypad_enter = pygame.K_KP_ENTER
     keypad_equals = pygame.K_KP_EQUALS
@@ -148,18 +149,18 @@ class Key(InputEnum):
     left_alt = pygame.K_LALT
     left_bracket = pygame.K_LEFTBRACKET
     left_control = pygame.K_LCTRL
-    left_ctrl = pygame.K_LCTRL
+    left_ctrl = pygame.K_LCTRL  # alias to left_control
     left_gui = pygame.K_LGUI
-    left_meta = pygame.K_LMETA
+    left_meta = pygame.K_LMETA  # alias to left_gui
     left_parenthesis = pygame.K_LEFTPAREN
     left_shift = pygame.K_LSHIFT
-    left_super = pygame.K_LSUPER
+    left_super = pygame.K_LSUPER  # alias to left_gui
     less = pygame.K_LESS
     menu = pygame.K_MENU
     minus = pygame.K_MINUS
     mode = pygame.K_MODE
     numlock = pygame.K_NUMLOCK
-    numlock_clear = pygame.K_NUMLOCKCLEAR
+    numlock_clear = pygame.K_NUMLOCKCLEAR  # alias to numlock
     page_down = pygame.K_PAGEDOWN
     page_up = pygame.K_PAGEUP
     pause = pygame.K_PAUSE
@@ -168,7 +169,7 @@ class Key(InputEnum):
     plus = pygame.K_PLUS
     power = pygame.K_POWER
     print = pygame.K_PRINT
-    printscreen = pygame.K_PRINTSCREEN
+    printscreen = pygame.K_PRINTSCREEN  # alias to print
     question = pygame.K_QUESTION
     quote = pygame.K_QUOTE
     quotedbl = pygame.K_QUOTEDBL
@@ -177,14 +178,14 @@ class Key(InputEnum):
     right_alt = pygame.K_RALT
     right_bracket = pygame.K_RIGHTBRACKET
     right_control = pygame.K_RCTRL
-    right_ctrl = pygame.K_RCTRL
+    right_ctrl = pygame.K_RCTRL  # alias to right_control
     right_gui = pygame.K_RGUI
-    right_meta = pygame.K_RMETA
+    right_meta = pygame.K_RMETA  # alias to right_gui
     right_parenthesis = pygame.K_RIGHTPAREN
     right_shift = pygame.K_RSHIFT
-    right_super = pygame.K_RSUPER
+    right_super = pygame.K_RSUPER  # alias to right_gui
     scrolllock = pygame.K_SCROLLLOCK
-    scrollock = pygame.K_SCROLLOCK
+    scrollock = pygame.K_SCROLLOCK  # alias to scrolllock
     semicolon = pygame.K_SEMICOLON
     slash = pygame.K_SLASH
     space = pygame.K_SPACE
@@ -219,8 +220,12 @@ class Key(InputEnum):
     x = pygame.K_x
     y = pygame.K_y
     z = pygame.K_z
-    ç = 231
+
+    pre_accent = 180  # keycode for before an accent is inputted
     tilde = 126
+    ç = 231
+
+    _ = underscore  # alias
 
 
 @final
@@ -238,12 +243,29 @@ class State(Enum):
 
     @classmethod
     def from_bools(cls, *, pressed: bool, released: bool, down: bool) -> State:
+        """
+        Create a state from a set of boolean flags.
+
+        Parameters
+        ----------
+            pressed: `bool`
+                Whether the key is currently pressed.
+            released: `bool`
+                Whether the key has been released.
+            down: `bool`
+                Whether the key is currently down.
+
+        Returns
+        -------
+            State: The state of the key.
+        """
+
         if down:
             return State.downed
-        if released:
-            return State.released
         if pressed:
             return State.pressed
+        if released:
+            return State.released
         return State.none
 
 
@@ -269,6 +291,20 @@ class Cursor(Enum):
 
     @staticmethod
     def as_cursor(value: CursorLike, /) -> pygame.Cursor:
+        """
+        Converts a cursor-like value to a pygame Cursor.
+
+        Parameters
+        ----------
+        value: `CursorLike`
+            The cursor-like value to convert.
+
+        Returns
+        -------
+        `pygame.Cursor`
+            The converted pygame Cursor.
+        """
+
         return (
             value
             if isinstance(value, pygame.Cursor)
