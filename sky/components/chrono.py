@@ -31,6 +31,12 @@ class Chrono(Component):
         self.frames = 0
         """The number of frames since the start of the app."""
 
+        self.min_fps = 0
+        """The minimum framerate achieved since the start of the app."""
+
+        self.max_fps = 0
+        """The maximum framerate achieved since the start of the app."""
+
         self._internal_clock = pygame.time.Clock()
 
     @property
@@ -38,6 +44,12 @@ class Chrono(Component):
         """The time since the start of the app, or None if it hasn't started yet."""
 
         return datetime.now() - self.start_time if self.start_time else None
+
+    @property
+    def avg_fps(self) -> float:
+        """The average framerate achieved since the start of the app."""
+
+        return self.frames / self.time_since_start.total_seconds()
 
     @override
     def start(self) -> None:
@@ -52,3 +64,8 @@ class Chrono(Component):
         self.deltatime = self._internal_clock.tick(self.target_framerate) / 1000
         self.framerate = self._internal_clock.get_fps()
         self.frames += 1
+
+        if self.framerate < self.min_fps:
+            self.min_fps = self.framerate
+        if self.framerate > self.max_fps:
+            self.max_fps = self.framerate
