@@ -1,12 +1,7 @@
 """Utilities, and extensions of `pygame` classes that replace certain methods with expection-less versions for ease of use."""
 
 from random import randint
-from typing import (
-    Any,
-    Callable,
-    Self,
-    override,
-)
+from typing import Any, Callable, Self, override
 from collections.abc import Generator, Iterable, Iterator
 
 from pygame import Color as PygameColor
@@ -16,6 +11,7 @@ from pygame.typing import SequenceLike
 
 __all__ = [
     "animate",
+    "clamp",
     "Color",
     "filter_by_attrs",
     "first",
@@ -23,11 +19,12 @@ __all__ = [
     "ilen",
     "last",
     "Vector2",
+    "Vector3",
 ]
 
 
 class Vector2(PygameVector2):
-    """A 2D vector. Should be used instead of `pygame.math.Vector2`."""
+    """Replacement for `pygame.Vector2` with some extra utilities and exception-less versions of common methods."""
 
     @classmethod
     def zero(cls) -> Self:
@@ -150,7 +147,7 @@ class Vector2(PygameVector2):
 
 
 class Vector3(PygameVector3):
-    """A 3D vector. Should be used instead of `pygame.math.Vector3`."""
+    """Replacement for `pygame.Vector3` with some extra utilities and exception-less versions of common methods"""
 
     @classmethod
     def zero(cls) -> Self:
@@ -295,7 +292,7 @@ class Vector3(PygameVector3):
 
 
 class Color(PygameColor):
-    """A color. Should be used instead of `pygame.Color`."""
+    """Replacement for `pygame.Color` with some extra utilities and exception-less versions of common methods"""
 
     @classmethod
     def random(cls, minimum: int = 0, maximum: int = 255) -> Self:
@@ -334,7 +331,7 @@ class Color(PygameColor):
         color : `Color` | `SequenceLike[int]` | `str` | `int`
             The color to interpolate to.
         amount : `float`
-            The amount to interpolate by.
+            The amount to interpolate by. Clamped to between 0 and 1.
 
         Returns
         -------
@@ -504,7 +501,21 @@ def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDe
 
 
 def ilen(i: Iterable[Any], /) -> int:
-    return sum(1 for _ in i)
+    """
+    Consumes and returns the length of an `Iterable`.
+
+    Parameters
+    ----------
+    i : `Iterable[Any]`
+        The `Iterable` to get the length of.
+
+    Returns
+    -------
+    `int`
+        The length of the `Iterable`.
+    """
+
+    return sum(1 for _ in i)  # faster than len(tuple(i)) or len(list(i))
 
 
 def animate(
