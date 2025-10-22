@@ -1,4 +1,4 @@
-from typing import Callable, Self, final
+from typing import Any, Callable, Self, final
 from collections.abc import Iterator
 
 import pygame
@@ -54,6 +54,17 @@ class Events(Component):
             self.on_event.notify(event)
 
         return self
+
+    def add_callback(
+        self, event: PygameEvent | int, callback: Callable[[PygameEvent], Any]
+    ):
+        type = event.type if isinstance(event, PygameEvent) else event
+
+        def _callback(e: PygameEvent):
+            if e.type == type:
+                callback(e)
+
+        self.on_event += _callback
 
     def any(self, /, *args: int) -> bool:
         """
