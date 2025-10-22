@@ -321,6 +321,12 @@ class Keyboard(Component):
         """
         Two axis to use for movement.
 
+        Example
+        -------
+        ```python
+        app.keyboard.get_movement_2d(("a", "d"), ("w", "s"))  # wasd
+        ```
+
         Parameters
         ----------
         vertical_axis: `tuple[KeyLike, KeyLike]`
