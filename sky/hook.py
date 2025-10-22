@@ -54,10 +54,9 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
     @app.setup
     def change_bg_color() -> Coroutine:
-        assert app.windowing.surface is not None
-        app.windowing.surface.fill(RED)
+        app.window.surface.fill(RED)
         yield WaitForSeconds(3)
-        app.windowing.surface.fill(BLUE)
+        app.window.surface.fill(BLUE)
 
 
     app.mainloop()
@@ -119,7 +118,7 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     ) -> TCallback | V:
         """Allows Hooks to be used as decorators."""
 
-        if get_type_hints(callback)["return"] is Coroutine:
+        if get_type_hints(callback).get("return", None) is Coroutine:
 
             def __add(*args: Any, **kwargs: Any) -> None:  # pyright: ignore[reportUnusedParameter]
                 self.app.executor.start_coroutine(callback)
