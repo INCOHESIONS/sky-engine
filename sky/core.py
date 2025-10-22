@@ -77,7 +77,14 @@ class AppSpec:
     _: KW_ONLY
 
     window_spec: WindowSpec | None = field(default_factory=WindowSpec)
-    """The app's `WindowSpec`"""
+    """The main window's `WindowSpec`"""
+
+    # general debugging flag that currently does nothing internally
+    debug: bool = False
+    """Whether to enable debugging."""
+
+    profile: bool = False
+    """Whether to enable profiling (using `cProfile`)."""
 
     @classmethod
     def headless(cls) -> AppSpec:

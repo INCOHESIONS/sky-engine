@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from inspect import Parameter, isgeneratorfunction, signature
 from typing import Any, Callable, Protocol, Self
+from cProfile import run as profile
 
 import pygame
 
@@ -181,6 +182,12 @@ class App:
                 3. `App.cleanup`
         """
 
+        if self.spec.profile:
+            profile("App()._mainloop()", sort="tottime")
+        else:
+            self._mainloop()
+
+    def _mainloop(self) -> None:
         if self.has_stopped:
             raise ValueError("You cannot run this app instance again!")
 
@@ -248,13 +255,13 @@ class App:
             If a type is passed that cannot be instanced with no arguments or if the app has already stopped running.
         """
 
+        if self.has_stopped:
+            raise ValueError("The app has already stopped running!")
+
         if callable(component) and self._callable_with_no_arguments(component):
             raise ValueError(
                 f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
-
-        if self.has_stopped:
-            raise ValueError("The app has already stopped running!")
 
         def _add():
             self._components.append(
@@ -345,6 +352,11 @@ class App:
             )
 
         self._components.remove(component)  # pyright: ignore[reportArgumentType]
+
+    def clear_components(self):
+        """Removes all non-internal components from the app."""
+
+        self._components = self._internal_components.copy()
 
     def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
         """
