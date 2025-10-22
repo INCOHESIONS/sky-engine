@@ -61,7 +61,6 @@ class MouseButton(InputEnum):
 
 
 @final
-@unique
 class Key(InputEnum):
     """Key enum."""
 
