@@ -258,7 +258,7 @@ class App:
         if self.has_stopped:
             raise ValueError("The app has already stopped running!")
 
-        if callable(component) and self._callable_with_no_arguments(component):
+        if callable(component) and not self._callable_with_no_arguments(component):
             raise ValueError(
                 f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
@@ -306,8 +306,17 @@ class App:
     def component[T: type[Component]](self, component: T, /) -> T:
         """
         Adds a component to the app.\n
-        Can be used as a class decorator as it properly preserves the component' type.
-        Should be used for class decoration instead of `app.add_component`.
+        Must be used as the first decorator, and as such should come before others such as `@dataclass`.
+        In constrast to `app.add_component`, this method will properly preserve the component's type.
+
+        Examples
+        --------
+        ```python
+        @app.component
+        @dataclass
+        class Player(Component):
+            position: Vector2
+        ```
 
         Parameters
         ----------
@@ -481,11 +490,12 @@ class App:
         pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def _callable_with_no_arguments(self, c: Callable[..., Any]) -> bool:
-        return not ilen(
+        count = ilen(
             param
             for param in signature(c).parameters.values()
             if param.default is Parameter.empty
         )
+        return count == 0
 
     def _handle_possible_coroutine(
         self, func: Callable[[], Coroutine | None], /
