@@ -5,7 +5,7 @@ from cProfile import run as profile
 
 import pygame
 
-from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
+from ._components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import AppSpec, Component, WindowSpec, singleton
 from .hook import Hook
 from .types import Coroutine
