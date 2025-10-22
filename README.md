@@ -4,213 +4,51 @@ Makes `pygame` ([pygame-ce](https://github.com/pygame-community/pygame-ce), more
 
 Theoretically cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
 
-Rendering is yet to be implemented, and thus is up to the user. An OpenGL example is provided below using `zengl`, as well as one using `pygame`'s software rendering with `pygame.draw`.
+## Quick Start
 
-## Examples
-
-Hello Triangle (using [zengl](https://github.com/szabolcsdombi/zengl), based on [this](https://github.com/pygame-community/pygame-ce/blob/main/examples/window_opengl.py) `pygame` example):
-
-```py
-from typing import override
-
-import zengl
-
-from sky import App, Component, WindowSpec
-
-
-class RenderPipeline(Component):
-    VERTEX_SHADER = """
-        #version 330 core
-
-        out vec3 v_color;
-
-        vec2 vertices[3] = vec2[](
-            vec2(0.0, 0.8),
-            vec2(-0.6, -0.8),
-            vec2(0.6, -0.8)
-        );
-
-        vec3 colors[3] = vec3[](
-            vec3(1.0, 0.0, 0.0),
-            vec3(0.0, 1.0, 0.0),
-            vec3(0.0, 0.0, 1.0)
-        );
-
-        void main() {
-            gl_Position = vec4(vertices[gl_VertexID], 0.0, 1.0);
-            v_color = colors[gl_VertexID];
-        }
-    """
-
-    FRAGMENT_SHADER = """
-        #version 330 core
-
-        in vec3 v_color;
-
-        layout (location = 0) out vec4 out_color;
-
-        void main() {
-            out_color = vec4(v_color, 1.0);
-            out_color.rgb = pow(out_color.rgb, vec3(1.0 / 2.2));
-        }
-    """
-
-    @override
-    def start(self) -> None:
-        self._ctx = zengl.context()
-        self._image = self._ctx.image(
-            app.window.size.to_int_tuple(), "rgba8unorm", samples=4
-        )
-        self._pipeline = self._ctx.pipeline(
-            vertex_shader=self.VERTEX_SHADER,
-            fragment_shader=self.FRAGMENT_SHADER,
-            framebuffer=[self._image],
-            topology="triangles",
-            vertex_count=3,
-        )
-
-    @override
-    def update(self) -> None:
-        self._ctx.new_frame()
-        self._image.clear()
-        self._pipeline.render()
-        self._image.blit()
-        self._ctx.end_frame()
-
-
-app = App(spec=WindowSpec(backend="opengl"))
-app.add_component(RenderPipeline)
-app.mainloop()
-```
-
-Interactivity (rendering done with `pygame.draw`):
-
-```py
-from dataclasses import dataclass, field
-from random import randint
-
-import pygame
-
-from sky import App, Color, Key, MouseButton, Vector2
-
-app = App()
-
-
-@dataclass
-class Circle:
-    position: Vector2
-    velocity: Vector2
-    acceleration: Vector2
-    radius: float = field(default_factory=lambda: randint(10, 20))
-    color: Color = field(default_factory=Color.random)
-
-    def update(self) -> None:
-        if app.mouse.is_pressed(MouseButton.right):
-            self.acceleration += self.position.direction_to(app.mouse.position)
-
-        if app.mouse.is_pressed(MouseButton.middle):
-            self.acceleration -= self.position.direction_to(app.mouse.position) * 3
-
-        self.velocity *= 0.999
-        self.velocity += self.acceleration
-        self.position += self.velocity
-        self.acceleration = Vector2()
-
-    def render(self) -> None:
-        pygame.draw.circle(
-            app.window.surface,
-            self.color,
-            self.position,
-            self.radius * 2,
-        )
-
-
-circles: list[Circle] = []
-
-
-@app.setup
-def setup() -> None:
-    app.keyboard.add_keybindings({
-        Key.escape: app.quit,
-        Key.f11: app.window.toggle_fullscreen,
-    })  # fmt: skip
-
-
-@app.pre_update
-def pre_update() -> None:
-    app.window.surface.fill("#141417")
-
-    for circle in circles:
-        circle.update()
-        circle.render()
-
-
-@app.mouse.on_mouse_button_downed.equals(MouseButton.left)
-def on_mouse_button_downed() -> None:
-    circles.append(Circle(app.mouse.position, Vector2(), app.mouse.velocity / 3))
-
-
-app.mainloop()
-```
-
-Multiple windows:
+Only 2 lines of code are needed to get started. This opens a window, centered on the screen, with a black background:
 
 ```python
-from sky import App, AppSpec, WindowSpec
-from sky.colors import BLUE, RED
-
-app = App(spec=WindowSpec(title="Main Window!"))
-extra_window = app.windowing.add_extra(spec=WindowSpec(title="Extra Window!"))
-
-
-@app.window.on_render
-def render() -> None:
-    app.window.surface.fill(RED)
-
-
-@extra_window.on_render
-def extra_render() -> None:
-    extra_window.surface.fill(BLUE)
-
-
-app.mainloop()
-```
-
-Coroutines (based on [Unity's Coroutines](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html)):
-
-```python
-from sky import App, Coroutine
-from sky.colors import BLUE, RED
-from sky.utils import animate
-
-app = App()
-
-
-@app.setup
-def lerp_color() -> Coroutine:
-    for t in animate(duration=3, step=lambda: app.chrono.deltatime):
-        app.window.surface.fill(RED.lerp(BLUE, t))
-        yield None  # same as WaitForFrames(1)
-
-
-app.mainloop()
-```
-
-Event cancelling:
-
-```python
-import pygame
-
 from sky import App
 
+App().mainloop()
+```
+
+To modify the window's properties, use the `spec` argument:
+```python
+from sky import App, WindowSpec
+
+App(spec=WindowSpec(title="My Window!", state="fullscreened")).mainloop()
+```
+
+The building blocks of Sky Engine are `Component`s. For example, this is how one might create a simple `Player` component that renders a circle at a position:
+
+```python
+from dataclasses import dataclass, field
+from typing import override
+
+import pygame
+
+from sky import App, Component, Vector2
+from sky.colors import WHITE
+
 app = App()
 
 
-@app.pre_update
-def pre_handling() -> None:
-    # prevents the app from closing. use CTRL + C on your terminal instead
-    app.events.cancel(pygame.QUIT)
+@app.component
+@dataclass
+class Player(Component):
+    position: Vector2 = field(default_factory=app.window.center.copy)
+
+    @override
+    def update(self):
+        self.position += app.keyboard.get_movement_2d(("a", "d"), ("w", "s"))
+        pygame.draw.circle(app.window.surface, WHITE, self.position, 25)
 
 
 app.mainloop()
 ```
+
+Although that example uses `pygame.draw`, one may use any other library that supports Vulkan or OpenGL. See [this](https://github.com/incohesions/sky-engine/tree/main/examples/hello_triangle.py) for an example using `zengl`.
+
+For examples on other Sky Engine features, see the [examples](https://github.com/incohesions/sky-engine/tree/main/examples) folder.
