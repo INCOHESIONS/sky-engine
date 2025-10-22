@@ -54,7 +54,7 @@ class WindowSpec:
     """The backend to use for the window. Software by default."""
 
     initialization: Literal["immediate", "deferred"] = "immediate"
-    """Only valid for the main window. Whether to initialize the window immediately or wait until `mainloop` is called. This is useful for adding listeners to the window before the app is started."""
+    """Only valid for the main window. Whether to initialize the window immediately or wait until `mainloop` is called. This is useful for adding callbacks to the window before the app is started."""
 
     @property
     def is_software(self) -> bool:

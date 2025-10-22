@@ -5,13 +5,13 @@ import pygame
 from pygame.event import Event as PygameEvent
 
 from ..core import Component
-from ..listenable import Listenable
+from ..hook import Hook
 from ..utils import filter_by_attrs, first
 
 __all__ = ["Events"]
 
 
-type _EventListener = Callable[[PygameEvent], None]
+type _EventCallback = Callable[[PygameEvent], None]
 
 
 @final
@@ -20,7 +20,7 @@ class Events(Component):
 
     def __init__(self) -> None:
         self._events: list[PygameEvent] = []
-        self.on_event = Listenable[_EventListener]()
+        self.on_event = Hook[_EventCallback]()
 
     def __iter__(self) -> Iterator[PygameEvent]:
         return iter(self._events)

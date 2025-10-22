@@ -4,15 +4,15 @@ import pygame
 
 from ..core import Component
 from ..enums import Cursor, MouseButton, State
-from ..listenable import Listenable
+from ..hook import Hook
 from ..types import MouseButtonLike, CursorLike
 from ..utils import Vector2
 
 __all__ = ["Mouse"]
 
-type _StatefulMouseButtonListener = Callable[[MouseButton, State], None]
-type _MouseButtonListener = Callable[[MouseButton], None]
-type _MouseWheelListener = Callable[[Vector2], None]
+type _StatefulMouseButtonCallback = Callable[[MouseButton, State], None]
+type _MouseButtonCallback = Callable[[MouseButton], None]
+type _MouseWheelCallback = Callable[[Vector2], None]
 
 
 @final
@@ -28,13 +28,13 @@ class Mouse(Component):
 
         self._states: list[State] = [State.none for _ in range(self._num_buttons)]
 
-        self.on_mouse_button = Listenable[_StatefulMouseButtonListener]()
+        self.on_mouse_button = Hook[_StatefulMouseButtonCallback]()
 
-        self.on_mouse_button_pressed = Listenable[_MouseButtonListener]()
-        self.on_mouse_button_downed = Listenable[_MouseButtonListener]()
-        self.on_mouse_button_released = Listenable[_MouseButtonListener]()
+        self.on_mouse_button_pressed = Hook[_MouseButtonCallback]()
+        self.on_mouse_button_downed = Hook[_MouseButtonCallback]()
+        self.on_mouse_button_released = Hook[_MouseButtonCallback]()
 
-        self.on_mouse_wheel = Listenable[_MouseWheelListener]()
+        self.on_mouse_wheel = Hook[_MouseWheelCallback]()
 
     @property
     def position(self) -> Vector2:

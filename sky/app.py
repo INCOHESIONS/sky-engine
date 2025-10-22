@@ -6,7 +6,7 @@ import pygame
 
 from .components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import AppSpec, Component, WindowSpec, singleton
-from .listenable import Listenable
+from .hook import Hook
 from .types import Coroutine
 from .utils import first, get_by_attrs, ilen
 from .yieldable import Yieldable
@@ -36,7 +36,7 @@ class App:
 
     User-defined components can be added by subclassing `Component` and using the `add_component` method (or `component` as a class decorator).
 
-    Listenables:
+    Hooks:
         Pre-loop:
             1. `entrypoint` (executed before components are started up, just after `mainloop` is called)
             2. `setup` (executed after components are started up, and before the first frame)
@@ -52,7 +52,7 @@ class App:
         pygame.init()
 
         Component.app = self
-        Listenable.app = self
+        Hook.app = self
         Yieldable.app = self
 
         self.spec = (
@@ -62,22 +62,22 @@ class App:
         )
         """The app's specification, i.e., pre-execution configuration."""
 
-        self.entrypoint = Listenable()
+        self.entrypoint = Hook()
         """Executes before components are started up, just after `mainloop` is called."""
 
-        self.setup = Listenable()
+        self.setup = Hook()
         """Executes after components are started up, and before the first frame."""
 
-        self.pre_update = Listenable()
+        self.pre_update = Hook()
         """Executes before components are updated."""
 
-        self.post_update = Listenable()
+        self.post_update = Hook()
         """Executes after components are updated."""
 
-        self.teardown = Listenable()
+        self.teardown = Hook()
         """Executes before components are stopped, and after the last frame."""
 
-        self.cleanup = Listenable()
+        self.cleanup = Hook()
         """Executes after components are stopped, and before the app is destroyed. Cleans up any registered modules."""
 
         self.events = Events()
@@ -221,7 +221,7 @@ class App:
         component: type[Component] | Component,
         /,
         *,
-        when: Listenable | None = None,
+        when: Hook | None = None,
     ) -> Self:
         """
         Adds a component to the app.\n
@@ -232,8 +232,8 @@ class App:
         ----------
         component: `type[Component] | Component`
             The component, or its `type`, to add. Will be instanced immediately if a `type` is passed.
-        when: `Listenable | None`
-            The listenable to use as a trigger for adding the component.
+        when: `Hook | None`
+            The Hook to use as a trigger for adding the component.
             If `None` (the default), the component will be added immediately.\n
             Basically a shorthand for `when += lambda: app.add_component(component)`.
 
@@ -406,7 +406,7 @@ class App:
         )
 
     def register_module(
-        self, module: _CompatibleModule, /, *, when: Listenable | None = None
+        self, module: _CompatibleModule, /, *, when: Hook | None = None
     ) -> Self:
         """
         Registers a module to be initialized and cleaned up when the app is started and stopped.
@@ -418,8 +418,8 @@ class App:
         ----------
         module: `_CompatibleModule`
             The module to register.
-        when: `Listenable | None`
-            The listenable to use as a trigger for initializing the module.
+        when: `Hook | None`
+            The Hook to use as a trigger for initializing the module.
             If `None` (the default), the module will be initialized immediately.\n
 
         Returns

@@ -5,14 +5,14 @@ import pygame
 
 from ..core import Component
 from ..enums import Key, State
-from ..listenable import Listenable
+from ..hook import Hook
 from ..types import KeyLike
 from ..utils import Vector2, Vector3, get_by_attrs
 
 __all__ = ["Keyboard"]
 
-type _StatefulKeyListener = Callable[[Key, State], None]
-type _KeyListener = Callable[[Key], None]
+type _StatefulKeyCallback = Callable[[Key, State], None]
+type _KeyCallback = Callable[[Key], None]
 
 
 @final
@@ -32,11 +32,11 @@ class Keyboard(Component):
         self._keybindings: list[_Keybinding] = []
         self._text = ""
 
-        self.on_key = Listenable[_StatefulKeyListener]()
+        self.on_key = Hook[_StatefulKeyCallback]()
 
-        self.on_key_pressed = Listenable[_KeyListener]()
-        self.on_key_downed = Listenable[_KeyListener]()
-        self.on_key_released = Listenable[_KeyListener]()
+        self.on_key_pressed = Hook[_KeyCallback]()
+        self.on_key_downed = Hook[_KeyCallback]()
+        self.on_key_released = Hook[_KeyCallback]()
 
     @property
     def states(self) -> dict[Key, State]:

@@ -9,24 +9,23 @@ from .types import Coroutine
 if TYPE_CHECKING:
     from sky import App
 
-__all__ = ["Listenable"]
+__all__ = ["Hook"]
 
 
-class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
+class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     """
-    A sort of event that can be listened to.
-    Isn't named Event to differentiate it from pygame.event.Event.
+    A `Hook` that can be listened to.
 
     ## Usage
     ```python
-    from sky import Listenable
+    from sky import Hook
 
-    on_something = Listenable()
+    on_something = Hook()
 
     on_something += lambda: print("something happened")
 
     # [...] once something happens:
-    on_something.notify()  # notifies all listeners
+    on_something.notify()  # notifies all callbacks
     ```
 
     They can also be used as decorators:
@@ -64,23 +63,23 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     app.mainloop()
     ```
 
-    They can also be cancelled: if a listener returns a truthy value, and `cancellable` is set to `True`, execution of all following listeners is stopped.
+    They can also be cancelled: if a callback returns a truthy value, and `cancellable` is set to `True`, execution of all following callbacks is stopped.
     ```python
     from typing import Callable
 
-    from sky import Listenable
+    from sky import Hook
 
-    on_something = Listenable[Callable[[], bool]](cancellable=True)
+    on_something = Hook[Callable[[], bool]](cancellable=True)
 
 
     @on_something
-    def listener1() -> bool:
-        print("listener1")
+    def callback1() -> bool:
+        print("callback1")
         return True
 
 
     @on_something
-    def listener2() -> bool:
+    def callback2() -> bool:
         print("this will not execute")
         return False
 
@@ -90,13 +89,13 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
     They can also be set to only be able to be called once:
     ```python
-    from sky import Listenable
+    from sky import Hook
 
-    on_something = Listenable(once=True)
+    on_something = Hook(once=True)
 
 
     @on_something
-    def some_listener() -> None: ...
+    def some_callback() -> None: ...
 
 
     on_something.notify()
@@ -107,95 +106,93 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
     app: ClassVar[App]
 
     def __init__(self, cancellable: bool = False, once: bool = False) -> None:
-        self._listeners: list[TListener] = []
+        self._callbacks: list[TCallback] = []
         self._cancellable = cancellable
         self._once = once
         self._called = False
 
-    def __iter__(self) -> Iterator[TListener]:
-        return iter(self._listeners)
+    def __iter__(self) -> Iterator[TCallback]:
+        return iter(self._callbacks)
 
     def __call__[V: Callable[[], Coroutine]](
-        self, listener: TListener | V
-    ) -> TListener | V:
-        """Allows listenables to be used as decorators."""
+        self, callback: TCallback | V
+    ) -> TCallback | V:
+        """Allows Hooks to be used as decorators."""
 
-        if get_type_hints(listener)["return"] is Coroutine:
+        if get_type_hints(callback)["return"] is Coroutine:
 
             def __add(*args: Any, **kwargs: Any) -> None:  # pyright: ignore[reportUnusedParameter]
-                self.app.executor.start_coroutine(listener)
+                self.app.executor.start_coroutine(callback)
 
-            self.add_listener(__add)  # pyright: ignore[reportArgumentType]
+            self.add_callback(__add)  # pyright: ignore[reportArgumentType]
         else:
-            self.add_listener(listener)  # pyright: ignore[reportArgumentType]
+            self.add_callback(callback)  # pyright: ignore[reportArgumentType]
 
-        return listener
+        return callback
 
-    def __iadd__(self, listener: TListener) -> Self:
-        self.add_listener(listener)
+    def __iadd__(self, callback: TCallback) -> Self:
+        self.add_callback(callback)
         return self
 
-    def __isub__(self, listener: TListener) -> Self:
-        self.remove_listener(listener)
+    def __isub__(self, callback: TCallback) -> Self:
+        self.remove_callback(callback)
         return self
 
     @property
     def called(self) -> bool:
-        """Whether or not this listenable has already notified its listeners at least once."""
+        """Whether or not this Hook has already notified its callbacks at least once."""
 
         return self._called
 
-    def add_listener(self, listener: TListener, /) -> None:
+    def add_callback(self, callback: TCallback, /) -> None:
         """
-        Adds a listener to the list of listeners.
+        Adds a callback to the list of callbacks.
 
         Parameters
         ----------
-        listener: `TListener`
-            The listener to add.
+        callback: `TCallback`
+            The callback to add.
         """
 
-        self._listeners.append(listener)
+        self._callbacks.append(callback)
 
-    def remove_listener(self, listener: TListener, /) -> None:
+    def remove_callback(self, callback: TCallback, /) -> None:
         """
-        Removes a listener to the list of listeners.
+        Removes a callback to the list of callbacks.
 
         Parameters
         ----------
-        listener: `TListener`
-            The listener to remove.
+        callback: `TCallback`
+            The callback to remove.
 
         Raises
         ------
         `ValueError`
-            If the listener wasn't found.
+            If the callback wasn't found.
         """
 
-        self._listeners.remove(listener)
+        self._callbacks.remove(callback)
 
     def clear(self) -> None:
-        """Clears the list of listeners."""
+        """Clears the list of callbacks."""
 
-        self._listeners.clear()
+        self._callbacks.clear()
 
     def notify(self, /, *args: Any, **kwargs: Any) -> None:
         """
-        Notifies all listeners
+        Notifies all callbacks
 
         Raises
         ------
         `RuntimeError`
-            If the `Listenable` was set to `once` and was already called.
+            If the `Hook` was set to `once` and was already called.
         """
 
         if self._once and self._called:
-            raise RuntimeError(
-                "Listenable with `once` set to `True` was already called."
-            )
+            raise RuntimeError("Hook with `once` set to `True` was already called.")
 
-        for listener in self:
-            if listener(*args, **kwargs) and self._cancellable:
+        for callback in self:
+            if callback(*args, **kwargs) and self._cancellable:
                 break
 
         if self._once:
@@ -207,7 +204,7 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
     def equals(
         self, *args: Any
-    ) -> Callable[[Callable[[], None]], Callable[[TListener], None]]:
+    ) -> Callable[[Callable[[], None]], Callable[[TCallback], None]]:
         """
         Prevents a handler from being invoked if the arguments passed to `invoke` don't match the arguments passed as `args`.
 
@@ -234,15 +231,15 @@ class Listenable[TListener: Callable[..., Any] = Callable[[], None]]:
 
         Returns
         -------
-        `Callable[[Callable[[], None]], Callable[[TListener], None]]`
+        `Callable[[Callable[[], None]], Callable[[TCallback], None]]`
             The decorated function.
         """
 
-        def decorator(func: Callable[[], None]) -> Callable[[TListener], None]:
+        def decorator(func: Callable[[], None]) -> Callable[[TCallback], None]:
             nonlocal self
 
             @functools.wraps(func)
-            def wrapper(*args2: TListener) -> None:
+            def wrapper(*args2: TCallback) -> None:
                 if args == args2:
                     func()
 

@@ -27,7 +27,7 @@ import pygame
 from .app import App
 from .core import AppSpec, Component, WindowSpec
 from .enums import Cursor, Key, MouseButton, State
-from .listenable import Listenable
+from .hook import Hook
 from .types import Coroutine
 from .utils import Color, Vector2
 from .yieldable import WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
@@ -46,7 +46,7 @@ __all__ = [
     "Coroutine",
     "Cursor",
     "Key",
-    "Listenable",
+    "Hook",
     "MouseButton",
     "State",
     "Vector2",

@@ -9,7 +9,7 @@ from pygame.event import Event as PygameEvent
 from screeninfo import Monitor, get_monitors
 
 from ..core import Component, WindowSpec
-from ..listenable import Listenable
+from ..hook import Hook
 from ..utils import Vector2, filter_by_attrs, first, get_by_attrs
 
 if TYPE_CHECKING:
@@ -90,7 +90,7 @@ class _WindowWrapper:
         self._spec = spec
         self._icon = spec.icon
 
-        self.on_render = Listenable()
+        self.on_render = Hook()
 
         if spec.position is None:
             self.center_on_monitor()
