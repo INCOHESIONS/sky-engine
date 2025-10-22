@@ -16,7 +16,7 @@ type _KeyCallback = Callable[[Key], None]
 
 
 @final
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class _Keybinding:
     keys: tuple[Key, ...]
     action: Callable[[], None]
