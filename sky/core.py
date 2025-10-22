@@ -6,10 +6,12 @@ from dataclasses import KW_ONLY, dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Literal, final
 
 from pygame import Surface
-from singleton_decorator import singleton as untyped_singleton  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
+from singleton_decorator import singleton as untyped_singleton
+
+from sky.colors import BLACK  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
 
 from .types import Coroutine
-from .utils import Vector2
+from .utils import Color, Vector2
 
 if TYPE_CHECKING:
     from .app import App
@@ -25,7 +27,7 @@ __all__ = [
 @final
 @dataclass(slots=True, frozen=True)
 class WindowSpec:
-    """Defines information the window needs to have before mainloop. If `position` is None, the window will be centered on the screen."""
+    """Defines information necessary to create a window."""
 
     _: KW_ONLY
 
@@ -46,6 +48,9 @@ class WindowSpec:
 
     borderless: bool = False
     """Whether or not the window is borderless, which also means it has no decorations."""
+
+    fill: Color | None = BLACK
+    """The window's fill color. If `None`, `fill` will not be called on `pre_update`"""
 
     state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
     """What state the window should be initialized at. Defaults to windowed."""
@@ -72,7 +77,7 @@ class WindowSpec:
 @final
 @dataclass(slots=True, frozen=True)
 class AppSpec:
-    """Defines information the app needs to have before mainloop. If `window_spec` is None, a window will not be created."""
+    """Defines information the app needs to have before mainloop. If `window_spec` is None, a window will not be created (headless mode)."""
 
     _: KW_ONLY
 

@@ -8,6 +8,8 @@ import pygame
 from pygame.event import Event as PygameEvent
 from screeninfo import Monitor, get_monitors
 
+from sky import Color
+
 from ..core import Component, WindowSpec
 from ..hook import Hook
 from ..utils import Vector2, filter_by_attrs, first, get_by_attrs
@@ -62,12 +64,7 @@ class _WindowWrapper:
     _magic_size_offset: ClassVar = Vector2(16, 39)
 
     def __init__(self, /, *, spec: WindowSpec) -> None:
-        self._fullscreen = False
-        self._minimized = False
-        self._maximized = False
-
-        if spec.state != "windowed":
-            setattr(self, f"_{spec.state}", True)
+        self._spec = spec
 
         self._underlying = pygame.Window(
             position=spec.position or (0, 0),
@@ -84,19 +81,26 @@ class _WindowWrapper:
                 )
             },
         )
-
         _ = self._underlying.get_surface()  # necessary
 
-        self._spec = spec
-        self._icon = spec.icon
+        self._fullscreen = False
+        self._minimized = False
+        self._maximized = False
 
-        self.on_render = Hook()
+        if self._spec.state != "windowed":
+            setattr(self, f"_{self._spec.state}", True)
 
-        if spec.position is None:
+        if self._spec.position is None:
             self.center_on_monitor()
 
-        if spec.icon is not None:
-            self.icon = spec.icon
+        if self._spec.icon is not None:
+            self.icon = self._spec.icon
+
+        self.fill_color = self._spec.fill
+        self.on_render = Hook()
+
+        self.app.pre_update += self._pre_update
+        self.app.post_update += self.flip
 
     @property
     def spec(self) -> WindowSpec:
@@ -307,6 +311,16 @@ class _WindowWrapper:
             monitor or self.windowing.primary_monitor
         ).size / 2 - self.size / 2
 
+    def fill(self, color: Color, /) -> None:
+        """Fills the window with the specified color."""
+
+        self.underlying.fill(color)
+
+    def blit(self, surface: pygame.Surface, /, position: Vector2 | pygame.Rect) -> None:
+        """Blits the surface onto the window."""
+
+        self.surface.blit(surface, position)
+
     def destroy(self) -> None:
         """Destroys the window."""
 
@@ -319,6 +333,12 @@ class _WindowWrapper:
         self._underlying.flip()
 
     update = flip
+
+    def _pre_update(self) -> None:
+        """Pre-update callback."""
+
+        if self.fill_color:
+            self.fill(self.fill_color)
 
 
 @final
@@ -431,20 +451,20 @@ class Windowing(Component):
             If the window wasn't found.
         """
 
-        window = (
+        win = (
             get_by_attrs(self._windows, _underlying=window)
             if isinstance(window, pygame.Window)
             else window
         )
 
-        if window is None:
+        if win is None:
             raise ValueError(f"Window {window} not found")
 
-        if window is self.main_window:
+        if win is self.main_window:
             raise ValueError("Cannot remove main window")
 
-        self._windows.remove(window)
-        window.destroy()
+        self._windows.remove(win)
+        win.destroy()
 
     def clear_extras(self) -> None:
         """Removes all extra windows."""
@@ -457,15 +477,9 @@ class Windowing(Component):
 
         self._windows.append(_WindowWrapper(spec=self.spec))
 
-        self.app.post_update += self._post_update
         self.app.teardown += self.clear_extras
 
         self.app.events.add_callback(pygame.WINDOWCLOSE, self._handle_close)
-
-    # uses post_update to guarantee the window is flipped after any user-added components update for ease of rendering
-    def _post_update(self) -> None:
-        for window in self.windows:
-            window.flip()
 
     def _handle_close(self, event: pygame.event.Event, /) -> None:
         assert self.main_window
