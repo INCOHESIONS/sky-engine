@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from inspect import Parameter, isgeneratorfunction, signature
-from typing import Callable, Protocol, Self, runtime_checkable
+from typing import Any, Callable, Protocol, Self
 
 import pygame
 
@@ -14,7 +14,6 @@ from .yieldable import Yieldable
 __all__ = ["App"]
 
 
-@runtime_checkable
 class _CompatibleModule(Protocol):
     def init(self) -> None: ...
 
@@ -129,11 +128,7 @@ class App:
             Whether the app contains the component.
         """
 
-        return (
-            get_by_attrs(self._components, __class__=component) is not None
-            if isinstance(component, type)
-            else component in self._components
-        )
+        return self.has_component(component)
 
     @property
     def components(self) -> Sequence[Component]:
@@ -253,11 +248,7 @@ class App:
             If a type is passed that cannot be instanced with no arguments or if the app has already stopped running.
         """
 
-        if callable(component) and ilen(
-            param
-            for param in signature(component).parameters.values()
-            if param.default is Parameter.empty
-        ):
+        if callable(component) and self._callable_with_no_arguments(component):
             raise ValueError(
                 f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
@@ -392,6 +383,28 @@ class App:
             else filter(lambda c: isinstance(c, component), self._components)
         )  # pyright: ignore[reportReturnType]
 
+    def has_component(self, component: type[Component] | Component, /) -> bool:
+        """
+        Checks if the app contains a component.\n
+        If a type is passed, checks if the app contains any component of that type. Does not instance the type.
+
+        Parameters
+        ----------
+        component: `type[Component] | Component`
+            The component to check for.
+
+        Returns
+        -------
+        `bool`
+            Whether the app contains the component.
+        """
+
+        return (
+            get_by_attrs(self._components, __class__=component) is not None
+            if isinstance(component, type)
+            else component in self._components
+        )
+
     def register_module(
         self, module: _CompatibleModule, /, *, when: Listenable | None = None
     ) -> Self:
@@ -399,7 +412,7 @@ class App:
         Registers a module to be initialized and cleaned up when the app is started and stopped.
         Initializes the module immediately if `when` is None, otherwise initializes it when `when` is triggered.\n
         Modules must have `init` and `quit` functions.\n
-        Useful for pygame modules such as `freetype` and `mixer`.\n
+        Useful for pygame modules such as `freetype` and `mixer`.
 
         Parameters
         ----------
@@ -413,14 +426,7 @@ class App:
         -------
         `Self`
             The app, for chaining.
-
-        Raises
-        ------
-        `AssertionError`
-            If the module does not have `init` and `quit` functions.
         """
-
-        assert isinstance(module, _CompatibleModule)
 
         if when is None:
             module.init()
@@ -461,6 +467,13 @@ class App:
         """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
 
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+
+    def _callable_with_no_arguments(self, c: Callable[..., Any]) -> bool:
+        return not ilen(
+            param
+            for param in signature(c).parameters.values()
+            if param.default is Parameter.empty
+        )
 
     def _handle_possible_coroutine(
         self, func: Callable[[], Coroutine | None], /
