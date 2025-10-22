@@ -108,7 +108,8 @@ class _WindowWrapper:
     def underlying(self) -> pygame.Window:
         """
         The underlying pygame window.\n
-        Position, size and fullscreen, minimized and maximized states should not be modified directly through this property.
+        Position, size and fullscreen, minimized and maximized states should not be modified directly through this property.\n
+        Use carefully.
         """
 
         return self._underlying
@@ -330,8 +331,7 @@ class Windowing(Component):
         _WindowWrapper.app = self.app
         _WindowWrapper.windowing = self
 
-        self._main = None
-        self._extras: list[_WindowWrapper] = []
+        self._windows: list[_WindowWrapper] = []
 
         self._monitors = [
             _MonitorInfo.from_monitor(monitor, index=i)
@@ -348,19 +348,19 @@ class Windowing(Component):
         Use `app.window` for a version of this property that can't be `None`.
         """
 
-        return self._main
-
-    @property
-    def all_windows(self) -> list[_WindowWrapper]:
-        """All windows, including the main window."""
-
-        return self._extras if self._main is None else [self._main] + self._extras
+        return self._windows[0]
 
     @property
     def extra_windows(self) -> list[_WindowWrapper]:
         """All extra windows."""
 
-        return self._extras
+        return self._windows[1:]
+
+    @property
+    def windows(self) -> list[_WindowWrapper]:
+        """All windows, both main and extra."""
+
+        return self._windows.copy()
 
     @property
     def spec(self) -> WindowSpec | None:
@@ -389,12 +389,12 @@ class Windowing(Component):
 
     @override
     def update(self) -> None:
-        for window in self.all_windows:
+        for window in self.windows:
             window.on_render.notify()
 
     @override
     def stop(self) -> None:
-        for window in self.all_windows:
+        for window in self.windows:
             window.destroy()
 
     def add_extra(self, /, *, spec: WindowSpec) -> _WindowWrapper:
@@ -412,7 +412,7 @@ class Windowing(Component):
             The wrapper for the generated window.
         """
 
-        self._extras.append(wrapper := _WindowWrapper(spec=spec))
+        self._windows.append(wrapper := _WindowWrapper(spec=spec))
         return wrapper
 
     def remove_extra(self, window: _WindowWrapper | pygame.Window, /) -> None:
@@ -431,38 +431,43 @@ class Windowing(Component):
             If the window wasn't found.
         """
 
-        self._extras.remove(
-            get_by_attrs(self._extras, _underlying=window)
+        window = (
+            get_by_attrs(self._windows, _underlying=window)
             if isinstance(window, pygame.Window)
-            else window  # pyright: ignore[reportArgumentType]
+            else window
         )
+
+        if window is None:
+            raise ValueError(f"Window {window} not found")
+
+        if window is self.main_window:
+            raise ValueError("Cannot remove main window")
+
+        self._windows.remove(window)
         window.destroy()
 
     def clear_extras(self) -> None:
         """Removes all extra windows."""
 
-        for window in self._extras:
+        for window in self.extra_windows:
             self.remove_extra(window)
 
     def _initialize(self) -> None:
         assert self.spec
 
-        self._main = _WindowWrapper(spec=self.spec)
+        self._windows.append(_WindowWrapper(spec=self.spec))
 
         self.app.post_update += self._post_update
         self.app.teardown += self.clear_extras
 
-        self.app.events.on_event += self._handle_close
+        self.app.events.add_callback(pygame.WINDOWCLOSE, self._handle_close)
 
-    # uses post_update to guarantee the window is flipped after any user-added components update
+    # uses post_update to guarantee the window is flipped after any user-added components update for ease of rendering
     def _post_update(self) -> None:
-        for window in self.all_windows:
+        for window in self.windows:
             window.flip()
 
     def _handle_close(self, event: pygame.event.Event, /) -> None:
-        if event.type != pygame.WINDOWCLOSE:
-            return
-
         assert self.main_window
 
         if event.window == self.main_window.underlying:
