@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum, IntEnum, auto
+from enum import Enum, IntEnum, auto, unique
 from typing import Self, final
 
 import pygame
@@ -51,6 +51,7 @@ class InputEnum(IntEnum):
 
 
 @final
+@unique
 class MouseButton(InputEnum):
     """Mouse button enum."""
 
@@ -60,6 +61,7 @@ class MouseButton(InputEnum):
 
 
 @final
+@unique
 class Key(InputEnum):
     """Key enum."""
 
@@ -219,11 +221,11 @@ class Key(InputEnum):
     y = pygame.K_y
     z = pygame.K_z
     ç = 231
-    _ = 180
     tilde = 126
 
 
 @final
+@unique
 class State(Enum):
     """
     State of a key or button.\n
