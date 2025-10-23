@@ -1,8 +1,8 @@
 """Utilities, and extensions of `pygame` classes that replace certain methods with expection-less versions for ease of use."""
 
+from collections.abc import Generator, Iterable, Iterator
 from random import randint
 from typing import Any, Callable, Self, override
-from collections.abc import Generator, Iterable, Iterator
 
 from pygame import Color as PygameColor
 from pygame import Vector2 as PygameVector2
@@ -57,7 +57,7 @@ class Vector2(PygameVector2):
         return cls(1, 0)
 
     @override
-    def normalize(self):
+    def normalize(self) -> Self:
         """
         Normalizes the vector.\n
         Exception-less version of `pygame.Vector2.normalize`.
@@ -69,9 +69,9 @@ class Vector2(PygameVector2):
         """
 
         try:
-            return super().normalize()
+            return self.__class__(*super().normalize())
         except ValueError:
-            return Vector2()
+            return self.__class__()
 
     def direction_to(self, other: Self, /) -> Self:
         """
@@ -88,7 +88,7 @@ class Vector2(PygameVector2):
             The direction from this vector to the other vector.
         """
 
-        return (other - self).normalize()  # pyright: ignore[reportReturnType]
+        return (other - self).normalize()
 
     # probably premature optimization?
     # i mean, i'd look real stupid if this was slower just by virtue of being a python method as opposed to a c method
@@ -192,7 +192,7 @@ class Vector3(PygameVector3):
         return cls(0, 0, -1)
 
     @override
-    def normalize(self):
+    def normalize(self) -> Self:
         """
         Normalizes the vector.\n
         Exception-less version of `pygame.Vector3.normalize`.
@@ -204,9 +204,9 @@ class Vector3(PygameVector3):
         """
 
         try:
-            return super().normalize()
+            return self.__class__(*super().normalize())
         except ValueError:
-            return Vector3()
+            return self.__class__()
 
     def direction_to(self, other: Self, /) -> Self:
         """
@@ -223,7 +223,7 @@ class Vector3(PygameVector3):
             The direction from this vector to the other vector.
         """
 
-        return (other - self).normalize()  # pyright: ignore[reportReturnType]
+        return (other - self).normalize()
 
     # probably premature optimization?
     # i mean, i'd look real stupid if this was slower just by virtue of being a python method as opposed to a c method
@@ -302,9 +302,9 @@ class Color(PygameColor):
         Parameters
         ----------
         minimum : `int`
-            The minimum value for each component.
+            The minimum value for each component. Defaults to 0.
         maximum : `int`
-            The maximum value for each component.
+            The maximum value for each component. Defaults to 255.
 
         Returns
         -------
@@ -452,11 +452,15 @@ def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TD
     0
     >>> first([])
     None
+    >>> first([], default=True)
+    True
 
     Parameters
     ----------
     i : `Iterable[T]`
         The `Iterable` to get the first element from.
+    default : `TDefault`, optional
+        The default value to return if the `Iterable` is empty.
 
     Returns
     -------
@@ -482,11 +486,15 @@ def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDe
     9
     >>> last([])
     None
+    >>> last([], default=True)
+    True
 
     Parameters
     ----------
     i : `Iterable[T]`
         The `Iterable` to get the last element from.
+    default : `TDefault`, optional
+        The default value to return if the `Iterable` is empty.
 
     Returns
     -------
@@ -559,7 +567,7 @@ def animate(
         A function that returns the next step of the animation.\n
         For general real-time based animations, use `app.chrono.deltatime`.
     normalize : `bool`
-        Whether to normalize the animation to the range [0, 1].\n
+        Whether to normalize the animation to the range [0, 1]. `True` by default.
 
     Yields
     ------
