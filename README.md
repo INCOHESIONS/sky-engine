@@ -1,6 +1,6 @@
 # Sky Engine
 
-Makes `pygame` ([pygame-ce](https://github.com/pygame-community/pygame-ce), more specifically) less painful to use. More like a wrapper than an engine. Fully typed with [basedpyright](https://github.com/DetachHead/basedpyright).
+Makes `pygame` (or rather, [pygame-ce](https://github.com/pygame-community/pygame-ce), more specifically) less painful to use. More like a wrapper than an engine. Fully typed with [basedpyright](https://github.com/DetachHead/basedpyright).
 
 Theoretically cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
 
@@ -49,6 +49,6 @@ class Player(Component):
 app.mainloop()
 ```
 
-Although that example uses `pygame.draw`, one may use any other library that supports Vulkan or OpenGL. See [this](https://github.com/incohesions/sky-engine/tree/main/examples/hello_triangle.py) for an example using `zengl`.
+Although this example uses `pygame.draw` (software rendering), one may use Vulkan or OpenGL libraries for more hardware rendering. See [this](https://github.com/incohesions/sky-engine/tree/main/examples/hello_triangle.py) for an example using `zengl`.
 
 For examples on other Sky Engine features, see the [examples](https://github.com/incohesions/sky-engine/tree/main/examples) folder.
