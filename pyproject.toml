@@ -1,15 +1,16 @@
 [tool.poetry]
 name = "sky-engine"
-version = "0.0.1"
 description = "A wrapper around pygame that makes it less painful to use."
 authors = ["iNCOHESiONS"]
+version = "0.0.1"
+
 license = "MIT"
 readme = "README.md"
+
 repository = "https://github.com/incohesions/sky-engine"
 homepage = "https://github.com/incohesions/sky-engine"
 
 keywords = ["pygame", "gamedev"]
-
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -23,10 +24,12 @@ classifiers = [
     "Programming Language :: Python",
 ]
 
+requires-python = ">=3.13"
+
 [tool.poetry.dependencies]
 python = "^3.13"
 pygame-ce = "^2.5.3"
-singleton-decorator = "^1.0.0"
+singleton-decorator = "==1.0.0"
 screeninfo = "^0.8.1"
 
 [tool.basedpyright]
@@ -35,9 +38,9 @@ pythonVersion="3.13"
 
 reportAny=false
 reportExplicitAny=false
-reportUnannotatedClassAttribute=false
 reportImportCycles=false  # handled by `if TYPE_CHECKING`, which basedpyright can't detect, apparently
 reportPropertyTypeMismatch=false
+reportUnannotatedClassAttribute=false
 reportUnusedCallResult=false
 
 [tool.ruff.format]
