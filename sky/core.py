@@ -6,10 +6,11 @@ from dataclasses import KW_ONLY, dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Literal, final
 
 from pygame import Surface
-from singleton_decorator import singleton as untyped_singleton
+from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
+    singleton as untyped_singleton,  # pyright: ignore[reportUnknownVariableType]
+)
 
-from sky.colors import BLACK  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
-
+from .colors import BLACK
 from .types import Coroutine
 from .utils import Color, Vector2
 
@@ -49,7 +50,7 @@ class WindowSpec:
     borderless: bool = False
     """Whether or not the window is borderless, which also means it has no decorations."""
 
-    fill: Color | None = BLACK
+    fill: Color | None = field(default_factory=lambda: BLACK)
     """The window's fill color. If `None`, `fill` will not be called on `pre_update`"""
 
     state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
