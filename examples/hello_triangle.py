@@ -1,3 +1,5 @@
+# pyright: reportUninitializedInstanceVariable=false
+
 # Based on https://github.com/pygame-community/pygame-ce/blob/main/examples/window_opengl.py
 
 from typing import override

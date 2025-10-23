@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from random import randint
+from typing import override
 
 import pygame
 
@@ -20,6 +21,7 @@ class Circle(Component):
     radius: float = field(default_factory=lambda: randint(10, 20))
     color: Color = field(default_factory=Color.random)
 
+    @override
     def update(self) -> None:
         if app.mouse.is_pressed(MouseButton.right):
             self.acceleration += self.position.direction_to(app.mouse.position)
@@ -31,6 +33,8 @@ class Circle(Component):
         self.velocity += self.acceleration
         self.position += self.velocity
         self.acceleration = Vector2()
+
+        self.render()
 
     def render(self) -> None:
         pygame.draw.circle(
