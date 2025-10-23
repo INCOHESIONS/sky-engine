@@ -1,7 +1,7 @@
 from collections.abc import Sequence
+from cProfile import run as profile
 from inspect import Parameter, isgeneratorfunction, signature
 from typing import Any, Callable, Protocol, Self
-from cProfile import run as profile
 
 import pygame
 
@@ -239,7 +239,7 @@ class App:
         ----------
         component: `type[Component] | Component`
             The component, or its `type`, to add. Will be instanced immediately if a `type` is passed.
-        when: `Hook | None`
+        when: `Hook | None`, optional
             The Hook to use as a trigger for adding the component.
             If `None` (the default), the component will be added immediately.\n
             Basically a shorthand for `when += lambda: app.add_component(component)`.

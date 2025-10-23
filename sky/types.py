@@ -1,7 +1,7 @@
-"""Core engine types. All of them are declared with the `type` keyword."""
+"""Core engine types."""
 
-from typing import TYPE_CHECKING, Literal
 from collections.abc import Generator
+from typing import TYPE_CHECKING, Literal
 
 import pygame
 

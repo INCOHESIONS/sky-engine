@@ -8,11 +8,9 @@ import pygame
 from pygame.event import Event as PygameEvent
 from screeninfo import Monitor, get_monitors
 
-from sky import Color
-
 from ..core import Component, WindowSpec
 from ..hook import Hook
-from ..utils import Vector2, filter_by_attrs, first, get_by_attrs
+from ..utils import Color, Vector2, filter_by_attrs, first, get_by_attrs
 
 if TYPE_CHECKING:
     from ..app import App
@@ -60,8 +58,8 @@ class _WindowWrapper:
     app: ClassVar[App]
     windowing: ClassVar[Windowing]
 
-    _magic_fullscreen_position: ClassVar = Vector2(-8, -31)
-    _magic_size_offset: ClassVar = Vector2(16, 39)
+    _magic_fullscreen_position: ClassVar[Vector2] = Vector2(-8, -31)
+    _magic_size_offset: ClassVar[Vector2] = Vector2(16, 39)
 
     def __init__(self, /, *, spec: WindowSpec) -> None:
         self._spec = spec
@@ -93,6 +91,7 @@ class _WindowWrapper:
         if self._spec.position is None:
             self.center_on_monitor()
 
+        self._icon = self._spec.icon
         if self._spec.icon is not None:
             self.icon = self._spec.icon
 
@@ -125,15 +124,21 @@ class _WindowWrapper:
         return self._underlying.get_surface()
 
     @property
-    def is_closed(self) -> bool:
-        """Whether the window is closed."""
+    def is_open(self) -> bool:
+        """Whether the window is open."""
 
         try:
             _ = self.surface
         except pygame.error:
-            return True
+            return False
 
-        return False
+        return True
+
+    @property
+    def is_closed(self) -> bool:
+        """Whether the window is closed."""
+
+        return not self.is_open
 
     @property
     def title(self) -> str:
@@ -314,7 +319,7 @@ class _WindowWrapper:
     def fill(self, color: Color, /) -> None:
         """Fills the window with the specified color."""
 
-        self.underlying.fill(color)
+        self.surface.fill(color)
 
     def blit(self, surface: pygame.Surface, /, position: Vector2 | pygame.Rect) -> None:
         """Blits the surface onto the window."""

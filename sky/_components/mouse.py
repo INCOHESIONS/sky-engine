@@ -5,7 +5,7 @@ import pygame
 from ..core import Component
 from ..enums import Cursor, MouseButton, State
 from ..hook import Hook
-from ..types import MouseButtonLike, CursorLike
+from ..types import CursorLike, MouseButtonLike
 from ..utils import Vector2
 
 __all__ = ["Mouse"]
