@@ -49,7 +49,11 @@ class Chrono(Component):
     def avg_fps(self) -> float:
         """The average framerate achieved since the start of the app."""
 
-        return self.frames / self.time_since_start.total_seconds()
+        return (
+            self.frames / self.time_since_start.total_seconds()
+            if self.time_since_start is not None
+            else 0
+        )
 
     @override
     def start(self) -> None:
