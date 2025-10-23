@@ -1,5 +1,5 @@
-from typing import Any, Callable, Self, final
 from collections.abc import Iterator
+from typing import Any, Callable, Self, final
 
 import pygame
 from pygame.event import Event as PygameEvent
@@ -168,7 +168,9 @@ class Events(Component):
 
         return list(filter_by_attrs(self._events, type=type))
 
-    def post(self, event: PygameEvent | int, /) -> None:
+    def post(
+        self, event: PygameEvent | int, /, *, attrs: dict[str, Any] | None = None
+    ) -> None:
         """
         Posts an event to the event queue to be handled next frame.
 
@@ -176,9 +178,13 @@ class Events(Component):
         ----------
         event: `pygame.event.Event | int`
             The event to post.
+        attrs: `dict[str, Any] | None`, optional
+            Additional attributes to add to the event. Only applies if `event` is an `int`.
         """
 
-        pygame.event.post(PygameEvent(event) if isinstance(event, int) else event)
+        pygame.event.post(
+            PygameEvent(event, attrs or {}) if isinstance(event, int) else event
+        )
 
     def cancel(self, event: PygameEvent | int, /) -> None:
         """
