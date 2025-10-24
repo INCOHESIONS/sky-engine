@@ -13,6 +13,7 @@ __all__ = [
     "Cursor",
     "InputEnum",
     "Key",
+    "Modifier",
     "MouseButton",
     "State",
 ]
@@ -226,6 +227,24 @@ class Key(InputEnum):
     ç = 231
 
     _ = underscore  # alias
+
+
+@final
+@unique
+class Modifier(Enum):
+    """Modifier keys."""
+
+    left_shift = Key.left_shift
+    right_shift = Key.right_shift
+    left_ctrl = Key.left_ctrl
+    right_ctrl = Key.right_ctrl
+    left_alt = Key.left_alt
+    right_alt = Key.right_alt
+    left_meta = Key.left_meta
+    right_meta = Key.right_meta
+    capslock = Key.capslock
+    numlock = Key.numlock
+    mode = Key.mode
 
 
 @final

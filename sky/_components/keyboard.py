@@ -1,13 +1,12 @@
-from dataclasses import dataclass
-from typing import Callable, Literal, Self, final, override
+from typing import Callable, Literal, final, override
 
 import pygame
 
-from ..core import Component
+from ..core import Component, Keybinding
 from ..enums import Key, State
 from ..hook import Hook
 from ..types import KeyLike
-from ..utils import Vector2, Vector3, get_by_attrs
+from ..utils import Vector2, Vector3
 
 __all__ = ["Keyboard"]
 
@@ -16,21 +15,15 @@ type _KeyCallback = Callable[[Key], None]
 
 
 @final
-@dataclass(slots=True, frozen=True)
-class _Keybinding:
-    keys: tuple[Key, ...]
-    action: Callable[[], None]
-    state: State = State.downed
-
-
-@final
 class Keyboard(Component):
     """Handles keyboard input."""
 
     def __init__(self) -> None:
         self._states: dict[Key, State] = {key: State.none for key in Key}
-        self._keybindings: list[_Keybinding] = []
         self._text = ""
+
+        self._keybindings: list[Keybinding] = []
+        self._active_keybindings: list[Keybinding] = []
 
         self.on_key = Hook[_StatefulKeyCallback]()
 
@@ -50,8 +43,24 @@ class Keyboard(Component):
 
         return self._text
 
+    @property
+    def keybindings(self) -> list[Keybinding]:
+        """All registered keybindings."""
+
+        return self._keybindings.copy()
+
+    @property
+    def active_keybindings(self) -> list[Keybinding]:
+        """All currently active keybindings."""
+
+        return self._active_keybindings.copy()
+
     @override
     def update(self) -> None:
+        previously_active_keybindings = self._active_keybindings.copy()
+
+        self._active_keybindings.clear()
+
         _pressed = pygame.key.get_pressed()
         _downed = pygame.key.get_just_pressed()
         _released = pygame.key.get_just_released()
@@ -75,83 +84,11 @@ class Keyboard(Component):
         )
 
         for keybinding in self._keybindings:
-            if all(self.get_state(key) == keybinding.state for key in keybinding.keys):
-                keybinding.action()
-
-    def add_keybinding(
-        self,
-        keys: KeyLike | tuple[KeyLike, ...],
-        action: Callable[[], None],
-        state: State = State.downed,
-        /,
-    ) -> Self:
-        """
-        Adds a keybinding.
-
-        Parameters
-        ----------
-        keys: `KeyLike | tuple[KeyLike, ...]`
-            The key or keys to bind the action to.
-        action: `Callable[[], None]`
-            The action to bind.
-        state: `State`
-            The state the action should be triggered in.
-
-        Returns
-        -------
-        `Self`
-            The keyboard, for chaining.
-        """
-
-        converted = tuple(
-            map(Key.convert, (keys if isinstance(keys, tuple) else (keys,)))
-        )
-        self._keybindings.append(_Keybinding(converted, action, state))
-        return self
-
-    def add_keybindings(
-        self,
-        keybindings: dict[KeyLike | tuple[KeyLike, ...], Callable[[], None]],
-        /,
-    ) -> Self:
-        """
-        Adds multiple keybindings at once.
-
-        Parameters
-        ----------
-        keybindings: `dict[KeyLike | tuple[KeyLike, ...], Callable[[], None]]`
-            The keybindings to add.
-
-        Returns
-        -------
-        `Self`
-            The keyboard, for chaining.
-        """
-
-        for keys, action in keybindings.items():
-            self.add_keybinding(keys, action)
-        return self
-
-    def remove_keybinding(self, keys: Key | tuple[Key, ...], /) -> None:
-        """
-        Removes a keybinding.
-
-        Parameters
-        ----------
-        keys: `Key | tuple[Key, ...]`
-            The key or keys used by the keybinding.
-
-        Raises
-        ------
-        `ValueError`
-            If no keybinding was found for the specified keys.
-        """
-
-        keybinding = get_by_attrs(
-            self._keybindings, keys=keys if isinstance(keys, tuple) else (keys,)
-        )
-
-        self._keybindings.remove(keybinding)  # pyright: ignore[reportArgumentType]
+            if self.is_active(keybinding):
+                keybinding.on_activation.notify()
+                self._active_keybindings.append(keybinding)
+            elif keybinding in previously_active_keybindings:
+                keybinding.on_deactivation.notify()
 
     def get_state(self, key: KeyLike, /) -> State:
         """
@@ -256,6 +193,23 @@ class Keyboard(Component):
 
         return self.is_state(key, State.released)
 
+    def is_active(self, keybinding: Keybinding, /) -> bool:
+        """
+        Checks if a keybinding is active.
+
+        Parameters
+        ----------
+        keybinding: `Keybinding`
+            The keybinding to check.
+
+        Returns
+        -------
+        `bool`
+            Whether the keybinding is active.
+        """
+
+        return all(self.is_state(key, state) for key, state in keybinding.keys.items())
+
     def any(self, state: State = State.none, /) -> bool:
         """
         Checks if any key is in a certain state.
@@ -278,6 +232,35 @@ class Keyboard(Component):
             else self.get_state(key) != State.none
             for key in self._states
         )
+
+    def add_keybinding(self, keybinding: Keybinding, /) -> None:
+        """
+        Adds a keybinding to the keyboard.
+
+        Parameters
+        ----------
+        keybinding: `Keybinding`
+            The keybinding to add.
+        """
+
+        self._keybindings.append(keybinding)
+
+    def remove_keybinding(self, keybinding: Keybinding, /) -> None:
+        """
+        Removes a keybinding from the keyboard.
+
+        Parameters
+        ----------
+        keybinding: `Keybinding`
+            The keybinding to remove.
+
+        Raises
+        ------
+        `ValueError`
+            If the keybinding is not found.
+        """
+
+        self._keybindings.remove(keybinding)
 
     def get_axis(
         self, neg: KeyLike, pos: KeyLike, /, *, state: State = State.pressed

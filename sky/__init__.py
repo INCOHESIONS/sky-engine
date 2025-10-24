@@ -25,7 +25,7 @@ del environ
 import pygame
 
 from .app import App
-from .core import AppSpec, Component, WindowSpec
+from .core import AppSpec, Component, Keybinding, WindowSpec
 from .enums import Cursor, Key, MouseButton, State
 from .hook import Hook
 from .types import Coroutine
@@ -45,8 +45,9 @@ __all__ = [
     "Component",
     "Coroutine",
     "Cursor",
-    "Key",
     "Hook",
+    "Key",
+    "Keybinding",
     "MouseButton",
     "State",
     "Vector2",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import TYPE_CHECKING, ClassVar, Literal, final
+from typing import TYPE_CHECKING, Callable, ClassVar, Literal, Self, final
 
 from pygame import Surface
 from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
@@ -11,6 +11,8 @@ from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
 )
 
 from .colors import BLACK
+from .enums import Key, Modifier, State
+from .hook import Hook
 from .types import Coroutine
 from .utils import Color, Vector2
 
@@ -20,9 +22,51 @@ if TYPE_CHECKING:
 __all__ = [
     "AppSpec",
     "Component",
+    "Keybinding",
     "singleton",
     "WindowSpec",
 ]
+
+
+@final
+@dataclass(slots=True)
+class Keybinding:
+    """Defines a keybinding."""
+
+    keys: dict[Key, State]
+    on_activation: Hook = field(default_factory=Hook)
+    on_deactivation: Hook = field(default_factory=Hook)
+
+    def __post_init__(self):
+        if not self.keys:
+            raise ValueError("Keybinding must have at least one key")
+
+    @classmethod
+    def simple(
+        cls,
+        key: Key,
+        /,
+        *,
+        action: Callable[[], None],
+        state: State = State.downed,
+    ) -> Self:
+        """Creates a keybinding with a single key and an action."""
+
+        return cls({key: state}, Hook([action]))
+
+    @classmethod
+    def modifier(
+        cls,
+        key: Key,
+        /,
+        modifier: Modifier,
+        *,
+        action: Callable[[], None],
+        state: State = State.downed,
+    ) -> Self:
+        """Creates a keybinding that requires a modifier to be pressed."""
+
+        return cls({modifier.value: State.pressed, key: state}, Hook([action]))
 
 
 @final
@@ -60,7 +104,7 @@ class WindowSpec:
     """The backend to use for the window. Software by default."""
 
     initialization: Literal["immediate", "deferred"] = "immediate"
-    """Only valid for the main window. Whether to initialize the window immediately or wait until `mainloop` is called. This is useful for adding callbacks to the window before the app is started."""
+    """Whether or not the main window should be initialized immediately or wait until `mainloop` is called. This is useful for adding callbacks to the window before the app has started."""
 
     @property
     def is_software(self) -> bool:
