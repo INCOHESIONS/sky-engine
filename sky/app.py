@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 from cProfile import run as profile
-from inspect import Parameter, isgeneratorfunction, signature
-from typing import Any, Callable, Protocol, Self
+from inspect import isgeneratorfunction
+from typing import Callable, Protocol, Self
 
 import pygame
 
@@ -9,7 +9,7 @@ from ._components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import AppSpec, Component, WindowSpec, singleton
 from .hook import Hook
 from .types import Coroutine
-from .utils import first, get_by_attrs, ilen
+from .utils import callable_with_no_arguments, first, get_by_attrs
 from .yieldable import Yieldable
 
 __all__ = ["App"]
@@ -270,7 +270,7 @@ class App:
         if self.has_stopped:
             raise ValueError("The app has already stopped running!")
 
-        if callable(component) and not self._callable_with_no_arguments(component):
+        if callable(component) and not callable_with_no_arguments(component):
             raise ValueError(
                 f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
@@ -500,14 +500,6 @@ class App:
         """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
 
         pygame.event.post(pygame.event.Event(pygame.QUIT))
-
-    def _callable_with_no_arguments(self, c: Callable[..., Any]) -> bool:
-        count = ilen(
-            param
-            for param in signature(c).parameters.values()
-            if param.default is Parameter.empty
-        )
-        return count == 0
 
     def _handle_possible_coroutine(
         self, func: Callable[[], Coroutine | None], /

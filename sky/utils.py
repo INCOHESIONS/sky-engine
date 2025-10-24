@@ -1,6 +1,7 @@
 """Utilities, and extensions of `pygame` classes that replace certain methods with expection-less versions for ease of use."""
 
 from collections.abc import Generator, Iterable, Iterator
+from inspect import Parameter, signature
 from random import randint
 from typing import Any, Callable, Self, override
 
@@ -524,6 +525,29 @@ def ilen(i: Iterable[Any], /) -> int:
     """
 
     return sum(1 for _ in i)  # faster than len(tuple(i)) or len(list(i))
+
+
+def callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
+    """
+    Checks whether or not the given `Callable` can be called with no arguments.
+
+    Parameters
+    ----------
+    callable : `Callable[..., Any]`
+        The `Callable` to check.
+
+    Returns
+    -------
+    `bool`
+        Whether or not the `Callable` can be called with no arguments.
+    """
+
+    count = ilen(
+        param
+        for param in signature(callable).parameters.values()
+        if param.default is Parameter.empty
+    )
+    return count == 0
 
 
 def animate(
