@@ -45,9 +45,8 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
     They can also be used as decorators in coroutines:
     ```python
-    from sky import App, WaitForSeconds
+    from sky import App, WaitForSeconds, Coroutine
     from sky.colors import BLUE, RED
-    from sky.types import Coroutine
 
     app = App()
 
@@ -113,11 +112,9 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     def __iter__(self) -> Iterator[TCallback]:
         return iter(self._callbacks)
 
-    def __call__[V: Callable[[], Coroutine]](
-        self, callback: TCallback | V
-    ) -> TCallback | V:
-        """Allows Hooks to be used as decorators."""
-
+    def __call__[C: Callable[[], Coroutine]](
+        self, callback: TCallback | C, /
+    ) -> TCallback | C:
         if get_type_hints(callback).get("return", None) is Coroutine:
 
             def __add(*args: Any, **kwargs: Any) -> None:  # pyright: ignore[reportUnusedParameter]
@@ -129,17 +126,29 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
         return callback
 
-    def __iadd__(self, callback: TCallback) -> Self:
+    def __iadd__(self, callback: TCallback, /) -> Self:
         self.add_callback(callback)
         return self
 
-    def __isub__(self, callback: TCallback) -> Self:
+    def __isub__(self, callback: TCallback, /) -> Self:
         self.remove_callback(callback)
         return self
 
     @property
+    def cancellable(self) -> bool:
+        """Whether or not this `Hook` can be cancelled."""
+
+        return self._cancellable
+
+    @property
+    def once(self) -> bool:
+        """Whether or not this `Hook` can only be called once."""
+
+        return self._once
+
+    @property
     def called(self) -> bool:
-        """Whether or not this Hook has already notified its callbacks at least once."""
+        """Whether or not this `Hook` has already notified its callbacks at least once."""
 
         return self._called
 
