@@ -25,8 +25,7 @@ del environ
 import pygame
 
 from .app import App
-from .core import Component, Keybinding
-from .enums import Cursor, Key, MouseButton, State
+from .core import Component, Cursor, Key, Keybinding, MouseButton, State
 from .hook import Hook
 from .spec import AppSpec, WindowSpec
 from .types import Coroutine

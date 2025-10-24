@@ -2,8 +2,7 @@ from typing import Callable, final, override
 
 import pygame
 
-from ..core import Component
-from ..enums import Cursor, MouseButton, State
+from ..core import Component, Cursor, MouseButton, State
 from ..hook import Hook
 from ..types import CursorLike, MouseButtonLike
 from ..utils import Vector2

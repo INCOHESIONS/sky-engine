@@ -9,9 +9,13 @@ from pygame import Color as PygameColor
 from pygame import Vector2 as PygameVector2
 from pygame import Vector3 as PygameVector3
 from pygame.typing import SequenceLike
+from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
+    singleton as untyped_singleton,  # pyright: ignore[reportUnknownVariableType]
+)
 
 __all__ = [
     "animate",
+    "callable_with_no_arguments",
     "clamp",
     "Color",
     "filter_by_attrs",
@@ -19,6 +23,7 @@ __all__ = [
     "get_by_attrs",
     "ilen",
     "last",
+    "singleton",
     "Vector2",
     "Vector3",
 ]
@@ -647,6 +652,12 @@ def clamp(value: float, minimum: float, maximum: float, /) -> float:
     """
 
     return max(minimum, min(value, maximum))
+
+
+def singleton[T: type](cls: T) -> T:
+    """Makes the decorated class a singleton while properly keeping its type."""
+
+    return untyped_singleton(cls)  # pyright: ignore[reportReturnType]
 
 
 constrain = clamp  # alias

@@ -6,11 +6,11 @@ from typing import Callable, Protocol, Self
 import pygame
 
 from ._components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
-from .core import Component, singleton
+from .core import Component
 from .hook import Hook
 from .spec import AppSpec, WindowSpec
 from .types import Coroutine
-from .utils import callable_with_no_arguments, first, get_by_attrs
+from .utils import callable_with_no_arguments, first, get_by_attrs, singleton
 from .yieldable import Yieldable
 
 __all__ = ["App"]

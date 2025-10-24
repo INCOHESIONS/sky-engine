@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 import pygame
 
 if TYPE_CHECKING:
-    from .enums import Cursor, Key, MouseButton
+    from .core import Cursor, Key, MouseButton
     from .yieldable import Yieldable
 
 

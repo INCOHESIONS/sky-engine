@@ -2,8 +2,7 @@ from typing import Callable, Literal, final, override
 
 import pygame
 
-from ..core import Component, Keybinding
-from ..enums import Key, State
+from ..core import Component, Key, Keybinding, State
 from ..hook import Hook
 from ..types import KeyLike
 from ..utils import Vector2, Vector3
