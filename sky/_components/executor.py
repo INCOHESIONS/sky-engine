@@ -1,5 +1,7 @@
 from typing import Callable, final, override
 
+from sky.utils import callable_with_no_arguments
+
 from ..core import Component
 from ..types import Coroutine
 from ..yieldable import WaitForFrames, Yieldable
@@ -33,7 +35,7 @@ class Executor(Component):
             coroutine = coroutine()
 
         if coroutine in self._coroutines:
-            raise RuntimeError("Tried adding the same exact coroutine twice.")
+            raise RuntimeError("The same exact coroutine cannot be added twice.")
 
         self._step_coroutine(coroutine)
 
@@ -53,6 +55,11 @@ class Executor(Component):
         """
 
         self._coroutines.pop(coroutine)
+
+    def stop_all_coroutines(self) -> None:
+        """Stops all `Coroutine`s."""
+
+        self._coroutines.clear()
 
     @override
     def update(self) -> None:
@@ -75,11 +82,11 @@ class Executor(Component):
             return None
 
         if isinstance(value, type):
-            try:
+            if callable_with_no_arguments(value):
                 return value()
-            except TypeError:
-                raise RuntimeError(
-                    f"The coroutine {coroutine} returned a type ({value.__name__}) that can't be instanced without arguments."
-                )
+
+            raise RuntimeError(
+                f"The type ({value.__name__}) cannot be instanced without arguments!"
+            )
 
         return value or WaitForFrames()
