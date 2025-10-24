@@ -25,9 +25,10 @@ del environ
 import pygame
 
 from .app import App
-from .core import AppSpec, Component, Keybinding, WindowSpec
+from .core import Component, Keybinding
 from .enums import Cursor, Key, MouseButton, State
 from .hook import Hook
+from .spec import AppSpec, WindowSpec
 from .types import Coroutine
 from .utils import Color, Vector2
 from .yieldable import WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
