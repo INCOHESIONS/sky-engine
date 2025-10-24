@@ -208,7 +208,7 @@ class Keyboard(Component):
             Whether the keybinding is active.
         """
 
-        return all(self.is_state(key, state) for key, state in keybinding.keys.items())
+        return all(self.is_state(key, state) for key, state in keybinding)
 
     def any(self, state: State = State.none, /) -> bool:
         """

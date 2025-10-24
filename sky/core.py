@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass, field
 from typing import TYPE_CHECKING, Callable, ClassVar, Literal, Self, final
 
@@ -33,40 +34,58 @@ __all__ = [
 class Keybinding:
     """Defines a keybinding."""
 
-    keys: dict[Key, State]
+    _: KW_ONLY
+
+    keymap: dict[Key, State]
+
     on_activation: Hook = field(default_factory=Hook)
     on_deactivation: Hook = field(default_factory=Hook)
 
     def __post_init__(self):
-        if not self.keys:
+        if not self.keymap:
             raise ValueError("Keybinding must have at least one key")
 
+    def __iter__(self) -> Iterator[tuple[Key, State]]:
+        return iter(self.keymap.items())
+
     @classmethod
-    def simple(
+    def make(
         cls,
         key: Key,
         /,
         *,
         action: Callable[[], None],
+        modifier: Modifier | None = None,
         state: State = State.downed,
     ) -> Self:
-        """Creates a keybinding with a single key and an action."""
+        """
+        Helper method to create a keybinding.
 
-        return cls({key: state}, Hook([action]))
+        Parameters
+        ----------
+        key : `Key`
+            The key to bind.
+        action : `Callable[[], None]`
+            The action to perform when the keybinding is activated.
+        modifier : `Modifier | None`, optional
+            A `Modifier` key whose state has to be `State.pressed` for the keybinding to activate.\n
+            Useful for keybindings like CTRL + C, for example.
+        state : `State`, optional
+            The state of the key. `State.downed` by default.
 
-    @classmethod
-    def modifier(
-        cls,
-        key: Key,
-        /,
-        modifier: Modifier,
-        *,
-        action: Callable[[], None],
-        state: State = State.downed,
-    ) -> Self:
-        """Creates a keybinding that requires a modifier to be pressed."""
+        Returns
+        -------
+        `Self`
+            The created keybinding.
+        """
 
-        return cls({modifier.value: State.pressed, key: state}, Hook([action]))
+        if modifier is not None:
+            return cls(
+                keymap={modifier.value: State.pressed, key: state},
+                on_activation=Hook([action]),
+            )
+
+        return cls(keymap={key: state}, on_activation=Hook([action]))
 
 
 @final
