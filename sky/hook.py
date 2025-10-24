@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import functools
+from bisect import insort
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Self, get_type_hints
 
 from .types import Coroutine
+from .utils import first
 
 if TYPE_CHECKING:
     from sky import App
@@ -61,6 +63,28 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     app.mainloop()
     ```
 
+    They can also be added with priorities:
+    ```python
+    from sky import Hook
+
+    on_something = Hook()
+
+
+    def callback1() -> None:
+        print("This will execute second")
+
+
+    def callback2() -> None:
+        print("This will execute first")
+
+
+    on_something.add_callback(callback1, priority=0)
+    on_something.add_callback(callback2, priority=100)
+
+
+    on_something.notify()
+    ```
+
     They can also be cancelled: if a callback returns a truthy value, and `cancellable` is set to `True`, execution of all following callbacks is stopped.
     ```python
     from typing import Callable
@@ -104,13 +128,13 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     app: ClassVar[App]
 
     def __init__(self, cancellable: bool = False, once: bool = False) -> None:
-        self._callbacks: list[TCallback] = []
+        self._callbacks: list[tuple[TCallback, int]] = []
         self._cancellable = cancellable
         self._once = once
         self._called = False
 
     def __iter__(self) -> Iterator[TCallback]:
-        return iter(self._callbacks)
+        return iter(c for c, _ in self._callbacks)
 
     def __call__[C: Callable[[], Coroutine]](
         self, callback: TCallback | C, /
@@ -125,6 +149,10 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
             self.add_callback(callback)  # pyright: ignore[reportArgumentType]
 
         return callback
+
+    def __imatmul__(self, callback_with_priority: tuple[TCallback, int], /) -> Self:
+        self.add_callback(callback_with_priority[0], priority=callback_with_priority[1])
+        return self
 
     def __iadd__(self, callback: TCallback, /) -> Self:
         self.add_callback(callback)
@@ -152,7 +180,9 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
         return self._called
 
-    def add_callback(self, callback: TCallback, /) -> None:
+    def add_callback(
+        self, callback: TCallback, /, *, priority: Literal["min", "max"] | int = 0
+    ) -> None:
         """
         Adds a callback to the list of callbacks.
 
@@ -160,9 +190,22 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
         ----------
         callback: `TCallback`
             The callback to add.
+        priority: `Literal["min", "max"] | int`
+            The priority of the callback.\n
+            If set to `"min"`, the callback will be added with a priority of the current lowest priority callback minus 1. If this is the first callback being added, it will have a priority of `-100`.\n
+            If set to `"max"`, the callback will be added with a priority of the current highest priority callback plus 1. If this is the first callback being added, it will have a priority of `100`.\n
+            If set to an `int`, the callback will simply be added with that priority.
         """
 
-        self._callbacks.append(callback)
+        if isinstance(priority, str):
+            if priority == min:
+                priority = min((p for _, p in self._callbacks), default=-99) - 1
+            elif priority == max:
+                priority = max((p for _, p in self._callbacks), default=99) + 1
+            else:
+                raise ValueError("Invalid priority.")
+
+        insort(self._callbacks, (callback, priority), key=lambda x: -x[1])
 
     def remove_callback(self, callback: TCallback, /) -> None:
         """
@@ -179,7 +222,12 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
             If the callback wasn't found.
         """
 
-        self._callbacks.remove(callback)
+        if (
+            remove := first(filter(lambda c: c[0] == callback, self._callbacks))
+        ) is None:
+            raise ValueError("Callback not found.")
+
+        self._callbacks.remove(remove)
 
     def clear(self) -> None:
         """Clears the list of callbacks."""
@@ -188,7 +236,7 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
     def notify(self, /, *args: Any, **kwargs: Any) -> None:
         """
-        Notifies all callbacks
+        Notifies all callbacks.
 
         Raises
         ------
