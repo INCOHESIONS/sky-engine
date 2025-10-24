@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Self, final, override
+from typing import TYPE_CHECKING, Callable, ClassVar, Self, final, override
 
 import pygame
 from pygame.event import Event as PygameEvent
@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
 
 __all__ = ["Windowing"]
+
+type _PygameEventCallback = Callable[[PygameEvent], None]
 
 
 # kind of assuming both pygame and screeninfo use the same indexing system here to match monitors to refresh rates
@@ -96,10 +98,24 @@ class _WindowWrapper:
             self.icon = self._spec.icon
 
         self.fill_color = self._spec.fill
+
+        self._hook_map: dict[int, Hook[_PygameEventCallback]] = {}
+
         self.on_render = Hook()
+
+        self.on_mouse_enter = self._make_hook(pygame.WINDOWENTER)
+        self.on_mouse_leave = self._make_hook(pygame.WINDOWLEAVE)
+        self.on_mouse_move = self._make_hook(pygame.MOUSEMOTION)
+
+        self.on_focus_gained = self._make_hook(pygame.WINDOWFOCUSGAINED)
+        self.on_focus_lost = self._make_hook(pygame.WINDOWFOCUSLOST)
+
+        self.on_resize = self._make_hook(pygame.WINDOWRESIZED)
+        self.on_close = self._make_hook(pygame.WINDOWCLOSE)
 
         self.app.pre_update += self._pre_update
         self.app.post_update += self.flip
+        self.app.events.on_event += self._handle_events
 
     @property
     def spec(self) -> WindowSpec:
@@ -221,7 +237,7 @@ class _WindowWrapper:
         Does some extra magic on Windows to get fullscreening to work, unlike `pygame.Window`'s `set_fullscreen` method.
         """
 
-        return self._fullscreen
+        return self._fullscreen  # FIXME: MAY RETURN INCORRECT VALUES
 
     @fullscreen.setter
     def fullscreen(self, value: bool, /) -> None:
@@ -251,7 +267,7 @@ class _WindowWrapper:
 
     @property
     def minimized(self) -> bool:
-        return self._minimized
+        return self._minimized  # FIXME: MAY RETURN INCORRECT VALUES
 
     @minimized.setter
     def minimized(self, value: bool, /) -> None:
@@ -264,7 +280,7 @@ class _WindowWrapper:
 
     @property
     def maximized(self) -> bool:
-        return self._maximized
+        return self._maximized  # FIXME: MAY RETURN INCORRECT VALUES
 
     @maximized.setter
     def maximized(self, value: bool, /) -> None:
@@ -331,6 +347,7 @@ class _WindowWrapper:
 
         self._underlying.destroy()
         self.on_render.clear()
+        self.on_close.notify()
 
     def flip(self) -> None:
         """Updates the window."""
@@ -340,10 +357,19 @@ class _WindowWrapper:
     update = flip
 
     def _pre_update(self) -> None:
-        """Pre-update callback."""
-
         if self.fill_color:
             self.fill(self.fill_color)
+
+    def _handle_events(self, event: pygame.event.Event):
+        if not hasattr(event, "window") or event.window != self.underlying:
+            return
+
+        if event.type in self._hook_map:
+            self._hook_map[event.type].notify(event)
+
+    def _make_hook(self, type: int) -> Hook[_PygameEventCallback]:
+        self._hook_map[type] = Hook[_PygameEventCallback]()
+        return self._hook_map[type]
 
 
 @final
