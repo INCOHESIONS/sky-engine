@@ -127,8 +127,15 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
     app: ClassVar[App]
 
-    def __init__(self, cancellable: bool = False, once: bool = False) -> None:
-        self._callbacks: list[tuple[TCallback, int]] = []
+    def __init__(
+        self,
+        callbacks: list[TCallback] | None = None,
+        /,
+        *,
+        cancellable: bool = False,
+        once: bool = False,
+    ) -> None:
+        self._callbacks: list[tuple[TCallback, int]] = [(c, 0) for c in callbacks or []]
         self._cancellable = cancellable
         self._once = once
         self._called = False
