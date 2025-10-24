@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from cProfile import run as profile
 from inspect import Parameter, isgeneratorfunction, signature
 from typing import Any, Callable, Protocol, Self
@@ -130,6 +130,18 @@ class App:
         """
 
         return self.has_component(component)
+
+    def __iter__(self) -> Iterator[Component]:
+        """
+        Iterates over the app's components.
+
+        Yields
+        ------
+        `Component`
+            The next component.
+        """
+
+        yield from self._components
 
     @property
     def components(self) -> Sequence[Component]:
