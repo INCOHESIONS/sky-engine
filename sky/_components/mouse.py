@@ -87,7 +87,7 @@ class Mouse(Component):
         return pygame.mouse.get_cursor()
 
     @cursor.setter
-    def cursor(self, cursor: CursorLike, /) -> None:
+    def cursor(self, cursor: CursorLike, /) -> None:  # pyright: ignore[reportPropertyTypeMismatch]
         pygame.mouse.set_cursor(Cursor.as_cursor(cursor))
 
     @property
