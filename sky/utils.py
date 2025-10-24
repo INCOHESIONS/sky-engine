@@ -410,11 +410,6 @@ def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
     -------
     `T | None`
         The element found. Or `None`, if no elements with matching attributes was found.
-
-    Raises
-    ------
-    `AttributeError`
-        If an attribute wasn't found in an object of the iterable.
     """
 
     return first(filter_by_attrs(iterable, **attrs))
@@ -433,11 +428,6 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
     -------
     `Iterable[T]`
         The filtered `Iterable`.
-
-    Raises
-    ------
-    `AttributeError`
-        If an attribute wasn't found in an object of the iterable.
     """
 
     return filter(
