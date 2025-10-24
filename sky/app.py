@@ -189,7 +189,7 @@ class App:
 
     def _mainloop(self) -> None:
         if self.has_stopped:
-            raise ValueError("You cannot run this app instance again!")
+            raise RuntimeError("You cannot run this app instance again!")
 
         self.entrypoint.notify()
 
