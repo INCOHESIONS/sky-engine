@@ -489,10 +489,10 @@ class Windowing(Component):
         )
 
         if win is None:
-            raise ValueError(f"Window {window} not found")
+            raise ValueError(f"Window {window.title} not found.")
 
         if win is self.main_window:
-            raise ValueError("Cannot remove main window")
+            raise ValueError("Cannot remove main window.")
 
         self._windows.remove(win)
         win.destroy()
