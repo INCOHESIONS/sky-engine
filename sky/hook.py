@@ -205,12 +205,10 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
         """
 
         if isinstance(priority, str):
-            if priority == min:
+            if priority == "min":
                 priority = min((p for _, p in self._callbacks), default=-99) - 1
-            elif priority == max:
+            elif priority == "max":
                 priority = max((p for _, p in self._callbacks), default=99) + 1
-            else:
-                raise ValueError("Invalid priority.")
 
         insort(self._callbacks, (callback, priority), key=lambda x: -x[1])
 
