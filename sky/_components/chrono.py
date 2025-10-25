@@ -1,3 +1,5 @@
+"""Contains the `Chrono` component that handles time."""
+
 from datetime import datetime, timedelta
 from typing import final, override
 
@@ -19,7 +21,7 @@ class Chrono(Component):
         self.stop_time = None
         """The time the app stopped, or None if it hasn't stopped yet."""
 
-        self.target_framerate = pygame.display.get_desktop_refresh_rates()[0]
+        self.target_framerate = self.app.windowing.primary_monitor.refresh_rate
         """The target framerate. Set to 0 to disable framerate limiting. Set to the main monitor's refresh rate by default."""
 
         self.deltatime = 0

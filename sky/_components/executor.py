@@ -1,9 +1,8 @@
 from typing import Callable, final, override
 
-from sky.utils import callable_with_no_arguments
-
 from ..core import Component
 from ..types import Coroutine
+from ..utils import callable_with_no_arguments
 from ..yieldable import WaitForFrames, Yieldable
 
 
@@ -57,7 +56,7 @@ class Executor(Component):
         self._coroutines.pop(coroutine)
 
     def stop_all_coroutines(self) -> None:
-        """Stops all `Coroutine`s."""
+        """Stops all currently running `Coroutine`s."""
 
         self._coroutines.clear()
 
@@ -68,10 +67,8 @@ class Executor(Component):
                 self._step_coroutine(coroutine)
 
     def _step_coroutine(self, coroutine: Coroutine, /) -> None:
-        next = self._get_next(coroutine)
-
-        if next is not None:
-            self._coroutines[coroutine] = next
+        if (n := self._get_next(coroutine)) is not None:
+            self._coroutines[coroutine] = n
         else:
             self.stop_coroutine(coroutine)
 

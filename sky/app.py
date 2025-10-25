@@ -1,3 +1,5 @@
+"""Contains the `App` class."""
+
 from collections.abc import Iterator, Sequence
 from cProfile import run as profile
 from inspect import isgeneratorfunction
@@ -53,9 +55,10 @@ class App:
     def __init__(self, /, *, spec: AppSpec | WindowSpec | None = None) -> None:
         pygame.init()
 
+        # probably bad practice but this does makes things real easy to use which is the whole point of this library
         Component.app = self
-        Hook.app = self
         Yieldable.app = self
+        Hook.app = self
 
         self.spec = (
             AppSpec(window_spec=spec)

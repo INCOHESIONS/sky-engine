@@ -209,4 +209,4 @@ type MouseButtonLike = MouseButton | MouseButtonLiteral | int
 type CursorLike = pygame.Cursor | Cursor | CursorLiteral | int
 
 type Coroutine = Generator[type[Yieldable] | Yieldable | None]
-"""A `Generator` that yields a `Yieldable`, its type (as long as it can be instanced with no arguments) or `None`."""
+"""A `Generator` that yields a `Yieldable`, its type (as long as it can be instanced with no arguments) or `None`. Not to be confused with `collections.abc.Coroutine`."""

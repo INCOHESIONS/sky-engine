@@ -1,3 +1,5 @@
+"""Contains the `Keyboard` component that handles keyboard input."""
+
 from typing import Callable, Literal, final, override
 
 import pygame

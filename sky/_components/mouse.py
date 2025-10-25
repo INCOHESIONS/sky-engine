@@ -1,3 +1,5 @@
+"""Contains the `Mouse` component that handles mouse input."""
+
 from typing import Callable, final, override
 
 import pygame

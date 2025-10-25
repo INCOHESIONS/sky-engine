@@ -1,3 +1,5 @@
+"""Contains the `Hook` class."""
+
 from __future__ import annotations
 
 import functools

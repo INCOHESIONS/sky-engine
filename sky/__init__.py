@@ -2,7 +2,7 @@
 Sky Engine
 ----------
 
-A wrapper around `pygame` that makes it less painful to use.
+A wrapper around `pygame-ce` that makes it less painful to use.
 
 :copyright: (c) 2025 by iNCOHESiONS.
 :license: MIT, see LICENSE for more details.

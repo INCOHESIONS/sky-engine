@@ -1,4 +1,4 @@
-"""Engine specs, i.e. information necessary before execution."""
+"""Specs, i.e. information necessary before execution."""
 
 from __future__ import annotations
 

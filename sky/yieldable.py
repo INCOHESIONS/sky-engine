@@ -1,3 +1,5 @@
+"""Contains `Yieldable`s, values that can halt the execution of a `Coroutine` for a period of time."""
+
 # pyright: reportUninitializedInstanceVariable=false
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ __all__ = [
 
 
 class Yieldable(ABC):
-    """Base class for `Yieldables`: values that tell the `Executor` to wait or continue executing a `Coroutine`."""
+    """Base class for `Yieldable`s: values that tell the `Executor` to wait or continue executing a `Coroutine`."""
 
     app: ClassVar[App]
 
