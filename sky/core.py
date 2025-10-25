@@ -1,16 +1,19 @@
-"""All of the engine's most important enums. Mostly input-related."""
+"""Core engine functionality, including most input-related types."""
 
 from __future__ import annotations
 
+from abc import ABC
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass, field
 from enum import Enum, IntEnum, auto, unique
 from typing import TYPE_CHECKING, Callable, ClassVar, Self, final
 
 import pygame
+from screeninfo import Monitor as ScreenInfoMonitor
 
 from .hook import Hook
 from .types import Coroutine, CursorLike
+from .utils import Vector2
 
 if TYPE_CHECKING:
     from .app import App
@@ -18,19 +21,19 @@ if TYPE_CHECKING:
 __all__ = [
     "Component",
     "Cursor",
-    "InputEnum",
     "Key",
     "Keybinding",
     "Modifier",
+    "Monitor",
     "MouseButton",
     "State",
 ]
 
 
-class Component:
+class Component(ABC):
     """Base class for components."""
 
-    app: ClassVar[App]
+    app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
 
     def start(self) -> Coroutine | None:
         """Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine."""
@@ -42,7 +45,38 @@ class Component:
         """Runs every frame, after `pre_update` and before `post_update`."""
 
 
-class InputEnum(IntEnum):
+@final
+@dataclass(slots=True, frozen=True)
+class Monitor:
+    name: str
+    position: Vector2
+    size: Vector2
+    is_primary: bool
+    index: int
+
+    @classmethod
+    def from_monitor(cls, monitor: ScreenInfoMonitor, /, *, index: int) -> Self:
+        """Creates a `Monitor` object from a `screeninfo.Monitor` object."""
+
+        return cls(
+            monitor.name or "Unnamed Monitor",
+            Vector2(monitor.x, monitor.y),
+            Vector2(monitor.width, monitor.height),
+            monitor.is_primary or index == 0,
+            index,
+        )
+
+    @property
+    def refresh_rate(self) -> int:
+        """The refresh rate of the monitor. Returns -1 if the video system hasn't been initialized."""
+
+        try:
+            return pygame.display.get_desktop_refresh_rates()[self.index]
+        except pygame.error:
+            return -1
+
+
+class _InputEnum(IntEnum):
     """Base class for input-related enums."""
 
     @final
@@ -77,7 +111,7 @@ class InputEnum(IntEnum):
 
 @final
 @unique
-class MouseButton(InputEnum):
+class MouseButton(_InputEnum):
     """Mouse button enum."""
 
     left = 0
@@ -86,7 +120,7 @@ class MouseButton(InputEnum):
 
 
 @final
-class Key(InputEnum):
+class Key(_InputEnum):
     """Key enum."""
 
     alpha_0 = pygame.K_0
@@ -393,7 +427,7 @@ class Cursor(Enum):
     @staticmethod
     def as_cursor(value: CursorLike, /) -> pygame.Cursor:
         """
-        Converts a cursor-like value to a pygame Cursor.
+        Converts a `CursorLike` value to a `pygame.Cursor`.
 
         Parameters
         ----------
