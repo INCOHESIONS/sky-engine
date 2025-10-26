@@ -2,7 +2,7 @@ from sky import App, WindowSpec
 from sky.colors import BLUE, RED
 
 app = App(spec=WindowSpec(title="Main Window!"))
-extra_window = app.windowing.add_extra(spec=WindowSpec(title="Extra Window!"))
+extra_window = app.windowing.add_window(spec=WindowSpec(title="Extra Window!"))
 
 
 @app.window.on_render

@@ -36,6 +36,12 @@ class Windowing(Component):
             self._initialize()
 
     @property
+    def windows(self) -> list[Window]:
+        """All windows, both main and extra."""
+
+        return self._windows.copy()
+
+    @property
     def main_window(self) -> Window | None:
         """
         The main window, or `None` if the app is headless.\n
@@ -51,14 +57,8 @@ class Windowing(Component):
         return self._windows[1:]
 
     @property
-    def windows(self) -> list[Window]:
-        """All windows, both main and extra."""
-
-        return self._windows.copy()
-
-    @property
     def spec(self) -> WindowSpec | None:
-        """The window spec, or `None` if the app is headless."""
+        """The main window's spec, or `None` if the app is headless."""
 
         return self.app.spec.window_spec
 
@@ -78,22 +78,7 @@ class Windowing(Component):
 
     main_monitor = primary_monitor  # alias
 
-    @override
-    def start(self) -> None:
-        if self.spec and self.spec.initialization == "deferred":
-            self._initialize()
-
-    @override
-    def update(self) -> None:
-        for window in self.windows:
-            window.on_render.notify()
-
-    @override
-    def stop(self) -> None:
-        for window in self.windows:
-            window.destroy()
-
-    def add_extra(self, /, *, spec: WindowSpec) -> Window:
+    def add_window(self, /, *, spec: WindowSpec) -> Window:
         """
         Creates and adds an extra window from a `WindowSpec`.
 
@@ -111,10 +96,11 @@ class Windowing(Component):
         self._windows.append(wrapper := Window(spec=spec))
         return wrapper
 
-    def remove_extra(self, window: Window | pygame.Window, /) -> None:
+    def remove_window(self, window: Window | pygame.Window, /) -> None:
         """
-        Removes and destroys the specified extra window.\n
-        Finds a window using its `underlying` property if a `pygame.Window` is passed.
+        Removes and destroys the specified window.\n
+        Finds a window using its `underlying` property if a `pygame.Window` is passed.\n
+        Simply closes the app if the main window is passed.
 
         Parameters
         ----------
@@ -137,30 +123,40 @@ class Windowing(Component):
             raise ValueError(f"Window {window.title} not found.")
 
         if win is self.main_window:
-            raise ValueError("Cannot remove main window.")
+            self.app.quit()
+            return
 
         self._windows.remove(win)
         win.destroy()
 
     def clear_extras(self) -> None:
-        """Removes all extra windows."""
+        """Removes all windows except the main one."""
 
         for window in self.extra_windows:
-            self.remove_extra(window)
+            self.remove_window(window)
+
+    @override
+    def start(self) -> None:
+        if self.spec and self.spec.initialization == "deferred":
+            self._initialize()
+
+    @override
+    def update(self) -> None:
+        for window in self.windows:
+            window.on_render.notify()
+
+    @override
+    def stop(self) -> None:
+        for window in self.windows:
+            window.destroy()
 
     def _initialize(self) -> None:
         assert self.spec
 
-        self._windows.append(Window(spec=self.spec))
+        self.add_window(spec=self.spec)
 
         self.app.teardown += self.clear_extras
 
-        self.app.events.add_callback(pygame.WINDOWCLOSE, self._handle_close)
-
-    def _handle_close(self, event: pygame.event.Event, /) -> None:
-        assert self.main_window
-
-        if event.window == self.main_window.underlying:
-            self.app.quit()
-        else:
-            self.remove_extra(event.window)
+        self.app.events.add_callback(
+            pygame.WINDOWCLOSE, lambda e: self.remove_window(e.window)
+        )
