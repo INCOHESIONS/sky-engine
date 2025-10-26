@@ -558,9 +558,8 @@ def animate(
     Examples
     --------
     ```python
-    from sky import App
+    from sky import App, Coroutine
     from sky.colors import BLUE, RED
-    from sky.types import Coroutine
     from sky.utils import animate
 
     app = App()

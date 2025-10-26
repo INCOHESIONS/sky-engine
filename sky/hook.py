@@ -11,7 +11,7 @@ from .types import Coroutine
 from .utils import first
 
 if TYPE_CHECKING:
-    from sky import App
+    from .app import App
 
 __all__ = ["Hook"]
 
