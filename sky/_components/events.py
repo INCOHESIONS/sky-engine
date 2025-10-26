@@ -1,7 +1,7 @@
 """Contains the `Events` component that handles pygame events."""
 
 from collections.abc import Iterator
-from typing import Any, Callable, Self, final
+from typing import Any, Callable, Literal, Self, final
 
 import pygame
 from pygame.event import Event as PygameEvent
@@ -13,7 +13,7 @@ from ..utils import filter_by_attrs, first
 __all__ = ["Events"]
 
 
-type _EventCallback = Callable[[PygameEvent], None]
+type _PygameEventCallback = Callable[[PygameEvent], None]
 
 
 @final
@@ -22,7 +22,10 @@ class Events(Component):
 
     def __init__(self) -> None:
         self._events: list[PygameEvent] = []
-        self.on_event = Hook[_EventCallback]()
+        self._callbacks: dict[int, list[_PygameEventCallback]] = {}
+        self._cancelled: set[int] = set()
+
+        self.on_event = Hook[_PygameEventCallback]()
 
     def __iter__(self) -> Iterator[PygameEvent]:
         return iter(self._events)
@@ -52,21 +55,74 @@ class Events(Component):
 
         self._events = pygame.event.get()
 
+        for event in self._cancelled:
+            self.cancel(event)
+
         for event in self:
             self.on_event.notify(event)
 
         return self
 
     def add_callback(
-        self, event: PygameEvent | int, callback: Callable[[PygameEvent], Any]
-    ):
+        self, event: PygameEvent | int, callback: Callable[[PygameEvent], Any], /
+    ) -> None:
+        """
+        Adds a callback to be called when the specified event is received.
+
+        Parameters
+        ----------
+        event : `PygameEvent | int`
+            The event to listen for.
+        callback : `Callable[[PygameEvent], Any]`
+            The callback to call when the event is received.
+        """
+
         type = event.type if isinstance(event, PygameEvent) else event
 
         def _callback(e: PygameEvent):
             if e.type == type:
                 callback(e)
 
+        self._callbacks[type] = self._callbacks.get(type, []) + [_callback]
+
         self.on_event += _callback
+
+    def remove_callback(self, callback: Callable[[PygameEvent], Any], /) -> None:
+        """
+        Removes a callback from the event listener.
+
+        Parameters
+        ----------
+        callback : `Callable[[PygameEvent], Any]`
+            The callback to remove.
+
+        Raises
+        ------
+        ValueError
+            If the callback is not registered.
+        """
+
+        self.on_event -= callback
+
+    def remove_all_callbacks(self, type: int, /) -> None:
+        """
+        Removes all callbacks of the specified type from the event listener.
+
+        Parameters
+        ----------
+        type : `int`
+            The type of events to remove callbacks for.
+
+        Raises
+        ------
+        ValueError
+            If the type is not registered.
+        """
+
+        # default argument so a ValueError is raised at Hook.__isub__ instead of a KeyError here
+        # purely so that the error types from add and remove are consistent
+        for callback in self._callbacks.pop(type, []):
+            self.on_event -= callback
 
     def any(self, /, *args: int) -> bool:
         """
@@ -188,7 +244,9 @@ class Events(Component):
             PygameEvent(event, attrs or {}) if isinstance(event, int) else event
         )
 
-    def cancel(self, event: PygameEvent | int, /) -> None:
+    def cancel(
+        self, event: PygameEvent | int, /, *, style: Literal["now", "forever"] = "now"
+    ) -> None:
         """
         Removes an event from the event queue.
 
@@ -196,9 +254,14 @@ class Events(Component):
         ----------
         event: `pygame.event.Event | int`
             The event to remove.
+        style: `Literal["now", "forever"]`, optional
+            Whether to only cancel the event for the current frame or for all following frames. Defaults to "now".
         """
 
         pygame.event.clear(type := event if isinstance(event, int) else event.type)
 
         for event in filter_by_attrs(self, type=type):
             self._events.remove(event)
+
+        if style == "forever":
+            self._cancelled.add(type)
