@@ -6,15 +6,17 @@ from typing import TYPE_CHECKING, Literal
 import pygame
 
 if TYPE_CHECKING:
-    from .core import Cursor, Key, MouseButton
+    from .core import Cursor, Key, Modifier, MouseButton, State
     from .yieldable import Yieldable
 
 
 __all__ = [
-    "KeyLike",
-    "MouseButtonLike",
-    "CursorLike",
     "Coroutine",
+    "CursorLike",
+    "KeyLike",
+    "ModifierLike",
+    "MouseButtonLike",
+    "StateLike",
 ]
 
 
@@ -180,6 +182,20 @@ type KeyLiteral = Literal[
     "_",
 ]
 
+type ModifierLiteral = Literal[
+    "left_shift",
+    "right_shift",
+    "left_ctrl",
+    "right_ctrl",
+    "left_alt",
+    "right_alt",
+    "left_meta",
+    "right_meta",
+    "capslock",
+    "numlock",
+    "mode",
+]
+
 type MouseButtonLiteral = Literal[
     "left",
     "middle",
@@ -204,8 +220,17 @@ type CursorLiteral = Literal[
     "deny",  # alias
 ]
 
+type StateLiteral = Literal[
+    "pressed",
+    "downed",
+    "released",
+    "none",
+]
+
 type KeyLike = Key | KeyLiteral | int
+type ModifierLike = Key | Modifier | ModifierLiteral | int
 type MouseButtonLike = MouseButton | MouseButtonLiteral | int
+type StateLike = State | StateLiteral
 type CursorLike = pygame.Cursor | Cursor | CursorLiteral | int
 
 type Coroutine = Generator[type[Yieldable] | Yieldable | None]

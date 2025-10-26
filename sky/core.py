@@ -12,7 +12,7 @@ import pygame
 from screeninfo import Monitor as ScreenInfoMonitor
 
 from .hook import Hook
-from .types import Coroutine, CursorLike
+from .types import Coroutine, CursorLike, KeyLike, ModifierLike, StateLike
 from .utils import Vector2
 
 if TYPE_CHECKING:
@@ -288,9 +288,24 @@ class Key(_InputEnum):
     _ = underscore  # alias
 
 
+_mod_to_key = {
+    pygame.KMOD_LSHIFT: Key.left_shift,
+    pygame.KMOD_RSHIFT: Key.right_shift,
+    pygame.KMOD_LCTRL: Key.left_ctrl,
+    pygame.KMOD_RCTRL: Key.right_ctrl,
+    pygame.KMOD_LALT: Key.left_alt,
+    pygame.KMOD_RALT: Key.right_alt,
+    pygame.KMOD_LMETA: Key.left_meta,
+    pygame.KMOD_RMETA: Key.right_meta,
+    pygame.KMOD_CAPS: Key.capslock,
+    pygame.KMOD_NUM: Key.numlock,
+    pygame.KMOD_MODE: Key.mode,
+}
+
+
 @final
 @unique
-class Modifier(Enum):
+class Modifier(IntEnum):
     """Modifier keys."""
 
     left_shift = Key.left_shift
@@ -304,6 +319,38 @@ class Modifier(Enum):
     capslock = Key.capslock
     numlock = Key.numlock
     mode = Key.mode
+
+    @classmethod
+    def convert(cls, value: ModifierLike, /) -> Self:
+        """
+        Converts a `ModifierLike` value to a Modifier.\n
+        `Key`s, `Modifier`s, `Modifier` names and key values from `pygame.locals` such as `pygame.K_LSHIFT` or modifier values such as `pygame.KMOD_LSHIFT` can be used.
+
+        Parameters
+        ----------
+        value : `ModifierLike`
+            The value to convert.
+
+        Returns
+        -------
+        `Modifier`
+            The converted modifier.
+
+        Raises
+        ------
+        `ValueError`
+            If the value is not among the values defined.
+
+        `KeyError`
+            If the value is not among the keys defined.
+        """
+        if isinstance(value, str):
+            return cls[value.lower()]
+
+        try:
+            return cls(value)
+        except ValueError:
+            return cls(_mod_to_key[value])
 
 
 @final
@@ -346,6 +393,10 @@ class State(Enum):
             return State.released
         return State.none
 
+    @classmethod
+    def convert(cls, value: StateLike, /) -> Self:
+        return cls[value] if isinstance(value, str) else value  # pyright: ignore[reportReturnType]
+
 
 @final
 @dataclass(slots=True)
@@ -369,11 +420,11 @@ class Keybinding:
     @classmethod
     def make(
         cls,
-        key: Key,
+        key: KeyLike,
         /,
         *,
         action: Callable[[], None],
-        modifier: Modifier | None = None,
+        modifier: ModifierLike | None = None,
         state: State = State.downed,
     ) -> Self:
         """
@@ -397,9 +448,11 @@ class Keybinding:
             The created keybinding.
         """
 
+        key = Key.convert(key)
+
         if modifier is not None:
             return cls(
-                keymap={modifier.value: State.pressed, key: state},
+                keymap={Modifier.convert(modifier).value: State.pressed, key: state},
                 on_activation=Hook([action]),
             )
 

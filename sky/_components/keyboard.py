@@ -6,7 +6,7 @@ import pygame
 
 from ..core import Component, Key, Keybinding, State
 from ..hook import Hook
-from ..types import KeyLike
+from ..types import KeyLike, StateLike
 from ..utils import Vector2, Vector3
 
 __all__ = ["Keyboard"]
@@ -108,7 +108,7 @@ class Keyboard(Component):
 
         return self._states[Key.convert(key)]
 
-    def set_state(self, key: KeyLike, state: State, /) -> None:
+    def set_state(self, key: KeyLike, /, *, state: StateLike) -> None:
         """
         Sets the state of a key.
 
@@ -116,13 +116,13 @@ class Keyboard(Component):
         ----------
         key: `KeyLike`
             The key to set the state of.
-        state: `State`
+        state: `StateLike`
             The state to set.
         """
 
-        self._states[Key.convert(key)] = state
+        self._states[Key.convert(key)] = State.convert(state)
 
-    def is_state(self, key: KeyLike, state: State, /) -> bool:
+    def is_state(self, key: KeyLike, state: StateLike, /) -> bool:
         """
         Checks if a key is in a certain state.
         State can be State.none to check if the key is not being interacted with at all.\n
@@ -132,7 +132,7 @@ class Keyboard(Component):
         ----------
         key: `KeyLike`
             The key to check.
-        state: `State`
+        state: `StateLike`
             The state to check for.
 
         Returns
@@ -141,7 +141,7 @@ class Keyboard(Component):
             Whether the key is in the specified state.
         """
 
-        return self.get_state(key) == state
+        return self.get_state(key) == State.convert(state)
 
     def is_pressed(self, key: KeyLike, /) -> bool:
         """
@@ -211,21 +211,40 @@ class Keyboard(Component):
 
         return all(self.is_state(key, state) for key, state in keybinding)
 
-    def any(self, state: State = State.none, /) -> bool:
+    def is_inactive(self, keybinding: Keybinding, /) -> bool:
+        """
+        Checks if a keybinding is inactive.
+
+        Parameters
+        ----------
+        keybinding: `Keybinding`
+            The keybinding to check.
+
+        Returns
+        -------
+        `bool`
+            Whether the keybinding is inactive.
+        """
+
+        return not self.is_active(keybinding)
+
+    def any(self, state: StateLike = State.none, /) -> bool:
         """
         Checks if any key is in a certain state.
 
         Parameters
         ----------
-        state: `State`
+        state: `StateLike`
             The state to check for.
-            If no state is specified (and as such `state` is `State.none`), checks if any key is being interacted with at all, i.e., in any state.
+            If no state is specified, checks if any key is being interacted with at all, i.e. in any state except `State.none`.
 
         Returns
         -------
         `bool`
             Whether any key is in the specified state.
         """
+
+        state = State.convert(state)
 
         return any(
             self.get_state(key) == state
@@ -264,7 +283,7 @@ class Keyboard(Component):
         self._keybindings.remove(keybinding)
 
     def get_axis(
-        self, neg: KeyLike, pos: KeyLike, /, *, state: State = State.pressed
+        self, neg: KeyLike, pos: KeyLike, /, *, state: StateLike = State.pressed
     ) -> float:
         """
         Gets the axis value of a key.
@@ -275,7 +294,7 @@ class Keyboard(Component):
             The key to check for negative values.
         pos: `KeyLike`
             The key to check for positive values.
-        state: `State`
+        state: `StateLike`
             The state to check for. Cannot be `State.none`. Defaults to `State.pressed`.
 
         Returns
@@ -289,6 +308,8 @@ class Keyboard(Component):
             If `state` is `State.none`.
         """
 
+        state = State.convert(state)
+
         assert state != State.none
 
         return int(self.is_state(pos, state)) - int(self.is_state(neg, state))
@@ -299,7 +320,7 @@ class Keyboard(Component):
         vertical_axis: tuple[KeyLike, KeyLike],
         /,
         *,
-        state: State = State.pressed,
+        state: StateLike = State.pressed,
         normalize: bool = True,
     ) -> Vector2:
         """
@@ -317,7 +338,7 @@ class Keyboard(Component):
             The keys to check for vertical movement.
         horizontal_axis: `tuple[KeyLike, KeyLike]`
             The keys to check for horizontal movement.
-        state: `State`
+        state: `StateLike`
             The state to check for. Cannot be `State.none`. Defaults to `State.pressed`.
         normalize: `bool`
             Whether to normalize the movement to the range [0, 1]. Defaults to `True`.
@@ -347,7 +368,7 @@ class Keyboard(Component):
         forward_axis: tuple[KeyLike, KeyLike],
         /,
         *,
-        state: State = State.pressed,
+        state: StateLike = State.pressed,
         order: Literal["XYZ", "XZY"] = "XYZ",
         normalize: bool = True,
     ) -> Vector3:
@@ -363,7 +384,7 @@ class Keyboard(Component):
             The keys to check for horizontal movement.
         forward_axis: `tuple[KeyLike, KeyLike]`
             The keys to check for forward movement.
-        state: `State`
+        state: `StateLike`
             The state to check for. Cannot be `State.none`. Defaults to `State.pressed`.
         order: `Literal["XYZ", "XZY"]`
             The order of the axes. Defaults to "XYZ".
@@ -380,18 +401,13 @@ class Keyboard(Component):
         `AssertionError`
             If `state` is `State.none`.
         """
+        movement = Vector3(
+            self.get_axis(*horizontal_axis, state=state),
+            self.get_axis(*vertical_axis, state=state),
+            self.get_axis(*forward_axis, state=state),
+        )
 
-        if order == "XYZ":
-            movement = Vector3(
-                self.get_axis(*horizontal_axis, state=state),
-                self.get_axis(*vertical_axis, state=state),
-                self.get_axis(*forward_axis, state=state),
-            )
-        elif order == "XZY":
-            movement = Vector3(
-                self.get_axis(*horizontal_axis, state=state),
-                self.get_axis(*forward_axis, state=state),
-                self.get_axis(*vertical_axis, state=state),
-            )
+        if order == "XZY":
+            movement = Vector3(movement.xzy)  # pygame.math.Vector3 -> sky.Vector3
 
         return movement.normalize() if normalize else movement
