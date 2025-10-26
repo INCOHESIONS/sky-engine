@@ -48,6 +48,8 @@ class Component(ABC):
 @final
 @dataclass(slots=True, frozen=True)
 class Monitor:
+    """Stores information about a monitor. Basically `screeninfo.Monitor` but with some extra information."""
+
     name: str
     position: Vector2
     size: Vector2
@@ -68,7 +70,7 @@ class Monitor:
 
     @property
     def refresh_rate(self) -> int:
-        """The refresh rate of the monitor. Returns -1 if the video system hasn't been initialized."""
+        """The refresh rate of the monitor. Returns -1 if pygame's video system hasn't been initialized (i.e. `pygame.init()` hasn't been called)."""
 
         try:
             return pygame.display.get_desktop_refresh_rates()[self.index]

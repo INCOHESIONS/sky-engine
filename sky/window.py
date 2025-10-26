@@ -25,6 +25,8 @@ type _PygameEventCallback = Callable[[PygameEvent], None]
 
 @final
 class Window:
+    """Wrapper class for `pygame.Window` with many utilities."""
+
     app: ClassVar[App]
     windowing: ClassVar[Windowing]
 
@@ -94,7 +96,7 @@ class Window:
     @property
     def underlying(self) -> pygame.Window:
         """
-        The underlying pygame window.\n
+        The underlying `pygame.Window`.\n
         Position, size and fullscreen, minimized and maximized states should not be modified directly through this property.\n
         Use carefully.
         """
@@ -103,13 +105,13 @@ class Window:
 
     @property
     def surface(self) -> pygame.Surface:
-        """The main window's surface."""
+        """This `Window`'s surface."""
 
         return self._underlying.get_surface()
 
     @property
     def is_open(self) -> bool:
-        """Whether the window is open."""
+        """Whether this window is open."""
 
         try:
             _ = self.surface
@@ -120,12 +122,14 @@ class Window:
 
     @property
     def is_closed(self) -> bool:
-        """Whether the window is closed."""
+        """Whether this window is closed."""
 
         return not self.is_open
 
     @property
     def title(self) -> str:
+        """This `Window`'s title."""
+
         return self._underlying.title
 
     @title.setter
@@ -134,7 +138,7 @@ class Window:
 
     @property
     def position(self) -> Vector2:
-        """Gets or sets the position of the main window."""
+        """This `Window`'s position."""
 
         return Vector2(self._underlying.position)
 
@@ -144,7 +148,7 @@ class Window:
 
     @property
     def size(self) -> Vector2:
-        """Gets or sets the current size of the main window."""
+        """This `Window`'s size."""
 
         return Vector2(self._underlying.size)
 
@@ -154,7 +158,7 @@ class Window:
 
     @property
     def width(self) -> int:
-        """Gets the width of the main window."""
+        """This `Window`'s width."""
 
         return int(self.size.x)
 
@@ -164,7 +168,7 @@ class Window:
 
     @property
     def height(self) -> int:
-        """Gets the height of the main window."""
+        """This `Window`'s height."""
 
         return int(self.size.y)
 
@@ -174,22 +178,19 @@ class Window:
 
     @property
     def rect(self) -> pygame.Rect:
-        """The main window's rect."""
+        """This `Window`'s rect."""
 
         return self.surface.get_rect()
 
     @property
     def center(self) -> Vector2:
-        """Gets the center position, in pixel coordinates, of this window."""
+        """This `Window`'s center pixel."""
 
         return self.size / 2
 
     @property
     def icon(self) -> pygame.Surface | None:
-        """
-        Gets or sets the icon of the main window.\n
-        Returns `None` if the default icon is being used.
-        """
+        """This `Window`'s icon. `None` if the default icon is being used."""
 
         return self._icon
 
@@ -201,7 +202,7 @@ class Window:
     @property
     def fullscreen(self) -> bool:
         """
-        Gets or sets the main window's fullscreen state.\n
+        Whether or not this window is fullscreened.\n
         Does some extra magic on Windows to get fullscreening to work, unlike `pygame.Window`'s `set_fullscreen` method.
         """
 
@@ -235,6 +236,8 @@ class Window:
 
     @property
     def minimized(self) -> bool:
+        """Whether or not the window is minimized."""
+
         return self._minimized  # FIXME: MAY RETURN INCORRECT VALUES
 
     @minimized.setter
@@ -248,6 +251,8 @@ class Window:
 
     @property
     def maximized(self) -> bool:
+        """Whether or not the window is maximized."""
+
         return self._maximized  # FIXME: MAY RETURN INCORRECT VALUES
 
     @maximized.setter
@@ -261,6 +266,8 @@ class Window:
 
     @property
     def borderless(self) -> bool:
+        """Whether or not the window is borderless."""
+
         return self._underlying.borderless
 
     @borderless.setter
@@ -269,6 +276,8 @@ class Window:
 
     @property
     def resizable(self) -> bool:
+        """Whether or not the window is resizable."""
+
         return self._underlying.resizable
 
     @resizable.setter
