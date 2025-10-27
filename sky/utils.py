@@ -124,6 +124,12 @@ class Vector2(PygameVector2):
         dist = unnormalized_dir.magnitude()
         return unnormalized_dir / dist, dist
 
+    def clear(self) -> None:
+        """Sets the x and y components of this vector to zero."""
+
+        self.x = 0
+        self.y = 0
+
     def with_x(self, x: float, /) -> Self:
         """Returns a new vector with the x-component set to `x`."""
 
@@ -258,6 +264,13 @@ class Vector3(PygameVector3):
         unnormalized_dir = other - self
         dist = unnormalized_dir.magnitude()
         return unnormalized_dir / dist, dist
+
+    def clear(self) -> None:
+        """Sets the x, y and z components of this vector to zero."""
+
+        self.x = 0
+        self.y = 0
+        self.z = 0
 
     def with_x(self, x: float, /) -> Self:
         """Returns a new `Vector3` with the x-component set to `x`."""
