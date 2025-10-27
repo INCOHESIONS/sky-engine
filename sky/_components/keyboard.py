@@ -4,7 +4,7 @@ from typing import Callable, Literal, final, override
 
 import pygame
 
-from ..core import Component, Key, Keybinding, State
+from ..core import Key, Keybinding, Service, State
 from ..hook import Hook
 from ..types import KeyLike, StateLike
 from ..utils import Vector2, Vector3
@@ -16,7 +16,7 @@ type _KeyCallback = Callable[[Key], None]
 
 
 @final
-class Keyboard(Component):
+class Keyboard(Service):
     """Handles keyboard input."""
 
     def __init__(self) -> None:
@@ -264,6 +264,19 @@ class Keyboard(Component):
         """
 
         self._keybindings.append(keybinding)
+
+    def add_keybindings(self, keybindings: dict[KeyLike, Callable[[], None]]) -> None:
+        """
+        A helper method for adding many modifier-less keybindings.
+
+        Parameters
+        ----------
+        keybindings: `dict[KeyLike, Callable[[], None]]`
+            `KeyLike` to action mapping for the keybindings.
+        """
+
+        for key, action in keybindings.items():
+            self.add_keybinding(Keybinding.make(key, action=action))
 
     def remove_keybinding(self, keybinding: Keybinding, /) -> None:
         """

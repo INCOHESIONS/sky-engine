@@ -2,22 +2,23 @@
 
 from collections.abc import Iterator, Sequence
 from cProfile import run as profile
-from inspect import isgeneratorfunction
-from typing import Callable, Protocol, Self
+from typing import Literal, Protocol, Self, final
 
 import pygame
 
 from ._components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
-from .core import Component
+from .core import Component, Service
 from .hook import Hook
+from .scene import Scene
 from .spec import AppSpec, WindowSpec
-from .types import Coroutine
-from .utils import callable_with_no_arguments, first, get_by_attrs, singleton
+from .utils import callable_with_no_arguments, singleton
+from .window import Window
 from .yieldable import Yieldable
 
 __all__ = ["App"]
 
 
+@final
 class _CompatibleModule(Protocol):
     def init(self) -> None: ...
 
@@ -30,7 +31,7 @@ class App:
     The singleton `App` class.\n
     Pre-execution configuration is defined with `AppSpec`, such as the main window's title and size.
 
-    Components:
+    Services (in order of execution):
         - `Events` (handles pygame events)
         - `Keyboard` (handles keyboard input)
         - `Mouse` (handles mouse input)
@@ -38,18 +39,22 @@ class App:
         - `Chrono` (handles time)
         - `Executor` (handles coroutines)
 
-    User-defined components can be added by subclassing `Component` and using the `add_component` method (or `component` as a class decorator).
+    User-defined components can be added by subclassing `Component` and using the `add_component` method on a `Scene`.
 
     Hooks:
+        ```
         Pre-loop:
-            1. `entrypoint` (executed before components are started up, just after `mainloop` is called)
-            2. `setup` (executed after components are started up, and before the first frame)
+            1. preload (before scenes and services are started up, just after mainloop is called)
+            2. setup (after scenes and services are started up, and before the first frame)
+
         During loop:
-            1. `pre_update` (executed before components are updated)
-            2. `post_update` (executed after components are updated)
+            1. pre_update (before scenes and services are updated)
+            2. post_update (after scenes and services are updated)
+
         Post-loop:
-            1. `teardown` (executed before components are stopped, and after the last frame)
-            2. `cleanup` (executed after components are stopped, and before the app is destroyed. Cleans up any registered modules)
+            1. teardown (before scenes and services are stopped, and after the last frame)
+            2. cleanup (after scenes and services are stopped, and before the app is destroyed; cleans up registered modules)
+        ```
     """
 
     def __init__(self, /, *, spec: AppSpec | WindowSpec | None = None) -> None:
@@ -58,7 +63,11 @@ class App:
         # probably bad practice but this does makes things real easy to use which is the whole point of this library
         Component.app = self
         Yieldable.app = self
+        Scene.app = self
         Hook.app = self
+
+        self.is_running = False
+        self.has_stopped = False
 
         self.spec = (
             AppSpec(window_spec=spec)
@@ -67,23 +76,23 @@ class App:
         )
         """The app's specification, i.e., pre-execution configuration."""
 
-        self.entrypoint = Hook()
-        """Executes before components are started up, just after `mainloop` is called."""
+        self.preload = Hook()
+        """Executes before scenes and services are started up, just after mainloop is called."""
 
         self.setup = Hook()
-        """Executes after components are started up, and before the first frame."""
+        """Executes after scenes and services are started up, and before the first frame."""
 
         self.pre_update = Hook()
-        """Executes before components are updated."""
+        """Executes before scenes and services are updated."""
 
         self.post_update = Hook()
-        """Executes after components are updated."""
+        """Executes after scenes and services are updated."""
 
         self.teardown = Hook()
-        """Executes before components are stopped, and after the last frame."""
+        """Executes before scenes and services are stopped, and after the last frame."""
 
         self.cleanup = Hook()
-        """Executes after components are stopped, and before the app is destroyed. Cleans up any registered modules."""
+        """Executes after scenes and services are stopped, and before the app is destroyed; cleans up registered modules."""
 
         self.events = Events()
         """Handles pygame events."""
@@ -101,9 +110,9 @@ class App:
         """Handles time."""
 
         self.executor = Executor()
-        """Handles coroutines."""
+        """Handles `Coroutine`s."""
 
-        self._internal_components: list[Component] = [
+        self._internal_services: list[Service] = [
             self.events,
             self.mouse,
             self.keyboard,
@@ -112,62 +121,51 @@ class App:
             self.executor,
         ]  # do not change ordering
 
-        self._components = self._internal_components.copy()
+        self._services = self._internal_services.copy()
 
-        self.is_running = True
-        self.has_stopped = False
+        self._scenes: list[Scene] = []
 
-    def __contains__(self, component: type[Component] | Component, /) -> bool:
+        if self.spec.default_scene:
+            self.load_scene(Scene())
+
+    def __iter__(self) -> Iterator[Scene]:
         """
-        Checks if the app contains a component.\n
-        If a type is passed, checks if the app contains any component of that type. Does not instance the type.
-
-        Parameters
-        ----------
-        component: `type[Component] | Component`
-            The component to check for.
-
-        Returns
-        -------
-        `bool`
-            Whether the app contains the component.
-        """
-
-        return self.has_component(component)
-
-    def __iter__(self) -> Iterator[Component]:
-        """
-        Iterates over the app's components.
+        Iterates over the app's active scenes.
 
         Yields
         ------
-        `Component`
-            The next component.
+        `Scene`
+            The next active scene.
         """
 
-        yield from self._components
+        yield from self._scenes
 
     @property
-    def components(self) -> Sequence[Component]:
-        """
-        A copy of the app's components.
+    def services(self) -> Sequence[Service]:
+        """The app's services."""
 
-        Returns
-        -------
-        `Sequence[Component]`
-            The components.
-        """
-
-        return self._components.copy()
+        return self._services.copy()
 
     @property
-    def window(self):
+    def scenes(self) -> Sequence[Scene]:
+        """The app's active scenes."""
+
+        return self._scenes.copy()
+
+    @property
+    def scene(self) -> Scene:
+        """The app's main active scene. Always the last scene in the list."""
+
+        return self._scenes[-1]
+
+    @property
+    def window(self) -> Window:
         """
         Short for `app.windowing.main_window`.
 
         Returns
         -------
-        `_WindowWrapper`
+        `Window`
             The main window.
 
         Raises
@@ -183,19 +181,40 @@ class App:
         """
         The app's main loop.
 
-        Order of execution:
+        # Order of execution:
+            ```
             Pre-loop:
-                1. `App.entrypoint`
-                2. `Component.start`
-                3. `App.setup`
+                1. App.preload
+                2. Service.start
+                3. Scene.start
+                    1. Scene.pre_start
+                    2. Component.start
+                    3. Scene.post_start
+                4. App.setup
+
             During loop:
-                1. `App.pre_update`
-                2. `Component.update`
-                3. `App.post_update`
+                1. App.pre_update
+                2. Service.update
+                3. Scene.update
+                    1. Scene.pre_update
+                    2. Component.update
+                    3. Scene.post_update
+                4. App.post_update
+
             Post-loop:
-                1. `App.teardown`
-                2. `Component.stop`
-                3. `App.cleanup`
+                1. App.teardown
+                2. Service.stop
+                3. Scene.stop
+                    1. Scene.pre_stop
+                    2. Component.stop
+                    3. Scene.post_stop
+                4. App.cleanup
+            ```
+
+        Raises
+        ------
+        `RuntimeError`
+            If the app has already stopped and is being rerun.
         """
 
         if self.spec.profile:
@@ -207,10 +226,13 @@ class App:
         if self.has_stopped:
             raise RuntimeError("You cannot run this app instance again!")
 
-        self.entrypoint.notify()
+        self.preload.notify()
 
-        for component in self._components:
-            self._start_component(component)
+        for service in self.services:
+            service.start()
+
+        for scene in self.scenes:
+            scene.start()
 
         self.setup.notify()
 
@@ -219,8 +241,11 @@ class App:
         while self.events.handle_events().lacks(pygame.QUIT):
             self.pre_update.notify()
 
-            for component in self._components:
-                component.update()
+            for service in self.services:
+                service.update()
+
+            for scene in self.scenes:
+                scene.update()
 
             self.post_update.notify()
 
@@ -229,8 +254,11 @@ class App:
 
         self.teardown.notify()
 
-        for component in self._components:
-            self._handle_possible_coroutine(component.stop)
+        for service in self.services:
+            service.stop()
+
+        for scene in self.scenes:
+            scene.stop()
 
         self.cleanup.notify()
 
@@ -239,69 +267,147 @@ class App:
     run = mainloop  # alias
     __call__ = mainloop
 
-    def add_component(
+    def load_scene(
         self,
-        component: type[Component] | Component,
+        scene: type[Scene] | Scene,
         /,
         *,
-        when: Hook | None = None,
-    ) -> Self:
+        mode: Literal["add", "replace_all", "replace_last"] = "add",
+    ) -> None:
         """
-        Adds a component to the app.\n
-        Calls the component's `start` method if the app is running and the component hadn't yet been started.\n
-        If you wish to use this as a class decorator, use `app.component` instead.
+        Adds a scene to the app's active scenes.\n
+        If a type is passed, it will be instanced immediately with no arguments.
+
+        Parameters
+        ----------
+        scene: `type[Scene] | Scene`
+            The scene, or its type (to be instanced), to add.
+        mode: `Literal["add", "replace_all", "replace_last"]`
+            The mode of loading the scene.
+            "add" adds the scene to the list of active scenes.
+            "replace_all" removes all active scenes and leaves the new scene as the only active scene.
+            "replace_last" replaces the last active scene with the new scene.
+
+        Raises
+        ------
+        ValueError
+            If the `Scene`'s type is passed and it cannot be instanced with no arguments.
+        """
+
+        if isinstance(scene, type):
+            if callable_with_no_arguments(scene):
+                scene = scene()
+            else:
+                raise ValueError("Scene cannot be instanced with no arguments.")
+
+        match mode:
+            case "add":
+                self._scenes.append(scene)
+            case "replace_all":
+                for scene in self.scenes:
+                    self.unload_scene(scene)
+                self._scenes = [scene]
+            case "replace_last":
+                self.unload_scene(self._scenes[-1])
+                self._scenes.append(scene)
+
+        if self.is_running and not scene.has_started:
+            scene.start()
+
+    def unload_scene(self, scene: Scene, /):
+        """
+        Removes a `Scene` from the list of active scenes and stops it.
+
+        Parameters
+        ----------
+        scene: `Scene`
+            The scene to unload.
+        """
+
+        self._scenes.remove(scene)
+        scene.stop()
+
+    def toggle_scene(self, scene: Scene, /):
+        """
+        Loads a `Scene` if it's not already loaded, or unloads it if it is.
+
+        Parameters
+        ----------
+        scene: `Scene`
+            The scene to toggle.
+        """
+
+        if scene in self._scenes:
+            self.unload_scene(scene)
+        else:
+            self.load_scene(scene)
+
+    def add_component(self, component: type[Component] | Component, /) -> Self:
+        """
+        Adds a component to the `Scene`.\n
+        Calls the component's `start` method if it hasn't yet been started.
 
         Parameters
         ----------
         component: `type[Component] | Component`
             The component, or its `type`, to add. Will be instanced immediately if a `type` is passed.
-        when: `Hook | None`, optional
-            The Hook to use as a trigger for adding the component.
-            If `None` (the default), the component will be added immediately.\n
-            Basically a shorthand for `when += lambda: app.add_component(component)`.
 
         Returns
         -------
-        Self
-            The app, for chaining.
+        `Self`
+            The `App`, for chaining.
 
         Raises
         ------
         `ValueError`
-            If a type is passed that cannot be instanced with no arguments or if the app has already stopped running.
+            If a type is passed that cannot be instanced with no arguments.
         """
 
-        if self.has_stopped:
-            raise ValueError("The app has already stopped running!")
-
-        if callable(component) and not callable_with_no_arguments(component):
-            raise ValueError(
-                f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
-            )
-
-        def _add():
-            self._components.append(
-                comp := component() if callable(component) else component
-            )
-
-            if self.is_running and not getattr(comp, "_has_started", False):
-                self._start_component(comp)
-
-        if when is None:
-            _add()
-        else:
-            when += _add
-
+        self.scene.add_component(component)
         return self
 
-    def add_components(self, /, *components: type[Component] | Component) -> Self:
+    def remove_component(self, component: type[Component] | Component, /) -> None:
         """
-        Adds multiple components to the app.
+        Removes a component from the main active `Scene`.
 
         Parameters
         ----------
-        *components: `type[Component] | Component`
-            The components, or their `type`, to add. Will be instanced immediately if a `type` is passed.
+        component: `type[Component] | Component`
+            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
+
+        Raises
+        ------
+        `ValueError`
+            If the component wasn't found.
+        """
+        self.scene.remove_component(component)
+
+    def add_service(self, service: Service, /) -> Self:
+        """
+        Adds a service to the app.
+
+        Parameters
+        ----------
+        service: `Service`
+            The service to add.
+
+        Returns
+        -------
+        `Self`
+            The app, for chaining.
+        """
+
+        self.scene.add_component(service)
+        return self
+
+    def remove_service(self, service: Service, /) -> Self:
+        """
+        Removes a service from the app.
+
+        Parameters
+        ----------
+        service: `Service`
+            The service to remove.
 
         Returns
         -------
@@ -310,137 +416,15 @@ class App:
 
         Raises
         ------
-        `ValueError`
-            If a type is passed that cannot be instanced with no arguments or if the app has already stopped running.
+        ValueError
+            If the service is an internal service.
         """
 
-        for component in components:
-            self.add_component(component)
+        if service in self._internal_services:
+            raise ValueError("Cannot remove internal service")
 
+        self.scene.remove_component(service)
         return self
-
-    def component[T: type[Component]](self, component: T, /) -> T:
-        """
-        Adds a component to the app.\n
-        Must be used as the first decorator, and as such should come before others such as `@dataclass`.
-        In constrast to `app.add_component`, this method will properly preserve the component's type.
-
-        Examples
-        --------
-        ```python
-        @app.component
-        @dataclass
-        class Player(Component):
-            position: Vector2
-        ```
-
-        Parameters
-        ----------
-        component: `type[Component]`
-            The type. Will be instanced immediately. Use `app.add_component` for finer control.
-
-        Returns
-        -------
-        `T`
-            The component, for chaining.
-
-        Raises
-        ------
-        `ValueError`
-            If the type passed cannot be instanced with no arguments or if the app has already stopped running.
-        """
-        self.add_component(component)
-        return component
-
-    def remove_component(self, component: type[Component] | Component, /) -> None:
-        """
-        Removes a component from the app.
-
-        Parameters
-        ----------
-        component: `type[Component] | Component`
-            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.\n
-            If the component is an internal component (such as `Events` or `Windowing`), an error will be raised.
-
-        Raises
-        ------
-        `ValueError`
-            If the component is internal or wasn't found.
-        """
-
-        if isinstance(component, type):
-            component = self.get_component(component)  # pyright: ignore[reportAssignmentType]
-
-        if component in self._internal_components:
-            raise ValueError(
-                f"Cannot remove internal component {component.__class__.__name__}."
-            )
-
-        self._components.remove(component)  # pyright: ignore[reportArgumentType]
-
-    def clear_components(self):
-        """Removes all non-internal components from the app."""
-
-        self._components = self._internal_components.copy()
-
-    def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
-        """
-        Gets a component from the app.
-
-        Parameters
-        ----------
-        component: `type[Component] | str`
-            The component's type's name, or the type itself. Will not be instanced.
-
-        Returns
-        -------
-        `Component | None`
-            The component, if found.
-        """
-
-        return first(self.get_components(component), default=None)
-
-    def get_components[T: Component](self, component: type[T] | str, /) -> list[T]:
-        """
-        Gets a list of components from the app.
-
-        Parameters
-        ----------
-        component: `type[Component] | str`
-            The component's type's name, or the type itself. Will not be instanced.
-
-        Returns
-        -------
-        `list[Component]`
-            The list of components, if found.
-        """
-        return list(
-            filter(lambda c: c.__class__.__name__ == component, self._components)
-            if isinstance(component, str)
-            else filter(lambda c: isinstance(c, component), self._components)
-        )  # pyright: ignore[reportReturnType]
-
-    def has_component(self, component: type[Component] | Component, /) -> bool:
-        """
-        Checks if the app contains a component.\n
-        If a type is passed, checks if the app contains any component of that type. Does not instance the type.
-
-        Parameters
-        ----------
-        component: `type[Component] | Component`
-            The component to check for.
-
-        Returns
-        -------
-        `bool`
-            Whether the app contains the component.
-        """
-
-        return (
-            get_by_attrs(self._components, __class__=component) is not None
-            if isinstance(component, type)
-            else component in self._components
-        )
 
     def register_module(
         self, module: _CompatibleModule, /, *, when: Hook | None = None
@@ -504,15 +488,3 @@ class App:
         """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
 
         pygame.event.post(pygame.event.Event(pygame.QUIT))
-
-    def _handle_possible_coroutine(
-        self, func: Callable[[], Coroutine | None], /
-    ) -> None:
-        if isgeneratorfunction(func):
-            self.executor.start_coroutine(func)
-        else:
-            func()
-
-    def _start_component(self, /, component: Component) -> None:
-        self._handle_possible_coroutine(component.start)
-        component._has_started = True  # pyright: ignore[reportAttributeAccessIssue]

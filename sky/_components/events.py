@@ -6,7 +6,7 @@ from typing import Any, Callable, Literal, Self, final
 import pygame
 from pygame.event import Event as PygameEvent
 
-from ..core import Component
+from ..core import Service
 from ..hook import Hook
 from ..utils import filter_by_attrs, first
 
@@ -17,13 +17,12 @@ type _PygameEventCallback = Callable[[PygameEvent], None]
 
 
 @final
-class Events(Component):
+class Events(Service):
     """Handles pygame events."""
 
     def __init__(self) -> None:
         self._events: list[PygameEvent] = []
         self._callbacks: dict[int, list[_PygameEventCallback]] = {}
-        self._cancelled: set[int] = set()
 
         self.on_event = Hook[_PygameEventCallback]()
 
@@ -54,9 +53,6 @@ class Events(Component):
         """
 
         self._events = pygame.event.get()
-
-        for event in self._cancelled:
-            self.cancel(event)
 
         for event in self:
             self.on_event.notify(event)
@@ -244,8 +240,24 @@ class Events(Component):
             PygameEvent(event, attrs or {}) if isinstance(event, int) else event
         )
 
+    def allow(self, event: PygameEvent | int, /) -> None:
+        """
+        Allows an event to be posted again, after it was cancelled with the `when` argument being `"always"`.
+
+        Parameters
+        ----------
+        event: `pygame.event.Event | int`
+            The event to allow.
+        """
+
+        pygame.event.set_allowed(event if isinstance(event, int) else event.type)
+
     def cancel(
-        self, event: PygameEvent | int, /, *, style: Literal["now", "forever"] = "now"
+        self,
+        event: PygameEvent | int,
+        /,
+        *,
+        when: Literal["frame", "always"] = "frame",
     ) -> None:
         """
         Removes an event from the event queue.
@@ -254,8 +266,8 @@ class Events(Component):
         ----------
         event: `pygame.event.Event | int`
             The event to remove.
-        style: `Literal["now", "forever"]`, optional
-            Whether to only cancel the event for the current frame or for all following frames. Defaults to "now".
+        when: `Literal["frame", "always"]`, optional
+            When to cancel the event: only for the current frame or for all subsequent frames. Defaults to "frame".
         """
 
         pygame.event.clear(type := event if isinstance(event, int) else event.type)
@@ -263,5 +275,5 @@ class Events(Component):
         for event in filter_by_attrs(self, type=type):
             self._events.remove(event)
 
-        if style == "forever":
-            self._cancelled.add(type)
+        if when == "always":
+            pygame.event.set_blocked(type)

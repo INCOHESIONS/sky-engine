@@ -2,7 +2,7 @@
 
 from collections.abc import Generator, Iterable, Iterator
 from inspect import Parameter, signature
-from random import randint
+from random import randint, uniform
 from typing import Any, Callable, Self, override
 
 from pygame import Color as PygameColor
@@ -61,6 +61,12 @@ class Vector2(PygameVector2):
         """Returns a `Vector2` pointing right."""
 
         return cls(1, 0)
+
+    @classmethod
+    def random(cls) -> Self:
+        """Returns a `Vector2` pointing in a random direction."""
+
+        return cls(uniform(-1, 1), uniform(-1, 1)).normalize()
 
     @override
     def normalize(self) -> Self:
@@ -385,6 +391,23 @@ class Color(PygameColor):
         """
 
         return self.brighten(-amount)
+
+    def invert(self) -> Self:
+        """
+        Inverts the color.
+
+        Returns
+        -------
+        `Color`
+            The inverted color.
+        """
+
+        return self.__class__(
+            255 - self.r,
+            255 - self.g,
+            255 - self.b,
+            self.a,
+        )
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:

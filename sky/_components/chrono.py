@@ -5,13 +5,13 @@ from typing import final, override
 
 import pygame
 
-from ..core import Component
+from ..core import Service
 
 __all__ = ["Chrono"]
 
 
 @final
-class Chrono(Component):
+class Chrono(Service):
     """Handles time."""
 
     def __init__(self) -> None:

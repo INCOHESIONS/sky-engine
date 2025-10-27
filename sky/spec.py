@@ -76,6 +76,9 @@ class AppSpec:
     window_spec: WindowSpec | None = field(default_factory=WindowSpec)
     """The main window's `WindowSpec`"""
 
+    default_scene: bool = True
+    """Whether to automatically add a default scene to the app."""
+
     # general debugging flag that currently does nothing internally
     debug: bool = False
     """Whether to enable debugging."""

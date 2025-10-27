@@ -1,13 +1,13 @@
 from typing import Callable, final, override
 
-from ..core import Component
+from ..core import Service
 from ..types import Coroutine
 from ..utils import callable_with_no_arguments
 from ..yieldable import WaitForFrames, Yieldable
 
 
 @final
-class Executor(Component):
+class Executor(Service):
     """Handles coroutines."""
 
     def __init__(self) -> None:

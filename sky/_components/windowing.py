@@ -7,7 +7,7 @@ from typing import final, override
 import pygame
 from screeninfo import get_monitors
 
-from ..core import Component, Monitor
+from ..core import Monitor, Service
 from ..spec import WindowSpec
 from ..utils import filter_by_attrs, first, get_by_attrs
 from ..window import Window
@@ -16,7 +16,7 @@ __all__ = ["Windowing"]
 
 
 @final
-class Windowing(Component):
+class Windowing(Service):
     """Handles windowing."""
 
     WINDOWFULLSCREENED = pygame.USEREVENT + 1

@@ -4,7 +4,7 @@ from typing import Callable, final, override
 
 import pygame
 
-from ..core import Component, Cursor, MouseButton, State
+from ..core import Cursor, MouseButton, Service, State
 from ..hook import Hook
 from ..types import CursorLike, MouseButtonLike, StateLike
 from ..utils import Vector2
@@ -17,7 +17,7 @@ type _MouseWheelCallback = Callable[[Vector2], None]
 
 
 @final
-class Mouse(Component):
+class Mouse(Service):
     """Handles mouse input."""
 
     def __init__(self) -> None:

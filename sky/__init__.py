@@ -27,6 +27,7 @@ import pygame
 from .app import App
 from .core import Component, Cursor, Key, Keybinding, Modifier, MouseButton, State
 from .hook import Hook
+from .scene import Scene
 from .spec import AppSpec, WindowSpec
 from .types import Coroutine
 from .utils import Color, Vector2
@@ -50,6 +51,7 @@ __all__ = [
     "Keybinding",
     "Modifier",
     "MouseButton",
+    "Scene",
     "State",
     "Vector2",
     "WaitForFrames",

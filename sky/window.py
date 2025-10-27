@@ -323,6 +323,10 @@ class Window:
         """Destroys the window."""
 
         self._underlying.destroy()
+
+        self.app.pre_update -= self._pre_update
+        self.app.post_update -= self.flip
+
         self.on_render.clear()
         self.on_close.notify()
 

@@ -45,6 +45,10 @@ class Component(ABC):
         """Runs every frame, after `pre_update` and before `post_update`."""
 
 
+class Service(Component, ABC):
+    """Services are global components that work across `Scene`s."""
+
+
 @final
 @dataclass(slots=True, frozen=True)
 class Monitor:
