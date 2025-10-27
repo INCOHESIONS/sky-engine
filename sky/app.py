@@ -10,7 +10,7 @@ from ._components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import Component, Service
 from .hook import Hook
 from .scene import Scene
-from .spec import AppSpec, WindowSpec
+from .spec import AppSpec, SceneSpec, WindowSpec
 from .utils import callable_with_no_arguments, singleton
 from .window import Window
 from .yieldable import Yieldable
@@ -57,7 +57,9 @@ class App:
         ```
     """
 
-    def __init__(self, /, *, spec: AppSpec | WindowSpec | None = None) -> None:
+    def __init__(
+        self, /, *, spec: AppSpec | WindowSpec | SceneSpec | None = None
+    ) -> None:
         pygame.init()
 
         # probably bad practice but this does makes things real easy to use which is the whole point of this library
@@ -67,11 +69,12 @@ class App:
         Hook.app = self
 
         self.is_running = False
-        self.has_stopped = False
 
         self.spec = (
             AppSpec(window_spec=spec)
             if isinstance(spec, WindowSpec)
+            else AppSpec(scene_spec=spec)
+            if isinstance(spec, SceneSpec)
             else spec or AppSpec()
         )
         """The app's specification, i.e., pre-execution configuration."""
@@ -125,8 +128,8 @@ class App:
 
         self._scenes: list[Scene] = []
 
-        if self.spec.default_scene:
-            self.load_scene(Scene())
+        if self.spec.scene_spec:
+            self.load_scene(Scene(spec=self.spec.scene_spec))
 
     def __iter__(self) -> Iterator[Scene]:
         """
@@ -151,6 +154,12 @@ class App:
         """The app's active scenes."""
 
         return self._scenes.copy()
+
+    @property
+    def non_persistent_scenes(self) -> Sequence[Scene]:
+        """The app's non-persistent active scenes."""
+
+        return [scene for scene in self._scenes if not scene.spec.persistent]
 
     @property
     def scene(self) -> Scene:
@@ -210,11 +219,6 @@ class App:
                     3. Scene.post_stop
                 4. App.cleanup
             ```
-
-        Raises
-        ------
-        `RuntimeError`
-            If the app has already stopped and is being rerun.
         """
 
         if self.spec.profile:
@@ -223,9 +227,6 @@ class App:
             self._mainloop()
 
     def _mainloop(self) -> None:
-        if self.has_stopped:
-            raise RuntimeError("You cannot run this app instance again!")
-
         self.preload.notify()
 
         for service in self.services:
@@ -250,7 +251,6 @@ class App:
             self.post_update.notify()
 
         self.is_running = False
-        self.has_stopped = True
 
         self.teardown.notify()
 
@@ -304,14 +304,19 @@ class App:
             case "add":
                 self._scenes.append(scene)
             case "replace_all":
-                for scene in self.scenes:
+                for scene in self.non_persistent_scenes:
                     self.unload_scene(scene)
+
                 self._scenes = [scene]
             case "replace_last":
-                self.unload_scene(self._scenes[-1])
+                try:
+                    self.unload_scene(self.non_persistent_scenes[-1])
+                except IndexError:
+                    pass
+
                 self._scenes.append(scene)
 
-        if self.is_running and not scene.has_started:
+        if self.is_running and not scene.is_running:
             scene.start()
 
     def unload_scene(self, scene: Scene, /):
@@ -380,6 +385,7 @@ class App:
         `ValueError`
             If the component wasn't found.
         """
+
         self.scene.remove_component(component)
 
     def add_service(self, service: Service, /) -> Self:

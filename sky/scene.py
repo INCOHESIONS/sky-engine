@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable, ClassVar, Self
 
 from .core import Component
 from .hook import Hook
+from .spec import SceneSpec
 from .types import Coroutine
 from .utils import callable_with_no_arguments, first, get_by_attrs
 
@@ -36,8 +37,10 @@ class Scene:
 
     app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
 
-    def __init__(self, components: list[Component] | None = None, /):
-        self._components = components or []
+    def __init__(self, /, *, spec: SceneSpec | None = None):
+        self.spec = spec if isinstance(spec, SceneSpec) else SceneSpec()
+
+        self._components = self.spec.components
 
         self.pre_start = Hook()
         self.post_start = Hook()
@@ -48,12 +51,12 @@ class Scene:
         self.pre_stop = Hook()
         self.post_stop = Hook()
 
-        self.has_started = False
+        self.is_running = False
 
     def __contains__(self, component: type[Component] | Component, /) -> bool:
         """
-        Checks if the app contains a component.\n
-        If a type is passed, checks if the app contains any component of that type. Does not instance the type.
+        Checks if the `Scene` contains a component.\n
+        If a type is passed, checks if the `Scene` contains any component of that type. Does not instance the type.
 
         Parameters
         ----------
@@ -63,7 +66,7 @@ class Scene:
         Returns
         -------
         `bool`
-            Whether the app contains the component.
+            Whether the `Scene` contains the component.
         """
 
         return self.has_component(component)
@@ -86,6 +89,24 @@ class Scene:
 
         return self._components.copy()
 
+    @classmethod
+    def from_components(cls, components: list[Component], /) -> Self:
+        """
+        Creates a new `Scene` from a sequence of components.
+
+        Parameters
+        ----------
+        components: `Iterable[Component]`
+            The components to add to the scene.
+
+        Returns
+        -------
+        `Scene`
+            The new `Scene`.
+        """
+
+        return cls(spec=SceneSpec(components=components))
+
     def start(self):
         """Starts this `Scene` and all of its components."""
 
@@ -96,10 +117,20 @@ class Scene:
 
         self.post_start.notify()
 
-        self.has_started = True
+        self.is_running = True
 
     def update(self):
-        """Updates this `Scene` and all of its components."""
+        """
+        Updates this `Scene` and all of its components.
+
+        Raises
+        ------
+        RuntimeError
+            If the scene is not running.
+        """
+
+        if not self.is_running:
+            raise RuntimeError("Scene is not running")
 
         self.pre_update.notify()
 
@@ -118,6 +149,8 @@ class Scene:
 
         self.post_stop.notify()
 
+        self.is_running = False
+
     def add_component(
         self,
         component: type[Component] | Component,
@@ -134,9 +167,9 @@ class Scene:
         component: `type[Component] | Component`
             The component, or its `type`, to add. Will be instanced immediately if a `type` is passed.
         when: `Hook | None`, optional
-            The Hook to use as a trigger for adding the component.
-            If `None` (the default), the component will be added immediately.\n
-            Basically a shorthand for `when += lambda: scene.add_component(component)`.
+            The `Hook` to use as a trigger for adding the component.
+            Will remove the callback from the `Hook` once the component has been added.\n
+            If `None` (the default), the component will be added immediately instead.
 
         Returns
         -------
@@ -155,12 +188,17 @@ class Scene:
             )
 
         def _add():
+            nonlocal when
+
             self._components.append(
                 comp := component() if callable(component) else component
             )
 
             if not getattr(comp, "_has_started", False):
                 self._start_component(comp)
+
+            if when:
+                when -= _add
 
         if when is None:
             _add()

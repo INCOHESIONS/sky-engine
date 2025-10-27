@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Literal, final
+from typing import Literal, Self, final
 
 from pygame import Surface
 
 from .colors import BLACK
+from .core import Component
 from .utils import Color, Vector2
 
 __all__ = [
     "AppSpec",
+    "SceneSpec",
     "WindowSpec",
 ]
 
@@ -67,6 +69,18 @@ class WindowSpec:
 
 
 @final
+@dataclass
+class SceneSpec:
+    """Defines information necessary to create a scene."""
+
+    components: list[Component] = field(default_factory=list)
+    """A list of components to add to the scene."""
+
+    persistent: bool = False
+    """Whether this scene should be unable to be unloaded."""
+
+
+@final
 @dataclass(slots=True, frozen=True)
 class AppSpec:
     """Defines information the app needs to have before mainloop. If `window_spec` is None, a window will not be created (headless mode)."""
@@ -76,8 +90,8 @@ class AppSpec:
     window_spec: WindowSpec | None = field(default_factory=WindowSpec)
     """The main window's `WindowSpec`"""
 
-    default_scene: bool = True
-    """Whether to automatically add a default scene to the app."""
+    scene_spec: SceneSpec | None = field(default_factory=SceneSpec)
+    """The default scene to add to the app. If `None`, will not create a default scene."""
 
     # general debugging flag that currently does nothing internally
     debug: bool = False
@@ -87,7 +101,7 @@ class AppSpec:
     """Whether to enable profiling (using `cProfile`)."""
 
     @classmethod
-    def headless(cls) -> AppSpec:
-        """Simply creates an `AppSpec` with `window_spec` set to None."""
+    def headless(cls) -> Self:
+        """Simply creates an `AppSpec` with `window_spec` set to `None`, meaning no window will be created."""
 
         return cls(window_spec=None)
