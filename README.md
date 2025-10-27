@@ -35,7 +35,6 @@ from sky.colors import WHITE
 app = App()
 
 
-@app.component
 @dataclass
 class Player(Component):
     position: Vector2 = field(default_factory=app.window.center.copy)
@@ -46,9 +45,49 @@ class Player(Component):
         pygame.draw.circle(app.window.surface, WHITE, self.position, 25)
 
 
+app.add_component(Player)
 app.mainloop()
 ```
 
-Although this example uses `pygame.draw` (software rendering), one may use Vulkan or OpenGL libraries for more hardware rendering. See [this](https://github.com/incohesions/sky-engine/tree/main/examples/hello_triangle.py) for an example using `zengl`.
+`Component`s are contained within `Scene`s. The example above uses `add_component` directly on `App`, which adds a component to the default scene, created via a `SceneSpec` argument in `AppSpec`.
+
+Here's a simple showcase of `Scene`s:
+
+```python
+from typing import override
+
+import pygame
+
+from sky import App, AppSpec, Color, Key, Scene, SceneSpec, Vector2
+from sky.colors import BLUE, RED
+
+app = App(spec=AppSpec.sceneless())  # no default scene since we'll add our own
+
+
+class CircleScene(Scene):
+    def __init__(self, pos: Vector2, color: Color, /):
+        super().__init__(spec=SceneSpec())
+
+        self.pos = pos
+        self.color = color
+
+    @override
+    def update(self):
+        pygame.draw.circle(app.window.surface, self.color, self.pos, 50)
+
+
+app.load_scene(red_scene := CircleScene(app.window.center + Vector2(100, 0), RED))
+app.load_scene(blue_scene := CircleScene(app.window.center - Vector2(100, 0), BLUE))
+
+app.keyboard.add_keybindings({
+    Key.a: lambda: app.toggle_scene(red_scene),
+    Key.b: lambda: app.toggle_scene(blue_scene),
+    Key.escape: app.quit,
+})
+
+app.mainloop()
+```
+
+Although both of these examples use software rendering with `pygame.draw`, one may alternatively use Vulkan or OpenGL libraries for hardware rendering. See [this](https://github.com/incohesions/sky-engine/tree/main/examples/hello_triangle.py) for an example using `zengl`.
 
 For examples on other Sky Engine features, see the [examples](https://github.com/incohesions/sky-engine/tree/main/examples) folder.
