@@ -265,15 +265,22 @@ class Keyboard(Service):
 
         self._keybindings.append(keybinding)
 
-    def add_keybindings(self, keybindings: dict[KeyLike, Callable[[], None]]) -> None:
+    def add_keybindings(
+        self, keybindings: list[Keybinding] | dict[KeyLike, Callable[[], None]]
+    ) -> None:
         """
-        A helper method for adding many modifier-less keybindings.
+        Adds a list of keybindings, or serves as a helper method for adding many simple, key to action, modifier-less keybindings.
 
         Parameters
         ----------
-        keybindings: `dict[KeyLike, Callable[[], None]]`
-            `KeyLike` to action mapping for the keybindings.
+        keybindings: `list[Keybinding] | dict[KeyLike, Callable[[], None]]`
+            The list of keybindings to add or a `KeyLike` to action mapping for the keybindings to be created.
         """
+
+        if isinstance(keybindings, list):
+            for keybinding in keybindings:
+                self.add_keybinding(keybinding)
+            return
 
         for key, action in keybindings.items():
             self.add_keybinding(Keybinding.make(key, action=action))
