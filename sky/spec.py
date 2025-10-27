@@ -105,3 +105,9 @@ class AppSpec:
         """Simply creates an `AppSpec` with `window_spec` set to `None`, meaning no window will be created."""
 
         return cls(window_spec=None)
+
+    @classmethod
+    def sceneless(cls) -> Self:
+        """Simply creates an `AppSpec` with `scene_spec` set to `None`, meaning no scene will be created."""
+
+        return cls(scene_spec=None)

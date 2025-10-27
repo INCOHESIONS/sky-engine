@@ -1,3 +1,5 @@
+"""Contains the `Scene` class, used for managing components."""
+
 from collections.abc import Iterator, Sequence
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Callable, ClassVar, Self

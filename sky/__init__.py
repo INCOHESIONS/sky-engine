@@ -28,7 +28,7 @@ from .app import App
 from .core import Component, Cursor, Key, Keybinding, Modifier, MouseButton, State
 from .hook import Hook
 from .scene import Scene
-from .spec import AppSpec, WindowSpec
+from .spec import AppSpec, SceneSpec, WindowSpec
 from .types import Coroutine
 from .utils import Color, Vector2
 from .yieldable import WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
@@ -52,6 +52,7 @@ __all__ = [
     "Modifier",
     "MouseButton",
     "Scene",
+    "SceneSpec",
     "State",
     "Vector2",
     "WaitForFrames",
