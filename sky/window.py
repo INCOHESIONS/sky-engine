@@ -14,7 +14,7 @@ from .spec import WindowSpec
 from .utils import Color, Vector2
 
 if TYPE_CHECKING:
-    from ._components.windowing import Windowing
+    from ._services.windowing import Windowing
     from .app import App
 
 __all__ = ["Window"]

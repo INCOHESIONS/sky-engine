@@ -6,7 +6,7 @@ from typing import Literal, Protocol, Self, final
 
 import pygame
 
-from ._components import Chrono, Events, Executor, Keyboard, Mouse, Windowing
+from ._services import *
 from .core import Component, Service
 from .hook import Hook
 from .scene import Scene
@@ -403,7 +403,7 @@ class App:
             The app, for chaining.
         """
 
-        self.scene.add_component(service)
+        self._services.append(service)
         return self
 
     def remove_service(self, service: Service, /) -> Self:
@@ -423,13 +423,13 @@ class App:
         Raises
         ------
         ValueError
-            If the service is an internal service.
+            If the service is an internal service or if the service is not registered.
         """
 
         if service in self._internal_services:
             raise ValueError("Cannot remove internal service")
 
-        self.scene.remove_component(service)
+        self._services.remove(service)
         return self
 
     def register_module(

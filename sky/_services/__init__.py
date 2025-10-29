@@ -1,4 +1,4 @@
-"""All of the engine's internal components."""
+"""All of the engine's internal services."""
 
 from .chrono import Chrono
 from .events import Events
