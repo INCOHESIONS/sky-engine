@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from .sentinel import Sentinel
+from .core import Sentinel
 from .types import Coroutine
 from .utils import first
 
@@ -28,7 +28,7 @@ __all__ = ["Hook"]
 
 class Hook[**TParams = [], TReturn: Any = None]:
     """
-    A `Hook` that can be listened to.
+    A `Hook` that can have callbacks registered to it.
 
     ## Examples
     ### Simple usage:
@@ -156,6 +156,7 @@ class Hook[**TParams = [], TReturn: Any = None]:
     """
 
     app: ClassVar[App]
+
     _NOT_EXECUTED: ClassVar = Sentinel("NOT_EXECUTED")
 
     def __init__(
@@ -325,7 +326,7 @@ class Hook[**TParams = [], TReturn: Any = None]:
         Returns
         -------
         list[TReturn]
-            A list of the results of the callbacks.
+            A list of all the values returned by the callbacks.
 
         Raises
         ------
