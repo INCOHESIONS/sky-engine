@@ -76,9 +76,6 @@ class SceneSpec:
     components: list[Component] = field(default_factory=list)
     """A list of components to add to the scene."""
 
-    persistent: bool = False
-    """Whether this scene should be unable to be unloaded."""
-
 
 @final
 @dataclass(slots=True, frozen=True)

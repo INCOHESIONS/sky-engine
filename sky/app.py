@@ -28,10 +28,41 @@ class _CompatibleModule(Protocol):
 @singleton
 class App:
     """
-    The singleton `App` class.\n
-    Pre-execution configuration is defined with `AppSpec`, such as the main window's title and size.
+    The singleton `App` class. Pre-execution configuration is defined with `AppSpec`, such as the main window's title and size.\n
+    User-defined `Component`s can be added by subclassing `Component` and using the `add_component` method on the `App` (which will add them to the main scene), or on a specific `Scene`.\n
+    Services can also be added by subclassing `Service` and using the `add_service` method.
 
-    Services (in order of execution):
+    ### Order of execution:
+        ```
+        Pre-loop:
+            1. App.preload
+            2. Service.start (for all services)
+            3. Scene.start (for all scenes)
+                1. Scene.pre_start
+                2. Component.start
+                3. Scene.post_start
+            4. App.setup
+
+        During loop:
+            1. App.pre_update
+            2. Service.update (for all services)
+            3. Scene.update (for all scenes)
+                1. Scene.pre_update
+                2. Component.update
+                3. Scene.post_update
+            4. App.post_update
+
+        Post-loop:
+            1. App.teardown
+            2. Service.stop (for all services)
+            3. Scene.stop (for all scenes)
+                1. Scene.pre_stop
+                2. Component.stop
+                3. Scene.post_stop
+            4. App.cleanup
+        ```
+
+    ### Services (in order of execution):
         - `Events` (handles pygame events)
         - `Keyboard` (handles keyboard input)
         - `Mouse` (handles mouse input)
@@ -39,26 +70,23 @@ class App:
         - `Chrono` (handles time)
         - `Executor` (handles coroutines)
 
-    User-defined components can be added by subclassing `Component` and using the `add_component` method on a `Scene`.
-
-    Hooks:
-        ```
-        Pre-loop:
-            1. preload (before scenes and services are started up, just after mainloop is called)
-            2. setup (after scenes and services are started up, and before the first frame)
-
-        During loop:
-            1. pre_update (before scenes and services are updated)
-            2. post_update (after scenes and services are updated)
-
-        Post-loop:
-            1. teardown (before scenes and services are stopped, and after the last frame)
-            2. cleanup (after scenes and services are stopped, and before the app is destroyed; cleans up registered modules)
-        ```
+    Parameters
+    ----------
+    spec: `AppSpec | WindowSpec | SceneSpec | None`, optional
+        Specification for the whole app, just the main scene, or just the main window.
+        By default `None`, which creates a default `AppSpec`. See `AppSpec` for more information.
+    modules: `Sequence[_CompatibleModule] | None`, optional
+        A `Sequence` of objects that have `init` and `quit` methods, such as the `pygame.freetype` or `pygame.mixer` modules, to register.
+        Modules will be initialized (`init`) immediately, and cleaned up (`quit`) when the `App`'s `cleanup` `Hook` is notified.
+        By default `None`.
     """
 
     def __init__(
-        self, /, *, spec: AppSpec | WindowSpec | SceneSpec | None = None
+        self,
+        /,
+        *,
+        spec: AppSpec | WindowSpec | SceneSpec | None = None,
+        modules: Sequence[_CompatibleModule] | None = None,
     ) -> None:
         pygame.init()
 
@@ -97,6 +125,10 @@ class App:
         self.cleanup = Hook()
         """Executes after scenes and services are stopped, and before the app is destroyed; cleans up registered modules."""
 
+        for module in modules or []:
+            module.init()
+            self.cleanup += module.quit
+
         self.events = Events()
         """Handles pygame events."""
 
@@ -133,12 +165,12 @@ class App:
 
     def __iter__(self) -> Iterator[Scene]:
         """
-        Iterates over the app's active scenes.
+        Iterates over the app's scenes.
 
         Yields
         ------
         `Scene`
-            The next active scene.
+            The next scene.
         """
 
         yield from self._scenes
@@ -151,19 +183,20 @@ class App:
 
     @property
     def scenes(self) -> Sequence[Scene]:
-        """The app's active scenes."""
+        """The app's scenes."""
 
         return self._scenes.copy()
 
     @property
-    def non_persistent_scenes(self) -> Sequence[Scene]:
-        """The app's non-persistent active scenes."""
-
-        return [scene for scene in self._scenes if not scene.spec.persistent]
-
-    @property
     def scene(self) -> Scene:
-        """The app's main active scene. Always the last scene in the list."""
+        """
+        The app's main scene. Always the last scene in the list.
+
+        Raises
+        ------
+        `IndexError`
+            If there are no scenes.
+        """
 
         return self._scenes[-1]
 
@@ -194,8 +227,8 @@ class App:
             ```
             Pre-loop:
                 1. App.preload
-                2. Service.start
-                3. Scene.start
+                2. Service.start (for all services)
+                3. Scene.start (for all scenes)
                     1. Scene.pre_start
                     2. Component.start
                     3. Scene.post_start
@@ -203,8 +236,8 @@ class App:
 
             During loop:
                 1. App.pre_update
-                2. Service.update
-                3. Scene.update
+                2. Service.update (for all services)
+                3. Scene.update (for all scenes)
                     1. Scene.pre_update
                     2. Component.update
                     3. Scene.post_update
@@ -212,8 +245,8 @@ class App:
 
             Post-loop:
                 1. App.teardown
-                2. Service.stop
-                3. Scene.stop
+                2. Service.stop (for all services)
+                3. Scene.stop (for all scenes)
                     1. Scene.pre_stop
                     2. Component.stop
                     3. Scene.post_stop
@@ -275,7 +308,7 @@ class App:
         mode: Literal["add", "replace_all", "replace_last"] = "add",
     ) -> None:
         """
-        Adds a scene to the app's active scenes.\n
+        Adds a scene to the app's scenes.\n
         If a type is passed, it will be instanced immediately with no arguments.
 
         Parameters
@@ -284,9 +317,9 @@ class App:
             The scene, or its type (to be instanced), to add.
         mode: `Literal["add", "replace_all", "replace_last"]`
             The mode of loading the scene.
-            "add" adds the scene to the list of active scenes.
-            "replace_all" removes all active scenes and leaves the new scene as the only active scene.
-            "replace_last" replaces the last active scene with the new scene.
+            "add" appends the scene to the list of scenes.
+            "replace_all" removes all scenes and leaves the new scene as the only scene.
+            "replace_last" replaces the last scene with the new scene.
 
         Raises
         ------
@@ -304,13 +337,13 @@ class App:
             case "add":
                 self._scenes.append(scene)
             case "replace_all":
-                for scene in self.non_persistent_scenes:
+                for scene in self.scenes:
                     self.unload_scene(scene)
 
                 self._scenes = [scene]
             case "replace_last":
                 try:
-                    self.unload_scene(self.non_persistent_scenes[-1])
+                    self.unload_scene(self.scenes[-1])
                 except IndexError:
                     pass
 
@@ -321,7 +354,7 @@ class App:
 
     def unload_scene(self, scene: Scene, /):
         """
-        Removes a `Scene` from the list of active scenes and stops it.
+        Removes a `Scene` from the list of scenes and stops it.
 
         Parameters
         ----------
@@ -373,7 +406,7 @@ class App:
 
     def remove_component(self, component: type[Component] | Component, /) -> None:
         """
-        Removes a component from the main active `Scene`.
+        Removes a component from the main `Scene`.
 
         Parameters
         ----------
@@ -432,65 +465,7 @@ class App:
         self._services.remove(service)
         return self
 
-    def register_module(
-        self, module: _CompatibleModule, /, *, when: Hook | None = None
-    ) -> Self:
-        """
-        Registers a module to be initialized and cleaned up when the app is started and stopped.
-        Initializes the module immediately if `when` is None, otherwise initializes it when `when` is triggered.\n
-        Modules must have `init` and `quit` functions.\n
-        Useful for pygame modules such as `freetype` and `mixer`.
-
-        Parameters
-        ----------
-        module: `_CompatibleModule`
-            The module to register.
-        when: `Hook | None`
-            The Hook to use as a trigger for initializing the module.
-            If `None` (the default), the module will be initialized immediately.\n
-
-        Returns
-        -------
-        `Self`
-            The app, for chaining.
-        """
-
-        if when is None:
-            module.init()
-        else:
-            when += module.init
-
-        self.cleanup += module.quit
-        return self
-
-    def register_modules(self, /, *modules: _CompatibleModule) -> Self:
-        """
-        Registers a module to be initialized and cleaned up when the app is started and stopped.
-        Initializes the module immediately. Modules must have `init` and `quit` functions.\n
-        Useful for pygame modules such as `freetype` and `mixer`.\n
-
-        Parameters
-        ----------
-        *modules: `_CompatibleModule`
-            The modules to register.
-
-        Returns
-        -------
-        `Self`
-            The app, for chaining.
-
-        Raises
-        ------
-        `AssertionError`
-            If the module does not have `init` and `quit` functions.
-        """
-
-        for module in modules:
-            self.register_module(module)
-
-        return self
-
     def quit(self) -> None:
         """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
 
-        pygame.event.post(pygame.event.Event(pygame.QUIT))
+        self.events.post(pygame.QUIT)

@@ -110,7 +110,17 @@ class Scene:
         return cls(spec=SceneSpec(components=components))
 
     def start(self):
-        """Starts this `Scene` and all of its components."""
+        """
+        Starts this `Scene` and all of its components.
+
+        Raises
+        ------
+        RuntimeError
+            If the scene is already running.
+        """
+
+        if self.is_running:
+            raise RuntimeError("A Scene cannot be started when it's already running!")
 
         self.pre_start.notify()
 
@@ -132,7 +142,7 @@ class Scene:
         """
 
         if not self.is_running:
-            raise RuntimeError("Scene is not running")
+            raise RuntimeError("A Scene cannot be updated when it's not running!")
 
         self.pre_update.notify()
 
@@ -142,7 +152,17 @@ class Scene:
         self.post_update.notify()
 
     def stop(self):
-        """Stops this `Scene` and all of its components."""
+        """
+        Stops this `Scene` and all of its components.
+
+        Raises
+        ------
+        RuntimeError
+            If the scene is not running.
+        """
+
+        if not self.is_running:
+            raise RuntimeError("A Scene cannot be stopped when it's not running!")
 
         self.pre_stop.notify()
 
