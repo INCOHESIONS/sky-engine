@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Callable, ClassVar, final
+from typing import TYPE_CHECKING, ClassVar, final
 
 import pygame
 from pygame.event import Event as PygameEvent
@@ -11,16 +11,13 @@ from pygame.event import Event as PygameEvent
 from .core import Monitor
 from .hook import Hook
 from .spec import WindowSpec
-from .utils import Color, Vector2
+from .utils import Color, Rect, Vector2
 
 if TYPE_CHECKING:
     from ._services.windowing import Windowing
     from .app import App
 
 __all__ = ["Window"]
-
-
-type _PygameEventCallback = Callable[[PygameEvent], None]
 
 
 @final
@@ -69,19 +66,19 @@ class Window:
 
         self.fill_color = self._spec.fill
 
-        self._hook_map: dict[int, Hook[_PygameEventCallback]] = {}
+        self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
 
         self.on_render = Hook()
+        self.on_close = Hook()
 
-        self.on_mouse_enter = self._make_hook(pygame.WINDOWENTER)
-        self.on_mouse_leave = self._make_hook(pygame.WINDOWLEAVE)
-        self.on_mouse_move = self._make_hook(pygame.MOUSEMOTION)
+        self.on_mouse_enter = self._make_event_hook(pygame.WINDOWENTER)
+        self.on_mouse_leave = self._make_event_hook(pygame.WINDOWLEAVE)
+        self.on_mouse_move = self._make_event_hook(pygame.MOUSEMOTION)
 
-        self.on_focus_gained = self._make_hook(pygame.WINDOWFOCUSGAINED)
-        self.on_focus_lost = self._make_hook(pygame.WINDOWFOCUSLOST)
+        self.on_focus_gained = self._make_event_hook(pygame.WINDOWFOCUSGAINED)
+        self.on_focus_lost = self._make_event_hook(pygame.WINDOWFOCUSLOST)
 
-        self.on_resize = self._make_hook(pygame.WINDOWRESIZED)
-        self.on_close = self._make_hook(pygame.WINDOWCLOSE)
+        self.on_resize = self._make_event_hook(pygame.WINDOWRESIZED)
 
         self.app.pre_update += self._pre_update
         self.app.post_update += self.flip
@@ -177,10 +174,10 @@ class Window:
         self._underlying.size = Vector2(self.width, value)
 
     @property
-    def rect(self) -> pygame.Rect:
+    def rect(self) -> Rect:
         """This `Window`'s rect."""
 
-        return self.surface.get_rect()
+        return Rect(self.surface.get_rect())
 
     @property
     def center(self) -> Vector2:
@@ -314,7 +311,7 @@ class Window:
 
         self.surface.fill(color)
 
-    def blit(self, surface: pygame.Surface, /, position: Vector2 | pygame.Rect) -> None:
+    def blit(self, surface: pygame.Surface, /, position: Vector2 | Rect) -> None:
         """Blits the surface onto the window."""
 
         self.surface.blit(surface, position)
@@ -341,13 +338,13 @@ class Window:
         if self.fill_color:
             self.fill(self.fill_color)
 
-    def _handle_events(self, event: pygame.event.Event):
+    def _handle_events(self, event: pygame.event.Event, /):
         if not hasattr(event, "window") or event.window != self.underlying:
             return
 
         if event.type in self._hook_map:
             self._hook_map[event.type].notify(event)
 
-    def _make_hook(self, type: int) -> Hook[_PygameEventCallback]:
-        self._hook_map[type] = Hook[_PygameEventCallback]()
+    def _make_event_hook(self, type: int, /) -> Hook[[PygameEvent]]:
+        self._hook_map[type] = Hook[[PygameEvent]]()
         return self._hook_map[type]

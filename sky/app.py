@@ -6,7 +6,7 @@ from typing import Literal, Protocol, Self, final
 
 import pygame
 
-from ._services import *
+from ._services import Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import Component, Service
 from .hook import Hook
 from .scene import Scene

@@ -13,18 +13,15 @@ from ..utils import filter_by_attrs, first
 __all__ = ["Events"]
 
 
-type _PygameEventCallback = Callable[[PygameEvent], None]
-
-
 @final
 class Events(Service):
     """Handles pygame events."""
 
     def __init__(self) -> None:
         self._events: list[PygameEvent] = []
-        self._callbacks: dict[int, list[_PygameEventCallback]] = {}
+        self._callbacks: dict[int, list[Callable[[PygameEvent], None]]] = {}
 
-        self.on_event = Hook[_PygameEventCallback]()
+        self.on_event = Hook[[PygameEvent]]()
 
     def __iter__(self) -> Iterator[PygameEvent]:
         return iter(self._events)

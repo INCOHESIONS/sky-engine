@@ -411,8 +411,8 @@ class Keybinding:
 
     keymap: dict[Key, State]
 
-    on_activation: Hook = field(default_factory=Hook)
-    on_deactivation: Hook = field(default_factory=Hook)
+    on_activation: Hook = field(default_factory=Hook[[]])
+    on_deactivation: Hook = field(default_factory=Hook[[]])
 
     def __post_init__(self):
         if not self.keymap:

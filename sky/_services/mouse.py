@@ -1,6 +1,6 @@
 """Contains the `Mouse` component that handles mouse input."""
 
-from typing import Callable, final, override
+from typing import final, override
 
 import pygame
 
@@ -10,10 +10,6 @@ from ..types import CursorLike, MouseButtonLike, StateLike
 from ..utils import Vector2
 
 __all__ = ["Mouse"]
-
-type _StatefulMouseButtonCallback = Callable[[MouseButton, State], None]
-type _MouseButtonCallback = Callable[[MouseButton], None]
-type _MouseWheelCallback = Callable[[Vector2], None]
 
 
 @final
@@ -29,13 +25,13 @@ class Mouse(Service):
 
         self._states: list[State] = [State.none for _ in range(self._num_buttons)]
 
-        self.on_mouse_button = Hook[_StatefulMouseButtonCallback]()
+        self.on_mouse_button = Hook[[MouseButton, State]]()
 
-        self.on_mouse_button_pressed = Hook[_MouseButtonCallback]()
-        self.on_mouse_button_downed = Hook[_MouseButtonCallback]()
-        self.on_mouse_button_released = Hook[_MouseButtonCallback]()
+        self.on_mouse_button_pressed = Hook[[MouseButton]]()
+        self.on_mouse_button_downed = Hook[[MouseButton]]()
+        self.on_mouse_button_released = Hook[[MouseButton]]()
 
-        self.on_mouse_wheel = Hook[_MouseWheelCallback]()
+        self.on_mouse_wheel = Hook[[Vector2]]()
 
     @property
     def position(self) -> Vector2:
@@ -63,34 +59,9 @@ class Mouse(Service):
 
     @property
     def cursor(self) -> pygame.Cursor:
-        """
-        Gets or sets the cursor.
-
-        # Getter
-
-        Returns
-        -------
-        `pygame.Cursor`
-            The cursor.
-
-        # Setter
-
-        Parameters
-        ----------
-        cursor: `CursorLike`
-            The cursor to set.
-
-        Returns
-        -------
-        `pygame.Cursor`
-            The cursor.
-        """
+        """Gets the cursor. Use set_cursor() to set the cursor."""
 
         return pygame.mouse.get_cursor()
-
-    @cursor.setter
-    def cursor(self, cursor: CursorLike, /) -> None:  # pyright: ignore[reportPropertyTypeMismatch]
-        pygame.mouse.set_cursor(Cursor.as_cursor(cursor))
 
     @property
     def relative_mode(self) -> bool:
@@ -273,3 +244,6 @@ class Mouse(Service):
             if state == State.none
             else any(b == state for b in self.states)
         )
+
+    def set_cursor(self, cursor: CursorLike, /) -> None:
+        pygame.mouse.set_cursor(Cursor.as_cursor(cursor))

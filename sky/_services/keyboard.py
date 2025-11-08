@@ -11,9 +11,6 @@ from ..utils import Vector2, Vector3
 
 __all__ = ["Keyboard"]
 
-type _StatefulKeyCallback = Callable[[Key, State], None]
-type _KeyCallback = Callable[[Key], None]
-
 
 @final
 class Keyboard(Service):
@@ -26,11 +23,11 @@ class Keyboard(Service):
         self._keybindings: list[Keybinding] = []
         self._active_keybindings: list[Keybinding] = []
 
-        self.on_key = Hook[_StatefulKeyCallback]()
+        self.on_key = Hook[[Key, State]]()
 
-        self.on_key_pressed = Hook[_KeyCallback]()
-        self.on_key_downed = Hook[_KeyCallback]()
-        self.on_key_released = Hook[_KeyCallback]()
+        self.on_key_pressed = Hook[[Key]]()
+        self.on_key_downed = Hook[[Key]]()
+        self.on_key_released = Hook[[Key]]()
 
     @property
     def states(self) -> dict[Key, State]:

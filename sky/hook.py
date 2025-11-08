@@ -5,8 +5,18 @@ from __future__ import annotations
 import functools
 from bisect import insort
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Literal, Self, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Self,
+    get_type_hints,
+    overload,
+)
 
+from .sentinel import Sentinel
 from .types import Coroutine
 from .utils import first
 
@@ -16,11 +26,12 @@ if TYPE_CHECKING:
 __all__ = ["Hook"]
 
 
-class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
+class Hook[**TParams = [], TReturn: Any = None]:
     """
     A `Hook` that can be listened to.
 
-    ## Usage
+    ## Examples
+    ### Simple usage:
     ```python
     from sky import Hook
 
@@ -32,7 +43,7 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     on_something.notify()  # notifies all callbacks
     ```
 
-    They can also be used as decorators:
+    ### Decorator:
     ```python
     from sky import App
 
@@ -47,7 +58,7 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     app.mainloop()
     ```
 
-    They can also be used as decorators in coroutines:
+    ### Decorator in a `Coroutine`:
     ```python
     from sky import App, WaitForSeconds, Coroutine
     from sky.colors import BLUE, RED
@@ -65,7 +76,7 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     app.mainloop()
     ```
 
-    They can also be added with priorities:
+    ### Callback registration with priority:
     ```python
     from sky import Hook
 
@@ -87,31 +98,48 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
     on_something.notify()
     ```
 
-    They can also be cancelled: if a callback returns a truthy value, and `cancellable` is set to `True`, execution of all following callbacks is stopped.
+    ### Gathering results from callbacks:
     ```python
-    from typing import Callable
-
     from sky import Hook
 
-    on_something = Hook[Callable[[], bool]](cancellable=True)
+    on_something = Hook[[float], float]()
 
 
     @on_something
-    def callback1() -> bool:
-        print("callback1")
-        return True
+    def square(v: float) -> float:
+        return v**2
 
 
     @on_something
-    def callback2() -> bool:
-        print("this will not execute")
-        return False
+    def cube(v: float) -> float:
+        return v**3
+
+
+    print(on_something.notify(3))
+    ```
+
+    ### Callback cancellation:
+    ```python
+    from sky import Hook
+
+    on_something = Hook(cancellable=True)
+
+
+    @on_something
+    def will_exec() -> None:
+        print("This will execute")
+        on_something.cancel()
+
+
+    @on_something
+    def wont_exec() -> None:
+        print("This won't")
 
 
     on_something.notify()
     ```
 
-    They can also be set to only be able to be called once:
+    ### Preventing recalling with `once`:
     ```python
     from sky import Hook
 
@@ -119,55 +147,74 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
 
     @on_something
-    def some_callback() -> None: ...
+    def callback() -> None: ...
 
 
     on_something.notify()
-    on_something.notify()  # raises RuntimeError. you can check if it's already been called at least once with the `on_something.called` property
+    on_something.notify()  # raises `RuntimeError`. you can check if it's already been called at least once with the `on_something.called` property.
     ```
     """
 
     app: ClassVar[App]
+    _NOT_EXECUTED: ClassVar = Sentinel("NOT_EXECUTED")
 
     def __init__(
         self,
-        callbacks: list[TCallback] | None = None,
+        callbacks: list[Callable[TParams, TReturn]] | None = None,
         /,
         *,
         cancellable: bool = False,
         once: bool = False,
     ) -> None:
-        self._callbacks: list[tuple[TCallback, int]] = [(c, 0) for c in callbacks or []]
+        self._callbacks: list[tuple[Callable[TParams, TReturn], int]] = [
+            (c, 0) for c in callbacks or []
+        ]
+
         self._cancellable = cancellable
+        self._cancelled = False
+
         self._once = once
         self._called = False
 
-    def __iter__(self) -> Iterator[TCallback]:
+    def __iter__(self) -> Iterator[Callable[TParams, TReturn]]:
         return iter(c for c, _ in self._callbacks)
 
-    def __call__[C: Callable[[], Coroutine]](
-        self, callback: TCallback | C, /
-    ) -> TCallback | C:
+    @overload
+    def __call__(
+        self, callback: Callable[TParams, Coroutine], /
+    ) -> Callable[TParams, Coroutine]: ...
+
+    @overload
+    def __call__(
+        self, callback: Callable[TParams, TReturn], /
+    ) -> Callable[TParams, TReturn]: ...
+
+    def __call__[TCallable: Callable[..., Any]](
+        self, callback: TCallable, /
+    ) -> TCallable:
         if get_type_hints(callback).get("return", None) is Coroutine:
 
-            def __add(*args: Any, **kwargs: Any) -> None:  # pyright: ignore[reportUnusedParameter]
-                self.app.executor.start_coroutine(callback)
+            def __add(*args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
+                self.app.executor.start_coroutine(callback(*args, **kwargs))
+                return None  # pyright: ignore[reportReturnType]
 
-            self.add_callback(__add)  # pyright: ignore[reportArgumentType]
+            self.add_callback(__add)
         else:
-            self.add_callback(callback)  # pyright: ignore[reportArgumentType]
+            self.add_callback(callback)
 
         return callback
 
-    def __imatmul__(self, callback_with_priority: tuple[TCallback, int], /) -> Self:
-        self.add_callback(callback_with_priority[0], priority=callback_with_priority[1])
+    def __imatmul__(
+        self, callback_with_priority: tuple[Callable[TParams, TReturn], int], /
+    ) -> Self:
+        self.add_callback(callback_with_priority)
         return self
 
-    def __iadd__(self, callback: TCallback, /) -> Self:
+    def __iadd__(self, callback: Callable[TParams, TReturn], /) -> Self:
         self.add_callback(callback)
         return self
 
-    def __isub__(self, callback: TCallback, /) -> Self:
+    def __isub__(self, callback: Callable[TParams, TReturn], /) -> Self:
         self.remove_callback(callback)
         return self
 
@@ -189,15 +236,35 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
         return self._called
 
+    @overload
     def add_callback(
-        self, callback: TCallback, /, *, priority: Literal["min", "max"] | int = 0
+        self,
+        callback: tuple[Callable[TParams, TReturn], int],
+        /,
+    ) -> None: ...
+
+    @overload
+    def add_callback(
+        self,
+        callback: Callable[TParams, TReturn],
+        /,
+        *,
+        priority: Literal["min", "max"] | int = 0,
+    ) -> None: ...
+
+    def add_callback(
+        self,
+        callback: tuple[Callable[TParams, TReturn], int] | Callable[TParams, TReturn],
+        /,
+        *,
+        priority: Literal["min", "max"] | int = 0,
     ) -> None:
         """
         Adds a callback to the list of callbacks.
 
         Parameters
         ----------
-        callback: `TCallback`
+        callback: `Callable[TParams, TReturn]`
             The callback to add.
         priority: `Literal["min", "max"] | int`
             The priority of the callback.\n
@@ -205,6 +272,9 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
             If set to `"max"`, the callback will be added with a priority of the current highest priority callback plus 1. If this is the first callback being added, it will have a priority of `100`.\n
             If set to an `int`, the callback will simply be added with that priority.
         """
+
+        if isinstance(callback, tuple):
+            callback, priority = callback
 
         if isinstance(priority, str):
             if priority == "min":
@@ -214,13 +284,13 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
         insort(self._callbacks, (callback, priority), key=lambda x: -x[1])
 
-    def remove_callback(self, callback: TCallback, /) -> None:
+    def remove_callback(self, callback: Callable[TParams, TReturn], /) -> None:
         """
         Removes a callback to the list of callbacks.
 
         Parameters
         ----------
-        callback: `TCallback`
+        callback: `Callable[TParams, TReturn]`
             The callback to remove.
 
         Raises
@@ -241,9 +311,21 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
         self._callbacks.clear()
 
-    def notify(self, /, *args: Any, **kwargs: Any) -> None:
+    def notify(self, /, *args: TParams.args, **kwargs: TParams.kwargs) -> list[TReturn]:
         """
         Notifies all callbacks.
+
+        Parameters
+        ----------
+        *args : TParams.args
+            Positional arguments to pass to the callbacks.
+        **kwargs : TParams.kwargs
+            Keyword arguments to pass to the callbacks.
+
+        Returns
+        -------
+        list[TReturn]
+            A list of the results of the callbacks.
 
         Raises
         ------
@@ -254,20 +336,46 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
         if self._once and self._called:
             raise RuntimeError("Hook with `once` set to `True` was already called.")
 
-        for callback in self:
-            if callback(*args, **kwargs) and self._cancellable:
-                break
+        results: list[TReturn] = []
+
+        if not self._cancelled:
+            for callback in self:
+                if (result := callback(*args, **kwargs)) is not self._NOT_EXECUTED:
+                    results.append(result)
+
+                if self._cancelled:
+                    break
 
         if self._once:
             self.clear()
 
         self._called = True
+        self._cancelled = False
+
+        return results
 
     invoke = notify  # alias
+    trigger = notify  # alias
+    emit = notify  # alias
+
+    def cancel(self) -> None:
+        """
+        Cancels the `Hook` and prevents any further callbacks from being invoked.
+
+        Raises
+        ------
+        `RuntimeError`
+            If the `Hook` is not cancellable.
+        """
+
+        if not self.cancellable:
+            raise RuntimeError("Hook is not cancellable.")
+
+        self._cancelled = True
 
     def equals(
-        self, *args: Any
-    ) -> Callable[[Callable[[], None]], Callable[[TCallback], None]]:
+        self, *args: TParams.args, **kwargs: TParams.kwargs
+    ) -> Callable[[Callable[[], TReturn]], Callable[TParams, TReturn]]:
         """
         Prevents a handler from being invoked if the arguments passed to `invoke` don't match the arguments passed as `args`.
 
@@ -289,26 +397,29 @@ class Hook[TCallback: Callable[..., Any] = Callable[[], None]]:
 
         Parameters
         ----------
-        *args : `Any`
+        *args : `TParams.args`
             The arguments to check against.
+        **kwargs : `TParams.kwargs`
+            The keyword arguments to check against.
 
         Returns
         -------
-        `Callable[[Callable[[], None]], Callable[[TCallback], None]]`
+        `Callable[[Callable[[], None]], Callable[TParams, TReturn]]`
             The decorated function.
         """
 
-        def decorator(func: Callable[[], None]) -> Callable[[TCallback], None]:
+        def decorator(
+            func: Callable[[], TReturn],
+        ) -> Callable[TParams, TReturn]:
             nonlocal self
 
             @functools.wraps(func)
-            def wrapper(*args2: TCallback) -> None:
-                if args == args2:
-                    func()
+            def wrapper(*args2: TParams.args, **kwargs2: TParams.kwargs) -> TReturn:
+                if args == args2 and kwargs == kwargs2:
+                    return func(*args2, **kwargs2)
+                return self._NOT_EXECUTED  # pyright: ignore[reportReturnType]
 
-            # there's no way to cast `wrapper` to `T` here, and since python doesn't support extracting
-            # the type of the arguments of a callable in some crazy typescript-like way, we have to do this
-            self += wrapper  # pyright: ignore[reportUnknownVariableType, reportOperatorIssue]
+            self += wrapper
 
             return wrapper
 

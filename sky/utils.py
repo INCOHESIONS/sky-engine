@@ -6,6 +6,7 @@ from random import randint, uniform
 from typing import Any, Callable, Self, override
 
 from pygame import Color as PygameColor
+from pygame import Rect as PygameRect
 from pygame import Vector2 as PygameVector2
 from pygame import Vector3 as PygameVector3
 from pygame.typing import SequenceLike
@@ -421,6 +422,20 @@ class Color(PygameColor):
             255 - self.b,
             self.a,
         )
+
+
+class Rect(PygameRect):
+    """Replacement for `pygame.Rect` with some extra utilities."""
+
+    @classmethod
+    def from_center(cls, position: Vector2, size: Vector2) -> Self:
+        """Returns a `Rect` with the given position and size, centered at the given position."""
+
+        r = cls()
+        r.size = size
+        r.center = position
+
+        return r
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
