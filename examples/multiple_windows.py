@@ -1,18 +1,26 @@
-from sky import App, WindowSpec
-from sky.colors import BLUE, RED
+from typing import Callable
 
-app = App(spec=WindowSpec(title="Main Window!"))
-extra_window = app.windowing.add_window(spec=WindowSpec(title="Extra Window!"))
+from pygame import freetype
+
+from sky import App, Window, WindowSpec
+from sky.colors import WHITE
+
+app = App(spec=WindowSpec(title="Main Window!"), modules=[freetype])
+
+font = freetype.SysFont("Arial", 32)
 
 
-@app.window.on_render
-def render() -> None:
-    app.window.surface.fill(RED)
+def render(window: Window) -> Callable[[], None]:
+    def wrapped() -> None:
+        font.render_to(window.surface, window.center, window.title, WHITE)
+
+    return wrapped
 
 
-@extra_window.on_render
-def extra_render() -> None:
-    extra_window.surface.fill(BLUE)
+main_window = app.window
+secondary_window = app.windowing.add_window(spec=WindowSpec(title="Extra Window!"))
 
+main_window.on_render += render(main_window)
+secondary_window.on_render += render(secondary_window)
 
 app.mainloop()
