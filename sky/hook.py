@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from .core import Sentinel
+from .sentinel import Sentinel
 from .types import Coroutine
 from .utils import first
 
