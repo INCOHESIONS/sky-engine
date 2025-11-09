@@ -31,6 +31,7 @@ from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
 from .types import Coroutine
 from .utils import Color, Vector2
+from .window import Window
 from .yieldable import WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
 
 if not getattr(pygame, "IS_CE", False):
@@ -59,5 +60,6 @@ __all__ = [
     "WaitForSeconds",
     "WaitUntil",
     "WaitWhile",
+    "Window",
     "WindowSpec",
 ]
