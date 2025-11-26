@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Literal, Self, final
+from typing import Literal, Protocol, Self, final
 
 from pygame import Surface
 
@@ -16,6 +16,12 @@ __all__ = [
     "SceneSpec",
     "WindowSpec",
 ]
+
+
+@final
+class _Module(Protocol):
+    def init(self) -> None: ...
+    def quit(self) -> None: ...
 
 
 @final
@@ -89,6 +95,9 @@ class AppSpec:
 
     scene_spec: SceneSpec | None = field(default_factory=SceneSpec)
     """The default scene to add to the app. If `None`, will not create a default scene."""
+
+    modules: list[_Module] = field(default_factory=list)
+    """A list of modules to add to the app. Modules must have a `init` and `quit` methods. Useful for initializing and cleaning up `pygame` modules such as `freetype` and `mixer`."""
 
     # general debugging flag that currently does nothing internally
     debug: bool = False

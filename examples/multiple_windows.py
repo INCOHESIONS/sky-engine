@@ -2,10 +2,15 @@ from typing import Callable
 
 from pygame import freetype
 
-from sky import App, Window, WindowSpec
+from sky import App, AppSpec, Window, WindowSpec
 from sky.colors import WHITE
 
-app = App(spec=WindowSpec(title="Main Window!"), modules=[freetype])
+app = App(
+    spec=AppSpec(
+        window_spec=WindowSpec(title="Main Window!"),
+        modules=[freetype],
+    )
+)
 
 font = freetype.SysFont("Arial", 32)
 

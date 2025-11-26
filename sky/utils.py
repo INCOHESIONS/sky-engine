@@ -1,6 +1,6 @@
 """Utilities, and extensions of `pygame` classes that replace certain methods with expection-less versions for ease of use."""
 
-from collections.abc import Generator, Iterable, Iterator
+from collections.abc import Generator, Iterable, Iterator, Sequence
 from inspect import Parameter, signature
 from random import randint, uniform
 from typing import Any, Callable, Self, override
@@ -14,19 +14,24 @@ from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
     singleton as untyped_singleton,  # pyright: ignore[reportUnknownVariableType]
 )
 
+from .easing import linear
+
 __all__ = [
     "animate",
-    "callable_with_no_arguments",
     "clamp",
     "Color",
     "filter_by_attrs",
     "first",
     "get_by_attrs",
     "ilen",
+    "is_callable_with_no_arguments",
     "last",
+    "Rect",
+    "saturate",
     "singleton",
     "Vector2",
     "Vector3",
+    "walk_neighbours",
 ]
 
 
@@ -38,6 +43,12 @@ class Vector2(PygameVector2):
         """Returns a zero `Vector2`. Same as `Vector2()`"""
 
         return cls(0, 0)
+
+    @classmethod
+    def one(cls) -> Self:
+        """Returns a `Vector2` with all components set to 1."""
+
+        return cls(1, 1)
 
     @classmethod
     def up(cls) -> Self:
@@ -92,7 +103,7 @@ class Vector2(PygameVector2):
 
         Parameters
         ----------
-        other : `Vector2`
+        other: `Vector2`
             The other vector.
 
         Returns
@@ -112,7 +123,7 @@ class Vector2(PygameVector2):
 
         Parameters
         ----------
-        other : `Vector2`
+        other: `Vector2`
             The other vector.
 
         Returns
@@ -175,6 +186,12 @@ class Vector3(PygameVector3):
         return cls(0, 0, 0)
 
     @classmethod
+    def one(cls) -> Self:
+        """Returns a `Vector3` with all components set to 1."""
+
+        return cls(1, 1, 1)
+
+    @classmethod
     def up(cls) -> Self:
         """Returns a `Vector3` pointing upwards."""
 
@@ -233,7 +250,7 @@ class Vector3(PygameVector3):
 
         Parameters
         ----------
-        other : `Vector3`
+        other: `Vector3`
             The other vector.
 
         Returns
@@ -253,7 +270,7 @@ class Vector3(PygameVector3):
 
         Parameters
         ----------
-        other : `Vector3`
+        other: `Vector3`
             The other vector.
 
         Returns
@@ -321,15 +338,15 @@ class Color(PygameColor):
     """Replacement for `pygame.Color` with some extra utilities and exception-less versions of common methods"""
 
     @classmethod
-    def random(cls, minimum: int = 0, maximum: int = 255) -> Self:
+    def random(cls, minimum: int = 0, maximum: int = 255, /) -> Self:
         """
         Generates a random `Color` where each component is between `minimum` and `maximum`.
 
         Parameters
         ----------
-        minimum : `int`
+        minimum: `int`
             The minimum value for each component. Defaults to 0.
-        maximum : `int`
+        maximum: `int`
             The maximum value for each component. Defaults to 255.
 
         Returns
@@ -354,9 +371,9 @@ class Color(PygameColor):
 
         Parameters
         ----------
-        color : `Color` | `SequenceLike[int]` | `str` | `int`
+        color: `Color` | `SequenceLike[int]` | `str` | `int`
             The color to interpolate to.
-        amount : `float`
+        amount: `float`
             The amount to interpolate by. Clamped to between 0 and 1.
 
         Returns
@@ -373,7 +390,7 @@ class Color(PygameColor):
 
         Parameters
         ----------
-        amount : `int`
+        amount: `int`
             The amount to brighten the color by.
 
         Returns
@@ -395,7 +412,7 @@ class Color(PygameColor):
 
         Parameters
         ----------
-        amount : `int`
+        amount: `int`
             The amount to darken the color by.
 
         Returns
@@ -423,12 +440,138 @@ class Color(PygameColor):
             self.a,
         )
 
+    def with_r(self, r: int, /) -> Self:
+        """
+        Returns a new color with the specified red value.
+
+        Parameters
+        ----------
+        r: `int`
+            The red value.
+
+        Returns
+        -------
+        `Color`
+            The new color.
+        """
+
+        return self.__class__(
+            r,
+            self.g,
+            self.b,
+            self.a,
+        )
+
+    with_red = with_r  # alias
+
+    def with_g(self, g: int, /) -> Self:
+        """
+        Returns a new color with the specified green value.
+
+        Parameters
+        ----------
+        g: `int`
+            The green value.
+
+        Returns
+        -------
+        `Color`
+            The new color.
+        """
+
+        return self.__class__(
+            self.r,
+            g,
+            self.b,
+            self.a,
+        )
+
+    with_green = with_g  # alias
+
+    def with_b(self, b: int, /) -> Self:
+        """
+        Returns a new color with the specified blue value.
+
+        Parameters
+        ----------
+        b: `int`
+            The blue value.
+
+        Returns
+        -------
+        `Color`
+            The new color.
+        """
+
+        return self.__class__(
+            self.r,
+            self.g,
+            b,
+            self.a,
+        )
+
+    with_blue = with_b  # alias
+
+    def with_a(self, a: int, /) -> Self:
+        """
+        Returns a new color with the specified alpha value.
+
+        Parameters
+        ----------
+        a: `int`
+            The alpha value.
+
+        Returns
+        -------
+        `Color`
+            The new color.
+        """
+
+        return self.__class__(
+            self.r,
+            self.g,
+            self.b,
+            a,
+        )
+
+    with_alpha = with_a  # alias
+
+    def with_opacity(self, opacity: float, /) -> Self:
+        """
+        Returns a new color with the specified opacity (between 0 and 1).
+
+        Parameters
+        ----------
+        opacity: `float`
+            The opacity value.
+
+        Returns
+        -------
+        `Color`
+            The new color.
+
+        Raises
+        ------
+        ValueError
+            If the opacity is not between 0 and 1.
+        """
+
+        if not 0 <= opacity <= 1:
+            raise ValueError("Opacity must be between 0 and 1")
+
+        return self.__class__(
+            self.r,
+            self.g,
+            self.b,
+            int(opacity * 255),
+        )
+
 
 class Rect(PygameRect):
     """Replacement for `pygame.Rect` with some extra utilities."""
 
     @classmethod
-    def from_center(cls, position: Vector2, size: Vector2) -> Self:
+    def from_center(cls, position: Vector2, size: Vector2, /) -> Self:
         """Returns a `Rect` with the given position and size, centered at the given position."""
 
         r = cls()
@@ -454,7 +597,7 @@ def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
 
     Parameters
     ----------
-    iterable : `Iterable[T]`
+    iterable: `Iterable[T]`
         The iterable to get an element from.
 
     Returns
@@ -472,7 +615,7 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
 
     Parameters
     ----------
-    iterable : `Iterable[T]`
+    iterable: `Iterable[T]`
         The `Iterable` to be filtered.
 
     Returns
@@ -489,7 +632,7 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
 
 def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
     """
-    Gets the first element of an `Iterable`.
+    Consumes and gets the first element of an `Iterable`.
 
     Examples
     --------
@@ -504,9 +647,9 @@ def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TD
 
     Parameters
     ----------
-    i : `Iterable[T]`
+    i: `Iterable[T]`
         The `Iterable` to get the first element from.
-    default : `TDefault`, optional
+    default: `TDefault`, optional
         The default value to return if the `Iterable` is empty.
 
     Returns
@@ -523,7 +666,7 @@ def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TD
 
 def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
     """
-    Gets the last element of an `Iterable`.
+    Consumes and gets the last element of an `Iterable`.
 
     Examples
     --------
@@ -538,9 +681,9 @@ def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDe
 
     Parameters
     ----------
-    i : `Iterable[T]`
+    i: `Iterable[T]`
         The `Iterable` to get the last element from.
-    default : `TDefault`, optional
+    default: `TDefault`, optional
         The default value to return if the `Iterable` is empty.
 
     Returns
@@ -561,7 +704,7 @@ def ilen(i: Iterable[Any], /) -> int:
 
     Parameters
     ----------
-    i : `Iterable[Any]`
+    i: `Iterable[Any]`
         The `Iterable` to get the length of.
 
     Returns
@@ -573,38 +716,17 @@ def ilen(i: Iterable[Any], /) -> int:
     return sum(1 for _ in i)  # faster than len(tuple(i)) or len(list(i))
 
 
-def callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
-    """
-    Checks whether or not the given `Callable` can be called with no arguments.
-
-    Parameters
-    ----------
-    callable : `Callable[..., Any]`
-        The `Callable` to check.
-
-    Returns
-    -------
-    `bool`
-        Whether or not the `Callable` can be called with no arguments.
-    """
-
-    count = ilen(
-        param
-        for param in signature(callable).parameters.values()
-        if param.default is Parameter.empty
-    )
-    return count == 0
-
-
 def animate(
-    *, duration: float, step: Callable[[], float], normalize: bool = True
+    *,
+    duration: float,
+    step: Callable[[], float],
+    easing: Callable[[float], float] = linear,
+    force_end: bool = True,
 ) -> Generator[float]:
     """
-    Generates a sequence of floats from 0 to `duration`, with a step size defined by `step`.\n
-    If normalize is `True`, the sequence will be normalized to the range [0, 1].
-    Useful for interpolating between two colors over time, for example.
-
-    Guaranteed to always yield both 0 and `duration`. Might yield `duration` (or 1 if `normalize` is `True`) twice.
+    Generates a sequence of floats from 0 to 1, with a step size defined by `step`.
+    Optionally, an easing function can be provided to control the values returned.
+    Guaranteed to always yield 0, and, if `force_end` is `True`, 1.\n
 
     Examples
     --------
@@ -612,16 +734,15 @@ def animate(
     from sky import App, Coroutine
     from sky.colors import BLUE, RED
     from sky.utils import animate
+    from sky.easing import bounce
 
     app = App()
 
 
     @app.setup
     def lerp_color() -> Coroutine:
-        assert app.windowing.surface is not None
-
-        for t in animate(duration=3, step=lambda: app.chrono.deltatime):
-            app.windowing.surface.fill(RED.lerp(BLUE, t))
+        for t in animate(duration=3, step=lambda: app.chrono.deltatime, easing=bounce):
+            app.window.surface.fill(RED.lerp(BLUE, t))
             yield None  # same as WaitForFrames(1)
 
 
@@ -630,13 +751,16 @@ def animate(
 
     Parameters
     ----------
-    duration : `float`
+    duration: `float`
         The duration of the animation.
-    step : `Callable[[], float]`
+    step: `Callable[[], float]`
         A function that returns the next step of the animation.\n
         For general real-time based animations, use `app.chrono.deltatime`.
-    normalize : `bool`
-        Whether to normalize the animation to the range [0, 1]. `True` by default.
+    easing: `Callable[[float], float]`
+        An easing function that controls the values returned.\n
+        Defaults to `linear`. See the `easing` module for more options.
+    force_end: `bool`
+        Whether to force the function to yield 1 at the end of the animation.
 
     Yields
     ------
@@ -655,19 +779,11 @@ def animate(
     start = 0
 
     while start < duration:
-        if normalize:
-            yield start / duration
-        else:
-            yield start
+        yield easing(start / duration)
+        start = clamp(start + step(), 0, 1)
 
-        start = clamp(start + step(), 0, duration)
-
-    # this is done to guarantee `duration` or 1 will always be yielded, but may cause it to be yielded twice, or almost
-    # example: step = lambda: 0.49; the function will yield 0, step, 0.98 and 1 again
-    # if we didn't do this, `duration` might not be yielded, and could cause strange behaviour while interpolating values since the stop value would never be used
-    # this is a fine trade-off
-
-    yield 1 if normalize else duration
+    if force_end:
+        yield 1
 
 
 def clamp(value: float, minimum: float, maximum: float, /) -> float:
@@ -676,11 +792,11 @@ def clamp(value: float, minimum: float, maximum: float, /) -> float:
 
     Parameters
     ----------
-    value : `float`
+    value: `float`
         The value to be clamped.
-    minimum : `float`
+    minimum: `float`
         The minimum value.
-    maximum : `float`
+    maximum: `float`
         The maximum value.
 
     Returns
@@ -694,10 +810,79 @@ def clamp(value: float, minimum: float, maximum: float, /) -> float:
     return max(minimum, min(value, maximum))
 
 
-def singleton[T: type](cls: T) -> T:
+constrain = clamp  # alias
+
+
+def saturate(value: float, /) -> float:
+    """
+    Contains a value to between 0 and 1.
+
+    Parameters
+    ----------
+    value: `float`
+        The value to be saturated.
+
+    Returns
+    -------
+    `float`
+        The saturated value.
+    """
+
+    return clamp(value, 0, 1)
+
+
+clamp01 = saturate  # alias
+
+
+def walk_neighbours[T](seq: Sequence[T], /) -> Iterable[tuple[T | None, T, T | None]]:
+    """
+    Walks a sequence, yielding each element along with its neighbours.\n
+    For the first value, the left neighbour is `None` and for the last value, the right neighbour is `None`.
+    Otherwise, all values are guaranteed to be of type T.
+
+    Parameters
+    ----------
+    seq: `Sequence[T]`
+        The sequence to walk.
+
+    Yields
+    ------
+    `tuple[T | None, T, T | None]`
+        The current element and its neighbours.
+    """
+
+    for i, el in enumerate(seq):
+        yield (
+            seq[i - 1] if i > 0 else None,
+            el,
+            seq[i + 1] if i < len(seq) - 1 else None,
+        )
+
+
+def singleton[C: type](cls: C) -> C:
     """Makes the decorated class a singleton while properly keeping its type."""
 
     return untyped_singleton(cls)  # pyright: ignore[reportReturnType]
 
 
-constrain = clamp  # alias
+def is_callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
+    """
+    Checks whether or not the given `Callable` can be called with no arguments.
+
+    Parameters
+    ----------
+    callable: `Callable[..., Any]`
+        The `Callable` to check.
+
+    Returns
+    -------
+    `bool`
+        Whether or not the `Callable` can be called with no arguments.
+    """
+
+    count = ilen(
+        param
+        for param in signature(callable).parameters.values()
+        if param.default is Parameter.empty
+    )
+    return count == 0

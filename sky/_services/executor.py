@@ -2,7 +2,7 @@ from typing import Callable, final, override
 
 from ..core import Service
 from ..types import Coroutine
-from ..utils import callable_with_no_arguments
+from ..utils import is_callable_with_no_arguments
 from ..yieldable import WaitForFrames, Yieldable
 
 
@@ -79,7 +79,7 @@ class Executor(Service):
             return None
 
         if isinstance(value, type):
-            if callable_with_no_arguments(value):
+            if is_callable_with_no_arguments(value):
                 return value()
 
             raise RuntimeError(

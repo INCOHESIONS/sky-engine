@@ -348,6 +348,7 @@ class Modifier(IntEnum):
         `KeyError`
             If the value is not among the keys defined.
         """
+
         if isinstance(value, str):
             return cls[value.lower()]
 

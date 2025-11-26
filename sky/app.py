@@ -2,27 +2,20 @@
 
 from collections.abc import Iterator, Sequence
 from cProfile import run as profile
-from typing import Literal, Protocol, Self, final
+from typing import Literal, Self
 
 import pygame
 
-from ._services import Chrono, Events, Executor, Keyboard, Mouse, Windowing
+from ._services import UI, Chrono, Events, Executor, Keyboard, Mouse, Windowing
 from .core import Component, Service
 from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
-from .utils import callable_with_no_arguments, singleton
+from .utils import is_callable_with_no_arguments, singleton
 from .window import Window
 from .yieldable import Yieldable
 
 __all__ = ["App"]
-
-
-@final
-class _CompatibleModule(Protocol):
-    def init(self) -> None: ...
-
-    def quit(self) -> None: ...
 
 
 @singleton
@@ -32,53 +25,48 @@ class App:
     User-defined `Component`s can be added by subclassing `Component` and using the `add_component` method on the `App` (which will add them to the main scene), or on a specific `Scene`.\n
     Services can also be added by subclassing `Service` and using the `add_service` method.
 
-    ### Order of execution:
-        ```
-        Pre-loop:
-            1. App.preload
-            2. Service.start (for all services)
-            3. Scene.start (for all scenes)
-                1. Scene.pre_start
-                2. Component.start
-                3. Scene.post_start
-            4. App.setup
+    # Order of execution:
+        - Pre-loop:
+            1. `App.preload`
+            2. `Service.start` (for all services)
+            3. `Scene.start` (for all scenes)
+                1. `Scene.pre_start`
+                2. `Component.start`
+                3. `Scene.post_start`
+            4. `App.setup`
 
-        During loop:
-            1. App.pre_update
-            2. Service.update (for all services)
-            3. Scene.update (for all scenes)
-                1. Scene.pre_update
-                2. Component.update
-                3. Scene.post_update
-            4. App.post_update
+        - During loop:
+            1. `App.pre_update`
+            2. `Service.update` (for all services)
+            3. `Scene.update` (for all scenes)
+                1. `Scene.pre_update`
+                2. `Component.update`
+                3. `Scene.post_update`
+            4. `App.post_update`
 
-        Post-loop:
-            1. App.teardown
-            2. Service.stop (for all services)
-            3. Scene.stop (for all scenes)
-                1. Scene.pre_stop
-                2. Component.stop
-                3. Scene.post_stop
-            4. App.cleanup
-        ```
+        - Post-loop:
+            1. `App.teardown`
+            2. `Service.stop` (for all services)
+            3. `Scene.stop` (for all scenes)
+                1. `Scene.pre_stop`
+                2. `Component.stop`
+                3. `Scene.post_stop`
+            4. `App.cleanup`
 
-    ### Services (in order of execution):
-        - `Events` (handles pygame events)
+    # Services (in order of execution):
+        - `Events` (handles `pygame` events)
         - `Keyboard` (handles keyboard input)
         - `Mouse` (handles mouse input)
         - `Windowing` (handles windowing)
         - `Chrono` (handles time)
         - `Executor` (handles coroutines)
+        - `UI` (handles the user interface)
 
-    Parameters
+    Constructor Parameters
     ----------
     spec: `AppSpec | WindowSpec | SceneSpec | None`, optional
         Specification for the whole app, just the main scene, or just the main window.
         By default `None`, which creates a default `AppSpec`. See `AppSpec` for more information.
-    modules: `Sequence[_CompatibleModule] | None`, optional
-        A `Sequence` of objects that have `init` and `quit` methods, such as the `pygame.freetype` or `pygame.mixer` modules, to register.
-        Modules will be initialized (`init`) immediately, and cleaned up (`quit`) when the `App`'s `cleanup` `Hook` is notified.
-        By default `None`.
     """
 
     def __init__(
@@ -86,15 +74,20 @@ class App:
         /,
         *,
         spec: AppSpec | WindowSpec | SceneSpec | None = None,
-        modules: Sequence[_CompatibleModule] | None = None,
     ) -> None:
+        """
+        App constructor.
+
+        Parameters
+        ----------
+        spec: `AppSpec | WindowSpec | SceneSpec | None`, optional
+            Specification for the whole app, just the main scene, or just the main window.
+            By default `None`, which creates a default `AppSpec`. See `AppSpec` for more information.
+        """
+
         pygame.init()
 
-        # probably bad practice but this does makes things real easy to use which is the whole point of this library
-        Component.app = self
-        Yieldable.app = self
-        Scene.app = self
-        Hook.app = self
+        self._handle_references()
 
         self.is_running = False
 
@@ -125,7 +118,7 @@ class App:
         self.cleanup = Hook()
         """Executes after scenes and services are stopped, and before the app is destroyed; cleans up registered modules."""
 
-        for module in modules or []:
+        for module in self.spec.modules:
             module.init()
             self.cleanup += module.quit
 
@@ -147,6 +140,9 @@ class App:
         self.executor = Executor()
         """Handles `Coroutine`s."""
 
+        self.ui = UI()
+        """Handles `UIElement`s."""
+
         self._internal_services: list[Service] = [
             self.events,
             self.mouse,
@@ -154,6 +150,7 @@ class App:
             self.windowing,
             self.chrono,
             self.executor,
+            self.ui,
         ]  # do not change ordering
 
         self._services = self._internal_services.copy()
@@ -220,39 +217,7 @@ class App:
         return self.windowing.main_window
 
     def mainloop(self) -> None:
-        """
-        The app's main loop.
-
-        # Order of execution:
-            ```
-            Pre-loop:
-                1. App.preload
-                2. Service.start (for all services)
-                3. Scene.start (for all scenes)
-                    1. Scene.pre_start
-                    2. Component.start
-                    3. Scene.post_start
-                4. App.setup
-
-            During loop:
-                1. App.pre_update
-                2. Service.update (for all services)
-                3. Scene.update (for all scenes)
-                    1. Scene.pre_update
-                    2. Component.update
-                    3. Scene.post_update
-                4. App.post_update
-
-            Post-loop:
-                1. App.teardown
-                2. Service.stop (for all services)
-                3. Scene.stop (for all scenes)
-                    1. Scene.pre_stop
-                    2. Component.stop
-                    3. Scene.post_stop
-                4. App.cleanup
-            ```
-        """
+        """The app's main loop. See `App` documentation for the order of execution."""
 
         if self.spec.profile:
             profile("App()._mainloop()", sort="tottime")
@@ -328,7 +293,7 @@ class App:
         """
 
         if isinstance(scene, type):
-            if callable_with_no_arguments(scene):
+            if is_callable_with_no_arguments(scene):
                 scene = scene()
             else:
                 raise ValueError("Scene cannot be instanced with no arguments.")
@@ -469,3 +434,10 @@ class App:
         """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
 
         self.events.post(pygame.QUIT)
+
+    # probably bad practice but this does makes things real easy to use which is the whole point of this library
+    def _handle_references(self) -> None:
+        Component.app = self
+        Yieldable.app = self
+        Scene.app = self
+        Hook.app = self

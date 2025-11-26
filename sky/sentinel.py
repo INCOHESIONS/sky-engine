@@ -11,7 +11,7 @@ from typing import LiteralString, Self, final, override
 _sentinels: dict[str, Sentinel] = {}
 
 
-def get_prev_module_name() -> str:
+def _get_calling_module_name() -> str:
     try:
         return inspect.getmodule(inspect.currentframe().f_back.f_back).__name__  # pyright: ignore[reportOptionalMemberAccess]
     except AttributeError:
@@ -28,7 +28,7 @@ class Sentinel:
     def __new__(
         cls, name: LiteralString, /, *, module_name: str | None = None
     ) -> Sentinel:
-        id = f"{module_name or get_prev_module_name()}-{name}"
+        id = f"{module_name or _get_calling_module_name()}-{name}"
 
         if (existing := _sentinels.get(id, None)) is not None:
             return existing

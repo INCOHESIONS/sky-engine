@@ -2,13 +2,13 @@
 
 from collections.abc import Iterator, Sequence
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Callable, ClassVar, Self
+from typing import TYPE_CHECKING, Callable, ClassVar, Self, final
 
 from .core import Component
 from .hook import Hook
 from .spec import SceneSpec
 from .types import Coroutine
-from .utils import callable_with_no_arguments, first, get_by_attrs
+from .utils import first, get_by_attrs, is_callable_with_no_arguments
 
 if TYPE_CHECKING:
     from .app import App
@@ -85,12 +85,14 @@ class Scene:
 
         yield from self._components
 
+    @final
     @property
     def components(self) -> Sequence[Component]:
         """Returns a sequence of all components in this `Scene`."""
 
         return self._components.copy()
 
+    @final
     @classmethod
     def from_components(cls, components: list[Component], /) -> Self:
         """
@@ -204,7 +206,7 @@ class Scene:
             If a type is passed that cannot be instanced with no arguments.
         """
 
-        if callable(component) and not callable_with_no_arguments(component):
+        if callable(component) and not is_callable_with_no_arguments(component):
             raise ValueError(
                 f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
             )
@@ -338,10 +340,12 @@ class Scene:
             else component in self._components
         )
 
+    @final
     def _start_component(self, /, component: Component) -> None:
         self._handle_possible_coroutine(component.start)
         component._has_started = True  # pyright: ignore[reportAttributeAccessIssue]
 
+    @final
     def _handle_possible_coroutine(
         self, func: Callable[[], Coroutine | None], /
     ) -> None:

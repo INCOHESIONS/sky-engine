@@ -5,6 +5,7 @@ from .events import Events
 from .executor import Executor
 from .keyboard import Keyboard
 from .mouse import Mouse
+from .ui import UI
 from .windowing import Windowing
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "Executor",
     "Keyboard",
     "Mouse",
+    "UI",
     "Windowing",
 ]
