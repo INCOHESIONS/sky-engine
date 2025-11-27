@@ -250,7 +250,9 @@ class Keyboard(Service):
             for key in self._states
         )
 
-    def add_keybinding(self, keybinding: Keybinding, /) -> None:
+    def add_keybinding(
+        self, keybinding: Keybinding | tuple[KeyLike, Callable[[], None]], /
+    ) -> None:
         """
         Adds a keybinding to the keyboard.
 
@@ -260,7 +262,11 @@ class Keyboard(Service):
             The keybinding to add.
         """
 
-        self._keybindings.append(keybinding)
+        self._keybindings.append(
+            keybinding
+            if isinstance(keybinding, Keybinding)
+            else Keybinding.make(keybinding[0], action=keybinding[1])
+        )
 
     def add_keybindings(
         self, keybindings: list[Keybinding] | dict[KeyLike, Callable[[], None]]
