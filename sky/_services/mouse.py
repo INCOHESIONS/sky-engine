@@ -1,5 +1,6 @@
 """Contains the `Mouse` component that handles mouse input."""
 
+from collections.abc import Sequence
 from typing import final, override
 
 import pygame
@@ -52,10 +53,10 @@ class Mouse(Service):
         return self._wheel_delta.copy()
 
     @property
-    def states(self) -> list[State]:
+    def states(self) -> Sequence[State]:
         """The current state of all buttons listed in the `MouseButton` enum."""
 
-        return self._states
+        return self._states.copy()
 
     @property
     def cursor(self) -> pygame.Cursor:

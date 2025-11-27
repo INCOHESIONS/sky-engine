@@ -1,5 +1,6 @@
 """Contains the `Keyboard` component that handles keyboard input."""
 
+from collections.abc import Sequence
 from typing import Callable, Literal, final, override
 
 import pygame
@@ -42,13 +43,13 @@ class Keyboard(Service):
         return self._text
 
     @property
-    def keybindings(self) -> list[Keybinding]:
+    def keybindings(self) -> Sequence[Keybinding]:
         """All registered keybindings."""
 
         return self._keybindings.copy()
 
     @property
-    def active_keybindings(self) -> list[Keybinding]:
+    def active_keybindings(self) -> Sequence[Keybinding]:
         """All currently active keybindings."""
 
         return self._active_keybindings.copy()

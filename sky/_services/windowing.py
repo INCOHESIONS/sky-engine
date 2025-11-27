@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import final, override
 
 import pygame
@@ -36,23 +37,26 @@ class Windowing(Service):
             self._initialize()
 
     @property
-    def windows(self) -> list[Window]:
-        """All windows, both main and extra."""
+    def windows(self) -> Sequence[Window]:
+        """All windows, main and extra."""
 
         return self._windows.copy()
 
     @property
     def main_window(self) -> Window | None:
         """
-        The main window, or `None` if the app is headless.\n
+        The main window, or `None` if the app has no windows (headless mode).\n
         Use `app.window` for a version of this property that can't be `None`.
         """
 
-        return self._windows[0]
+        if self._windows:
+            return self._windows[0]
+
+        return None
 
     @property
-    def extra_windows(self) -> list[Window]:
-        """All extra windows."""
+    def extra_windows(self) -> Sequence[Window]:
+        """All windows that aren't the main window."""
 
         return self._windows[1:]
 
@@ -63,10 +67,10 @@ class Windowing(Service):
         return self.app.spec.window_spec
 
     @property
-    def monitors(self) -> list[Monitor]:
+    def monitors(self) -> Sequence[Monitor]:
         """Information about all connected monitors."""
 
-        return self._monitors
+        return self._monitors.copy()
 
     @property
     def primary_monitor(self) -> Monitor:
