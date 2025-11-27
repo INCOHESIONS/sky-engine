@@ -369,6 +369,47 @@ class App:
         self.scene.add_component(component)
         return self
 
+    def singleton_component[TComponent: type[Component]](
+        self, cls: TComponent, /
+    ) -> TComponent:
+        """
+        Instantiates and adds the instance of the decorated `Component` to the current `Scene` immediately.\n
+        Also makes the decorated class a `Singleton`.
+
+        Parameters
+        ----------
+        component: `TComponent`
+            The type to instantiate. Must be a subclass of `Component`.
+
+        Returns
+        -------
+        `TComponent`
+            The original type.
+        """
+
+        return singleton(self.immediate_component(cls))
+
+    def immediate_component[TComponent: type[Component]](
+        self, cls: TComponent, /
+    ) -> TComponent:
+        """
+        Instantiates and adds the instance of the decorated `Component` to the current `Scene` immediately.
+
+        Parameters
+        ----------
+        component: `TComponent`
+            The type to instantiate. Must be a subclass of `Component`.
+
+        Returns
+        -------
+        `TComponent`
+            The original type.
+        """
+
+        self.add_component(cls)
+
+        return cls
+
     def remove_component(self, component: type[Component] | Component, /) -> None:
         """
         Removes a component from the main `Scene`.
