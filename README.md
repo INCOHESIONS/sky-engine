@@ -6,7 +6,7 @@ Theoretically cross-platform, but mostly tested on Windows. May have some window
 
 ## Quick Start
 
-Only 2 lines of code are needed to get started. This opens a window, centered on the screen, with a black background:
+Due to the engine's many defaults, only 2 lines of code are needed to get started. This opens an 800x600 window, centered on the main monitor, with a black background:
 
 ```python
 from sky import App
