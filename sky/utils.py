@@ -21,11 +21,13 @@ __all__ = [
     "clamp",
     "Color",
     "filter_by_attrs",
+    "filterl",
     "first",
     "get_by_attrs",
     "ilen",
     "is_callable_with_no_arguments",
     "last",
+    "mapl",
     "Rect",
     "saturate",
     "singleton",
@@ -721,6 +723,36 @@ def mapl[T, U](f: Callable[[T], U], i: Iterable[T]) -> list[U]:
     return list(map(f, i))
 
 
+def filterl[T](f: Callable[[T], bool], i: Iterable[T]) -> list[T]:
+    """Like `filter`, but it returns a `list` instead."""
+    return list(filter(f, i))
+
+
+def walk_neighbours[T](seq: Sequence[T], /) -> Iterable[tuple[T | None, T, T | None]]:
+    """
+    Walks a sequence, yielding each element along with its neighbours.\n
+    For the first value, the left neighbour is `None` and for the last value, the right neighbour is `None`.
+    Otherwise, all values are guaranteed to be of type T.
+
+    Parameters
+    ----------
+    seq: `Sequence[T]`
+        The sequence to walk.
+
+    Yields
+    ------
+    `tuple[T | None, T, T | None]`
+        The current element and its neighbours.
+    """
+
+    for i, el in enumerate(seq):
+        yield (
+            seq[i - 1] if i > 0 else None,
+            el,
+            seq[i + 1] if i < len(seq) - 1 else None,
+        )
+
+
 def animate(
     *,
     duration: float,
@@ -837,31 +869,6 @@ def saturate(value: float, /) -> float:
 
 
 clamp01 = saturate  # alias
-
-
-def walk_neighbours[T](seq: Sequence[T], /) -> Iterable[tuple[T | None, T, T | None]]:
-    """
-    Walks a sequence, yielding each element along with its neighbours.\n
-    For the first value, the left neighbour is `None` and for the last value, the right neighbour is `None`.
-    Otherwise, all values are guaranteed to be of type T.
-
-    Parameters
-    ----------
-    seq: `Sequence[T]`
-        The sequence to walk.
-
-    Yields
-    ------
-    `tuple[T | None, T, T | None]`
-        The current element and its neighbours.
-    """
-
-    for i, el in enumerate(seq):
-        yield (
-            seq[i - 1] if i > 0 else None,
-            el,
-            seq[i + 1] if i < len(seq) - 1 else None,
-        )
 
 
 def singleton[C: type](cls: C, /) -> C:
