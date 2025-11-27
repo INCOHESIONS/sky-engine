@@ -8,7 +8,7 @@ from .core import Component
 from .hook import Hook
 from .spec import SceneSpec
 from .types import Coroutine
-from .utils import first, get_by_attrs, is_callable_with_no_arguments
+from .utils import filterl, first, is_callable_with_no_arguments
 
 if TYPE_CHECKING:
     from .app import App
@@ -19,7 +19,8 @@ __all__ = ["Scene"]
 
 class Scene:
     """
-    A collection of `Component`s for ease of management.
+    A collection of `Component`s for ease of management.\n
+    Note that `Scene`s can be started and stopped multiple times, and their `start` and `stop` methods will be called each time.
 
     Hooks:
         ```
@@ -56,34 +57,13 @@ class Scene:
         self.is_running = False
 
     def __contains__(self, component: type[Component] | Component, /) -> bool:
-        """
-        Checks if the `Scene` contains a component.\n
-        If a type is passed, checks if the `Scene` contains any component of that type. Does not instance the type.
-
-        Parameters
-        ----------
-        component: `type[Component] | Component`
-            The component to check for.
-
-        Returns
-        -------
-        `bool`
-            Whether the `Scene` contains the component.
-        """
-
         return self.has_component(component)
 
     def __iter__(self) -> Iterator[Component]:
-        """
-        Iterates over the components in this `Scene`.
-
-        Yields
-        ------
-        `Component`
-            The next component in this `Scene`.
-        """
-
         yield from self._components
+
+    def __bool__(self) -> bool:
+        return bool(self._components)
 
     @final
     @property
@@ -296,11 +276,11 @@ class Scene:
             The component, if found.
         """
 
-        return first(self.get_components(component), default=None)
+        return first(self.get_components(component))
 
-    def get_components[T: Component](self, component: type[T] | str, /) -> list[T]:
+    def get_components[T: Component](self, component: type[T] | str, /) -> Sequence[T]:
         """
-        Gets a list of components from the `Scene`.
+        Gets a collection of components from the `Scene`.
 
         Parameters
         ----------
@@ -309,24 +289,27 @@ class Scene:
 
         Returns
         -------
-        `list[Component]`
-            The list of components, if found.
+        `Sequence[Component]`
+            The collection of components, if found.
         """
-        return list(
-            filter(lambda c: c.__class__.__name__ == component, self._components)
+
+        return filterl(
+            (lambda c: c.__class__.__name__ == component)
             if isinstance(component, str)
-            else filter(lambda c: isinstance(c, component), self._components)
+            else lambda c: isinstance(c, component),
+            self._components,
         )  # pyright: ignore[reportReturnType]
 
-    def has_component(self, component: type[Component] | Component, /) -> bool:
+    def has_component(self, component: type[Component] | Component | str, /) -> bool:
         """
         Checks if the `Scene` contains a component.\n
-        If a type is passed, checks if the `Scene` contains any component of that type. Does not instance the type.
+        If a type is passed, checks if the `Scene` contains any component of that type. Does not instance the type.\n
+        If a string is passed, checks if the `Scene` contains any component with a matching type name.
 
         Parameters
         ----------
-        component: `type[Component] | Component`
-            The component to check for.
+        component: `type[Component] | Component | str`
+            The `Component`, its type, or the name of its type to check for.
 
         Returns
         -------
@@ -335,9 +318,10 @@ class Scene:
         """
 
         return (
-            get_by_attrs(self._components, __class__=component) is not None
-            if isinstance(component, type)
-            else component in self._components
+            self.get_component(
+                component.__class__ if isinstance(component, Component) else component
+            )
+            is not None
         )
 
     @final
