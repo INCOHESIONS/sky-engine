@@ -1,6 +1,6 @@
 """Contains the `Events` component that handles pygame events."""
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import Any, Callable, Literal, Self, final
 
 import pygame
@@ -34,8 +34,8 @@ class Events(Service):
         return self
 
     @property
-    def events(self) -> list[PygameEvent]:
-        """The list of events collected this frame."""
+    def events(self) -> Sequence[PygameEvent]:
+        """The collection of events collected this frame."""
 
         return self._events.copy()
 
@@ -46,7 +46,7 @@ class Events(Service):
         Returns
         -------
         `Self`
-            The events, for chaining.
+            The `Events`, for chaining.
         """
 
         self._events = pygame.event.get()
