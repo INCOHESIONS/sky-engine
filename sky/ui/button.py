@@ -1,3 +1,5 @@
+"""Basic, extensible `Button` `UIElement` that uses `pygame.draw` for rendering."""
+
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Self, override
 

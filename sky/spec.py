@@ -1,4 +1,4 @@
-"""Specs, i.e. information necessary before execution."""
+"""Specs, i.e. information necessary before the `App`'s execution."""
 
 from __future__ import annotations
 
@@ -18,9 +18,15 @@ __all__ = [
 ]
 
 
-@final
-class _Module(Protocol):
+class Module(Protocol):
+    """
+    A module protocol class to be loaded during `App` instancing using the `modules` argument in `AppSpec`.\n
+    Requires `init` and `quit` methods that each take no arguments.\n
+    Used for loading `pygame` modules such as `freetype` and `mixer`.
+    """
+
     def init(self) -> None: ...
+
     def quit(self) -> None: ...
 
 
@@ -96,7 +102,7 @@ class AppSpec:
     scene_spec: SceneSpec | None = field(default_factory=SceneSpec)
     """The default scene to add to the app. If `None`, will not create a default scene."""
 
-    modules: list[_Module] = field(default_factory=list)
+    modules: list[Module] = field(default_factory=list)
     """A list of modules to add to the app. Modules must have a `init` and `quit` methods. Useful for initializing and cleaning up `pygame` modules such as `freetype` and `mixer`."""
 
     # general debugging flag that currently does nothing internally
