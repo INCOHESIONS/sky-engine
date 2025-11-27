@@ -716,6 +716,11 @@ def ilen(i: Iterable[Any], /) -> int:
     return sum(1 for _ in i)  # faster than len(tuple(i)) or len(list(i))
 
 
+def mapl[T, U](f: Callable[[T], U], i: Iterable[T]) -> list[U]:
+    """Like `map`, but it returns a `list` instead."""
+    return list(map(f, i))
+
+
 def animate(
     *,
     duration: float,
@@ -859,7 +864,7 @@ def walk_neighbours[T](seq: Sequence[T], /) -> Iterable[tuple[T | None, T, T | N
         )
 
 
-def singleton[C: type](cls: C) -> C:
+def singleton[C: type](cls: C, /) -> C:
     """Makes the decorated class a singleton while properly keeping its type."""
 
     return untyped_singleton(cls)  # pyright: ignore[reportReturnType]
