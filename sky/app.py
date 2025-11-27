@@ -2,6 +2,7 @@
 
 from collections.abc import Iterator, Sequence
 from cProfile import run as profile
+from itertools import chain as flatten
 from typing import Literal, Self
 
 import pygame
@@ -172,6 +173,9 @@ class App:
 
         yield from self._scenes
 
+    def __bool__(self) -> bool:
+        return bool(self._scenes)
+
     @property
     def services(self) -> Sequence[Service]:
         """The app's services."""
@@ -197,10 +201,15 @@ class App:
 
         return self._scenes[-1]
 
+    def all_components(self) -> Sequence[Component]:
+        """All components, in all currently loaded scenes."""
+
+        return list(flatten(*(scene.components for scene in self._scenes)))
+
     @property
     def window(self) -> Window:
         """
-        Short for `app.windowing.main_window`.
+        Short for `app.windowing.main_window`, but with its being non-optional for ease of use.
 
         Returns
         -------
@@ -210,7 +219,7 @@ class App:
         Raises
         ------
         `AssertionError`
-            If the main window is not set (app is in headless mode).
+            If the main window is not set (i.e. no windows are open due to the app being in headless mode).
         """
 
         assert self.windowing.main_window is not None
@@ -273,7 +282,7 @@ class App:
         mode: Literal["add", "replace_all", "replace_last"] = "add",
     ) -> None:
         """
-        Adds a scene to the app's scenes.\n
+        Adds a scene to the app's scene list and starts it.\n
         If a type is passed, it will be instanced immediately with no arguments.
 
         Parameters
@@ -282,14 +291,17 @@ class App:
             The scene, or its type (to be instanced), to add.
         mode: `Literal["add", "replace_all", "replace_last"]`
             The mode of loading the scene.
-            "add" appends the scene to the list of scenes.
-            "replace_all" removes all scenes and leaves the new scene as the only scene.
-            "replace_last" replaces the last scene with the new scene.
+            - "add" appends the scene to the list of scenes.
+            - "replace_all" removes all scenes and leaves the new scene as the only scene.
+            - "replace_last" replaces the last scene with the new scene.
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the `Scene`'s type is passed and it cannot be instanced with no arguments.
+
+        `RuntimeError`
+            If the scene is already loaded and running.
         """
 
         if isinstance(scene, type):
@@ -300,21 +312,17 @@ class App:
 
         match mode:
             case "add":
-                self._scenes.append(scene)
+                ...
             case "replace_all":
                 for scene in self.scenes:
                     self.unload_scene(scene)
-
-                self._scenes = [scene]
             case "replace_last":
-                try:
+                if self.scenes:
                     self.unload_scene(self.scenes[-1])
-                except IndexError:
-                    pass
 
-                self._scenes.append(scene)
+        self._scenes.append(scene)
 
-        if self.is_running and not scene.is_running:
+        if self.is_running:
             scene.start()
 
     def unload_scene(self, scene: Scene, /):
@@ -325,6 +333,14 @@ class App:
         ----------
         scene: `Scene`
             The scene to unload.
+
+        Raises
+        ------
+        `ValueError`
+            If the scene is not present in the list of scenes.
+
+        `RuntimeError`
+            If the scene was not loaded and running.
         """
 
         self._scenes.remove(scene)
@@ -369,6 +385,23 @@ class App:
         self.scene.add_component(component)
         return self
 
+    def remove_component(self, component: type[Component] | Component, /) -> None:
+        """
+        Removes a component from the main `Scene`.
+
+        Parameters
+        ----------
+        component: `type[Component] | Component`
+            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
+
+        Raises
+        ------
+        `ValueError`
+            If the component wasn't found.
+        """
+
+        self.scene.remove_component(component)
+
     def singleton_component[TComponent: type[Component]](
         self, cls: TComponent, /
     ) -> TComponent:
@@ -410,22 +443,39 @@ class App:
 
         return cls
 
-    def remove_component(self, component: type[Component] | Component, /) -> None:
+    def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
         """
-        Removes a component from the main `Scene`.
+        Gets a component from the current `Scene`.
 
         Parameters
         ----------
-        component: `type[Component] | Component`
-            The component, or its type, to remove. Will try and find a component of matching type if a type is passed. That type will not be instanced.
+        component: `type[Component] | str`
+            The component's type's name, or the type itself. Will not be instanced.
 
-        Raises
-        ------
-        `ValueError`
-            If the component wasn't found.
+        Returns
+        -------
+        `Component | None`
+            The component, if found.
         """
 
-        self.scene.remove_component(component)
+        return self.scene.get_component(component)
+
+    def get_components[T: Component](self, component: type[T] | str, /) -> Sequence[T]:
+        """
+        Gets a collection of components from the current `Scene`.
+
+        Parameters
+        ----------
+        component: `type[Component] | str`
+            The component's type's name, or the type itself. Will not be instanced.
+
+        Returns
+        -------
+        `Sequence[Component]`
+            The collection of components, if found.
+        """
+
+        return self.scene.get_components(component)
 
     def add_service(self, service: Service, /) -> Self:
         """
@@ -472,7 +522,7 @@ class App:
         return self
 
     def quit(self) -> None:
-        """Posts a `pygame.QUIT` event telling the app to close in the next frame."""
+        """Posts a `pygame.QUIT` event, telling the app to close the next frame."""
 
         self.events.post(pygame.QUIT)
 
