@@ -31,6 +31,8 @@ python = "^3.13"
 pygame-ce = "^2.5.3"
 singleton-decorator = "==1.0.0"
 screeninfo = "^0.8.1"
+pywin32 = {version = "^311", markers = "sys_platform == 'win32'"}
+
 
 [tool.basedpyright]
 typeCheckingMode="all"

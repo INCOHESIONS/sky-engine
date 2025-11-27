@@ -1,3 +1,4 @@
 singleton-decorator==1.0.0
 pygame-ce>=2.5.3
 screeninfo>=0.8.1
+pywin32>=311; sys.platform == 'win32'

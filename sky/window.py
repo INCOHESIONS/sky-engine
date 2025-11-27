@@ -17,6 +17,11 @@ if TYPE_CHECKING:
     from ._services.windowing import Windowing
     from .app import App
 
+is_windows = os.name == "nt"
+
+if is_windows:
+    import win32gui
+
 __all__ = ["Window"]
 
 
@@ -69,7 +74,10 @@ class Window:
         self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
 
         self.on_render = Hook()
-        self.on_close = Hook()
+
+        self.before_destroy = Hook()
+        self.after_destroy = Hook()
+        self.on_close = self.after_destroy  # alias
 
         self.on_mouse_enter = self._make_event_hook(pygame.WINDOWENTER)
         self.on_mouse_leave = self._make_event_hook(pygame.WINDOWLEAVE)
@@ -99,6 +107,18 @@ class Window:
         """
 
         return self._underlying
+
+    @property
+    def handle(self) -> int:
+        """
+        The window handle.\n
+        Only available on Windows. Will return -1 on other platforms.
+        """
+
+        if is_windows:
+            return win32gui.FindWindow(None, self.title)  # pyright: ignore[reportPossiblyUnboundVariable]
+
+        return -1
 
     @property
     def surface(self) -> pygame.Surface:
@@ -152,6 +172,10 @@ class Window:
     @size.setter
     def size(self, value: Vector2, /) -> None:
         self._underlying.size = value
+
+    @property
+    def isize(self) -> tuple[int, int]:
+        return self.size.to_int_tuple()
 
     @property
     def width(self) -> int:
@@ -319,13 +343,16 @@ class Window:
     def destroy(self) -> None:
         """Destroys the window."""
 
+        self.before_destroy.notify()
+
         self._underlying.destroy()
 
         self.app.pre_update -= self._pre_update
         self.app.post_update -= self.flip
 
         self.on_render.clear()
-        self.on_close.notify()
+
+        self.after_destroy.notify()
 
     def flip(self) -> None:
         """Updates the window."""
