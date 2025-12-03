@@ -14,16 +14,16 @@ from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
     singleton as untyped_singleton,  # pyright: ignore[reportUnknownVariableType]
 )
 
-from .easing import linear
-
 __all__ = [
     "animate",
     "clamp",
     "Color",
+    "discard",
     "filter_by_attrs",
     "filterl",
     "first",
     "get_by_attrs",
+    "identity",
     "ilen",
     "is_callable_with_no_arguments",
     "last",
@@ -176,6 +176,8 @@ class Vector2(PygameVector2):
         """
 
         return (int(self.x), int(self.y))
+
+    ituple = to_int_tuple  # alias
 
 
 class Vector3(PygameVector3):
@@ -700,6 +702,16 @@ def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDe
         return default
 
 
+def discard(_: Any, /) -> None:
+    """Simply discards the input."""
+
+
+def identity[T](value: T, /) -> T:
+    """Simply returns the input, unchanged. Maintains its type."""
+
+    return value
+
+
 def ilen(i: Iterable[Any], /) -> int:
     """
     Consumes and returns the length of an `Iterable`.
@@ -757,30 +769,38 @@ def animate(
     *,
     duration: float,
     step: Callable[[], float],
-    easing: Callable[[float], float] = linear,
+    easing: Callable[[float], float] = identity,  # linear
+    clamped: bool = True,
     force_end: bool = True,
 ) -> Generator[float]:
     """
-    Generates a sequence of floats from 0 to 1, with a step size defined by `step`.
+    Generates a sequence of floats, generally from 0 to 1, with a step size defined by `step`.
     Optionally, an easing function can be provided to control the values returned.
     Guaranteed to always yield 0, and, if `force_end` is `True`, 1.\n
 
     Examples
     --------
     ```python
-    from sky import App, Coroutine
-    from sky.colors import BLUE, RED
+    import pygame
+
+    from sky import App, Coroutine, Vector2
+    from sky.colors import RED
+    from sky.easing import bounce_out
     from sky.utils import animate
-    from sky.easing import bounce
 
     app = App()
 
 
     @app.setup
-    def lerp_color() -> Coroutine:
-        for t in animate(duration=3, step=lambda: app.chrono.deltatime, easing=bounce):
-            app.window.surface.fill(RED.lerp(BLUE, t))
-            yield None  # same as WaitForFrames(1)
+    def anim() -> Coroutine:
+        start = Vector2(200, app.window.height / 2)
+        end = start.with_x(app.window.width - 200)
+
+        for t in animate(
+            duration=3, step=lambda: app.chrono.deltatime, easing=bounce_out
+        ):
+            pygame.draw.circle(app.window.surface, RED, start.lerp(end, t), 30)
+            yield None
 
 
     app.mainloop()
@@ -796,6 +816,8 @@ def animate(
     easing: `Callable[[float], float]`
         An easing function that controls the values returned.\n
         Defaults to `linear`. See the `easing` module for more options.
+    clamp: `bool`
+        Whether to force the function to always yield values between 0 and 1.
     force_end: `bool`
         Whether to force the function to yield 1 at the end of the animation.
 
@@ -816,8 +838,9 @@ def animate(
     start = 0
 
     while start < duration:
-        yield easing(start / duration)
-        start = clamp(start + step(), 0, 1)
+        t = easing(start / duration)
+        yield saturate(t) if clamped else t
+        start += step()
 
     if force_end:
         yield 1
@@ -879,7 +902,22 @@ def singleton[C: type](cls: C, /) -> C:
 
 def is_callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
     """
-    Checks whether or not the given `Callable` can be called with no arguments.
+    Checks whether or not the given `Callable` can be called with no arguments without actually calling it.
+
+    Examples
+    --------
+    ```python
+    def a(arg: int): ...
+    def b(arg: int = 1): ...
+    def c(*args: int): ...
+    def d(**kwargs: int): ...
+
+
+    is_callable_with_no_arguments(a)  # False, a() -> raises a TypeError()
+    is_callable_with_no_arguments(b)  # True, b() -> arg has a default
+    is_callable_with_no_arguments(c)  # True, c() -> args is an empty list
+    is_callable_with_no_arguments(d)  # True, d() -> args is an empty dict
+    ```
 
     Parameters
     ----------
@@ -896,5 +934,39 @@ def is_callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
         param
         for param in signature(callable).parameters.values()
         if param.default is Parameter.empty
+        and param.kind not in (Parameter.VAR_KEYWORD, Parameter.VAR_POSITIONAL)
     )
+
     return count == 0
+
+
+def attempt_empty_call[T](callable: Callable[..., T], /, *, message: str) -> T:
+    """
+    Attempts to call a `Callable` with an empty argument list.
+    Used to display richer error messages, as the usual `TypeError` normally raised
+    in these cases might not contain enough information for an easy debugging experience.\n
+
+    Alternatively, for a simple check that does not execute the callable, use `is_callable_with_no_arguments`.
+
+    Parameters
+    ----------
+    callable: `Callable[..., T]`
+        The `Callable` to check.
+    message: `str`
+        The error message to attach to the raised `ValueError`.
+
+    Returns
+    -------
+    `T`
+        Whatever was returned by the callable.
+
+    Raises
+    ------
+    `ValueError`
+        Instead of a `TypeError`, raises a ValueError with `message` as the error message.
+    """
+
+    try:
+        return callable()
+    except TypeError:
+        raise ValueError(message)
