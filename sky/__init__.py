@@ -25,7 +25,16 @@ del environ
 import pygame
 
 from .app import App
-from .core import Component, Cursor, Key, Keybinding, Modifier, MouseButton, State
+from .core import (
+    Component,
+    Cursor,
+    Key,
+    Keybinding,
+    Modifier,
+    MouseButton,
+    Service,
+    State,
+)
 from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
@@ -54,6 +63,7 @@ __all__ = [
     "MouseButton",
     "Scene",
     "SceneSpec",
+    "Service",
     "State",
     "Vector2",
     "WaitForFrames",
