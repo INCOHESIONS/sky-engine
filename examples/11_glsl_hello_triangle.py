@@ -2,14 +2,18 @@
 
 # Based on https://github.com/pygame-community/pygame-ce/blob/main/examples/window_opengl.py
 
-from typing import override
+from typing import final, override
 
 import zengl
 
 from sky import App, Component, WindowSpec
 
+app = App(spec=WindowSpec(backend="opengl"))
 
-class RenderPipeline(Component):
+
+@final
+@app.singleton_component
+class Renderer(Component):
     VERTEX_SHADER = """
         #version 330 core
 
@@ -49,9 +53,7 @@ class RenderPipeline(Component):
     @override
     def start(self) -> None:
         self._ctx = zengl.context()
-        self._image = self._ctx.image(
-            app.window.size.to_int_tuple(), "rgba8unorm", samples=4
-        )
+        self._image = self._ctx.image(app.window.size.ituple(), "rgba8unorm", samples=4)
         self._pipeline = self._ctx.pipeline(
             vertex_shader=self.VERTEX_SHADER,
             fragment_shader=self.FRAGMENT_SHADER,
@@ -69,6 +71,4 @@ class RenderPipeline(Component):
         self._ctx.end_frame()
 
 
-app = App(spec=WindowSpec(backend="opengl"))
-app.add_component(RenderPipeline)
 app.mainloop()

@@ -1,5 +1,5 @@
 # pyright: reportMissingTypeStubs=false, reportUnknownArgumentType=false, reportUnknownMemberType=false, reportUnknownVariableType=false
-# ^ compushady lacks stubs so this is to prevent a bunch of type checking errors from flashing you
+# ^ prevents a ton of type checking errors as compushady lacks stubs
 
 import struct
 from ctypes import c_int, sizeof
@@ -12,12 +12,11 @@ import compushady
 from compushady.formats import B8G8R8A8_UNORM, R32G32_UINT
 from compushady.shaders.hlsl import compile
 
-from sky import App, Component, Key, Vector2
+from sky import App, Component, Vector2
 
 compushady.config.set_debug(True)
 
 app = App()
-app.keyboard.add_keybinding((Key.escape, app.quit))
 
 
 @final
@@ -46,7 +45,9 @@ class Renderer(Component):
     """
 
     def __init__(self):
-        self.target = compushady.Texture2D(*app.window.isize, format=B8G8R8A8_UNORM)
+        self.target = compushady.Texture2D(
+            *app.window.size.ituple(), format=B8G8R8A8_UNORM
+        )
         self.swapchain = compushady.Swapchain(app.window.handle, format=B8G8R8A8_UNORM)
 
         self.generate_points()
@@ -55,7 +56,7 @@ class Renderer(Component):
             compile(self.SHADER), uav=[self.target], srv=[self.points_buffer]
         )
 
-        app.keyboard.add_keybinding((Key.space, self.generate_points))
+        app.keyboard.add_keybindings(space=self.generate_points)
 
     @override
     def stop(self) -> None:
