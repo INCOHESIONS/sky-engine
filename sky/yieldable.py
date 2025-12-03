@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from time import perf_counter
-from typing import TYPE_CHECKING, Callable, ClassVar, final, override
+from typing import TYPE_CHECKING, Callable, ClassVar, Self, final, override
 
 if TYPE_CHECKING:
     from .app import App
@@ -25,10 +25,16 @@ class Yieldable(ABC):
     """Base class for `Yieldable`s: values that tell the `Executor` to wait or continue executing a `Coroutine`."""
 
     app: ClassVar[App]
+    _then: Yieldable
 
     @abstractmethod
     def is_ready(self) -> bool:
         raise NotImplementedError()
+
+    @final
+    def then(self, next: Yieldable, /) -> Self:
+        self._then = next
+        return self
 
 
 @final

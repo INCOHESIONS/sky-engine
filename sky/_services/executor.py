@@ -2,27 +2,39 @@ from typing import Callable, final, override
 
 from ..core import Service
 from ..types import Coroutine
-from ..utils import is_callable_with_no_arguments
+from ..utils import attempt_empty_call
 from ..yieldable import WaitForFrames, Yieldable
 
 
 @final
 class Executor(Service):
-    """Handles coroutines."""
+    """Handles `Coroutine`s."""
 
     def __init__(self) -> None:
         self._coroutines: dict[Coroutine, Yieldable] = {}
 
+    def __contains__(self, coroutine: Coroutine, /) -> bool:
+        return self.is_active(coroutine)
+
+    @override
+    def stop(self) -> None:
+        self.stop_all_coroutines()
+
     def start_coroutine(
         self, coroutine: Callable[[], Coroutine] | Coroutine, /
-    ) -> None:
+    ) -> Coroutine:
         """
-        Starts a Coroutine.
+        Starts a `Coroutine`.
 
         Parameters
         ----------
-        coroutine : `Callable[[], Coroutine] | Coroutine`
+        coroutine: `Callable[[], Coroutine] | Coroutine`
             A `Coroutine` or a `Callable` that returns a `Coroutine`.
+
+        Returns
+        -------
+        `Coroutine`
+            The added `Coroutine`.
 
         Raises
         ------
@@ -38,13 +50,15 @@ class Executor(Service):
 
         self._step_coroutine(coroutine)
 
+        return coroutine
+
     def stop_coroutine(self, coroutine: Coroutine, /) -> None:
         """
         Stops the given `Coroutine`.
 
         Parameters
         ----------
-        coroutine : `Coroutine`
+        coroutine: `Coroutine`
             The `Coroutine` to be stopped.
 
         Raises
@@ -66,8 +80,25 @@ class Executor(Service):
             if yieldable.is_ready():
                 self._step_coroutine(coroutine)
 
+    def is_active(self, coroutine: Coroutine, /) -> bool:
+        """
+        Checks if a `Coroutine` is currently being executed.
+
+        Parameters
+        ----------
+        coroutine: `Coroutine`
+            The `Coroutine` to check.
+
+        Returns
+        -------
+        `bool`
+            If the `Coroutine` is currently being executed.
+        """
+
+        return coroutine in self._coroutines
+
     def _step_coroutine(self, coroutine: Coroutine, /) -> None:
-        if (n := self._get_next(coroutine)) is not None:
+        if n := self._get_next(coroutine):
             self._coroutines[coroutine] = n
         else:
             self.stop_coroutine(coroutine)
@@ -76,14 +107,16 @@ class Executor(Service):
         try:
             value = next(coroutine)
         except StopIteration:
-            return None
+            return (
+                then
+                if (then := getattr(self._coroutines[coroutine], "_then", None))
+                else None
+            )
 
         if isinstance(value, type):
-            if is_callable_with_no_arguments(value):
-                return value()
-
-            raise RuntimeError(
-                f"The type ({value.__name__}) cannot be instanced without arguments!"
+            return attempt_empty_call(
+                value,
+                message=f"The type ({value.__name__}) cannot be instanced without arguments!",
             )
 
         return value or WaitForFrames()
