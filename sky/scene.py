@@ -56,6 +56,12 @@ class Scene:
 
         self.is_running = False
 
+    def __post_init__(self) -> None:
+        """@dataclass support."""
+
+        for base in self.__class__.__bases__:
+            base.__init__(self)
+
     def __contains__(self, component: type[Component] | Component, /) -> bool:
         return self.has_component(component)
 
@@ -186,9 +192,10 @@ class Scene:
             If a type is passed that cannot be instanced with no arguments.
         """
 
+        # `is_callable_with_no_arguments` for an immediate error instead of `attempt_empty_call`; better than erroring on `when`
         if callable(component) and not is_callable_with_no_arguments(component):
             raise ValueError(
-                f'Component types must have constructors that take no arguments to be passed in directly to `add_component` (problematic type: "{component.__name__}").'
+                f"{component.__name__} cannot be instanced with no arguments!"
             )
 
         def _add():
