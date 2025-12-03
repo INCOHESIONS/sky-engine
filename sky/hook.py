@@ -417,7 +417,7 @@ class Hook[**TParams = [], TReturn: Any = None]:
             @functools.wraps(func)
             def wrapper(*args2: TParams.args, **kwargs2: TParams.kwargs) -> TReturn:
                 if args == args2 and kwargs == kwargs2:
-                    return func(*args2, **kwargs2)
+                    return func()
                 return self._NOT_EXECUTED  # pyright: ignore[reportReturnType]
 
             self += wrapper
