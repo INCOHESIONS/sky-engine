@@ -251,9 +251,7 @@ class Keyboard(Service):
             for key in self._states
         )
 
-    def add_keybinding(
-        self, keybinding: Keybinding | tuple[KeyLike, Callable[[], None]], /
-    ) -> None:
+    def add_keybinding(self, keybinding: Keybinding, /) -> None:
         """
         Adds a keybinding to the keyboard.
 
@@ -263,31 +261,20 @@ class Keyboard(Service):
             The keybinding to add.
         """
 
-        self._keybindings.append(
-            keybinding
-            if isinstance(keybinding, Keybinding)
-            else Keybinding.make(keybinding[0], action=keybinding[1])
-        )
+        self._keybindings.append(keybinding)
 
-    def add_keybindings(
-        self, keybindings: list[Keybinding] | dict[KeyLike, Callable[[], None]]
-    ) -> None:
+    def add_keybindings(self, **kwargs: Callable[[], None]) -> None:
         """
-        Adds a list of keybindings, or serves as a helper method for adding many simple, key to action, modifier-less keybindings.
+        Adds many keybindings using keyword arguments.
 
         Parameters
         ----------
-        keybindings: `list[Keybinding] | dict[KeyLike, Callable[[], None]]`
-            The list of keybindings to add or a `KeyLike` to action mapping for the keybindings to be created.
+        **kwargs: `Callable[[], None]`
+            A dict of KeyLiteral to action.
         """
 
-        if isinstance(keybindings, list):
-            for keybinding in keybindings:
-                self.add_keybinding(keybinding)
-            return
-
-        for key, action in keybindings.items():
-            self.add_keybinding(Keybinding.make(key, action=action))
+        for key, action in kwargs.items():
+            self.add_keybinding(Keybinding.make(key, action=action))  # pyright: ignore[reportArgumentType]
 
     def remove_keybinding(self, keybinding: Keybinding, /) -> None:
         """
