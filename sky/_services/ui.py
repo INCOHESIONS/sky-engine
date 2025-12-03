@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from typing import final, override
 
 from ..core import Service, State
+from ..hook import Hook
 from ..ui import Layout, UIElement
 
 __all__ = ["UI"]
@@ -17,12 +18,15 @@ class UI(Service):
         self._elements: list[UIElement] = []
         self._interacting: UIElement | None = None
 
+        self.on_interact = Hook()
+
     def __iter__(self) -> Iterator[UIElement]:
         return iter(self._elements)
 
     def __contains__(self, element: UIElement, /) -> bool:
         return element in self._elements
 
+    @property
     def interacting(self) -> UIElement | None:
         """The element currently being interacted with."""
 
@@ -30,11 +34,15 @@ class UI(Service):
 
     @override
     def update(self) -> None:
+        old_interacting = self._interacting
         self._interacting = None
 
         for element in self._elements:
             if element.calculate_state() != State.none:
                 self._interacting = element
+
+        if self._interacting != old_interacting and self._interacting:
+            self.on_interact.notify()
 
         for element in self._elements:
             element.update()
