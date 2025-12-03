@@ -36,6 +36,9 @@ class Windowing(Service):
         if self.spec and self.spec.initialization == "immediate":
             self._initialize()
 
+    def __contains__(self, window: Window) -> bool:
+        return window in self.windows
+
     @property
     def windows(self) -> Sequence[Window]:
         """All windows, main and extra."""
@@ -126,11 +129,6 @@ class Windowing(Service):
         if win is None:
             raise ValueError(f"Window {window.title} not found.")
 
-        if win is self.main_window:
-            self.app.quit()
-            return
-
-        self._windows.remove(win)
         win.destroy()
 
     def clear_extras(self) -> None:
@@ -160,7 +158,3 @@ class Windowing(Service):
         self.add_window(spec=self.spec)
 
         self.app.teardown += self.clear_extras
-
-        self.app.events.add_callback(
-            pygame.WINDOWCLOSE, lambda e: self.remove_window(e.window)
-        )

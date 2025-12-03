@@ -6,7 +6,8 @@ import os
 from typing import TYPE_CHECKING, ClassVar, final
 
 import pygame
-from pygame.event import Event as PygameEvent
+from pygame import Event as PygameEvent
+from pygame import Rect as PygameRect
 
 from .core import Monitor
 from .hook import Hook
@@ -174,10 +175,6 @@ class Window:
         self._underlying.size = value
 
     @property
-    def isize(self) -> tuple[int, int]:
-        return self.size.to_int_tuple()
-
-    @property
     def width(self) -> int:
         """This `Window`'s width."""
 
@@ -335,13 +332,20 @@ class Window:
 
         self.surface.fill(color)
 
-    def blit(self, surface: pygame.Surface, /, position: Vector2 | Rect) -> None:
+    def blit(
+        self, surface: pygame.Surface, /, position: Vector2 | PygameRect | Rect
+    ) -> None:
         """Blits the surface onto the window."""
 
         self.surface.blit(surface, position)
 
     def destroy(self) -> None:
         """Destroys the window."""
+
+        if self is self.windowing.main_window:
+            self.app.quit()
+
+        self.windowing._windows.remove(self)  # pyright: ignore[reportPrivateUsage]
 
         self.before_destroy.notify()
 
@@ -367,6 +371,10 @@ class Window:
 
     def _handle_events(self, event: pygame.event.Event, /):
         if not hasattr(event, "window") or event.window != self.underlying:
+            return
+
+        if event.type == pygame.WINDOWCLOSE:
+            self.destroy()
             return
 
         if event.type in self._hook_map:
