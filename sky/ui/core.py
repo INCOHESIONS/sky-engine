@@ -51,8 +51,11 @@ class UIElement[TStyle: Style = Any](ABC):
         self.layer = layer
         """The layer on which the element is rendered. Used for sorting elements in the UI."""
 
-        self.on_state_changed = Hook[[State, State]]()
-        """Listens to changes to the element's state."""
+        self.on_enabled = Hook()
+        """Notified when the element is enabled."""
+
+        self.on_disabled = Hook()
+        """Notified when the element is disabled."""
 
         self.on_downed = Hook()
         """Notified when the element's state changes to `State.downed`."""
@@ -63,11 +66,8 @@ class UIElement[TStyle: Style = Any](ABC):
         self.on_released = Hook()
         """Notified when the element's state changes to `State.released`."""
 
-        self.on_enabled = Hook()
-        """Notified when the element is enabled."""
-
-        self.on_disabled = Hook()
-        """Notified when the element is disabled."""
+        self.on_state_changed = Hook[[State, State]]()
+        """Listens to changes to the element's state."""
 
         self.on_position_changed = Hook[[Vector2, Vector2]]()
         """Listens for changes to the element's position, providing the old and new values."""
@@ -78,7 +78,7 @@ class UIElement[TStyle: Style = Any](ABC):
         self.on_style_changed = Hook[[TStyle, TStyle]]()
         """Listens for changes to the element's style, providing the old and new values."""
 
-        self.on_any_change = Hook()
+        self.on_any_change = Hook()  # type: Hook  # pyright: ignore[reportTypeCommentUsage]  # HACK:
         """Listens to `on_state_changed`, `on_position_changed`, `on_size_changed` and `on_style_changed`."""
 
         def __add(_1: Any, _2: Any):
@@ -116,6 +116,17 @@ class UIElement[TStyle: Style = Any](ABC):
             self.on_size_changed.notify(self._size, value)
 
         self._size = value
+
+    @property
+    def bounds(self) -> Rect:
+        """The bounds of this element."""
+
+        return Rect(self._position, self._size)
+
+    @bounds.setter
+    def bounds(self, value: Rect, /) -> None:
+        self._position = Vector2(value.topleft)
+        self._size = Vector2(value.size)
 
     @final
     @property
@@ -169,17 +180,6 @@ class UIElement[TStyle: Style = Any](ABC):
         """The window this element is in."""
 
         return self._window
-
-    @property
-    def bounds(self) -> Rect:
-        """The bounds of this element."""
-
-        return Rect(self._position, self._size)
-
-    @bounds.setter
-    def bounds(self, value: Rect, /) -> None:
-        self._position = Vector2(value.topleft)
-        self._size = Vector2(value.size)
 
     # TODO: caching
     @property
@@ -240,6 +240,17 @@ class StateColors:
     released_color: Color = field(default_factory=lambda: WHITE)
     disabled_color: Color = field(default_factory=lambda: WHITE.with_opacity(0.5))
 
+    @classmethod
+    def from_single(cls, color: Color, /) -> Self:
+        return cls(
+            normal_color=color,
+            hovered_color=color,
+            downed_color=color,
+            pressed_color=color,
+            released_color=color,
+            disabled_color=color,
+        )
+
     def calculate(self, /, *, element: UIElement) -> Color:
         if element.disabled:
             return self.disabled_color
@@ -250,13 +261,14 @@ class StateColors:
         return getattr(self, element.state.name + "_color")
 
 
+# all values should have defaults; defaults should be fit for a white theme
 class Style(ABC):
     """Base class for UI styles."""
 
     @final
     @classmethod
     def white(cls) -> Self:
-        return cls()  # default should be white-themed
+        return cls()
 
     @classmethod
     @abstractmethod

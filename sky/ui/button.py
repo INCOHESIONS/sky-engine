@@ -7,9 +7,13 @@ import pygame
 
 from .core import StateColors, Style, UIElement
 
+__all__ = ["Button", "ButtonStyle"]
 
-@dataclass(slots=True, frozen=True)
+
+@dataclass
 class ButtonStyle(Style):
+    """`Style` for `Button`s."""
+
     _: KW_ONLY
 
     fill_colors: StateColors | None = field(default_factory=StateColors)
@@ -29,6 +33,8 @@ class ButtonStyle(Style):
 
 
 class Button(UIElement[ButtonStyle]):
+    """Extensible `Button`. For styling, see `ButtonStyle`."""
+
     @override
     def render(self) -> None:
         if self.style.fill_colors:
