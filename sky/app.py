@@ -12,7 +12,7 @@ from .core import Component, Service
 from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
-from .utils import is_callable_with_no_arguments, singleton
+from .utils import attempt_empty_call, singleton
 from .window import Window
 from .yieldable import Yieldable
 
@@ -59,7 +59,7 @@ class App:
         - `Keyboard` (handles keyboard input)
         - `Mouse` (handles mouse input)
         - `Windowing` (handles windowing)
-        - `Chrono` (handles time)
+        - `Chrono` (handles time-related data)
         - `Executor` (handles coroutines)
         - `UI` (handles the user interface)
 
@@ -305,10 +305,9 @@ class App:
         """
 
         if isinstance(scene, type):
-            if is_callable_with_no_arguments(scene):
-                scene = scene()
-            else:
-                raise ValueError("Scene cannot be instanced with no arguments.")
+            scene = attempt_empty_call(
+                scene, message="Scene cannot be instanced with no arguments."
+            )
 
         match mode:
             case "add":
@@ -526,7 +525,7 @@ class App:
 
         self.events.post(pygame.QUIT)
 
-    # probably bad practice but this does makes things real easy to use which is the whole point of this library
+    # probably bad practice but this makes things real easy to use which is the whole point of this library
     def _handle_references(self) -> None:
         Component.app = self
         Yieldable.app = self
