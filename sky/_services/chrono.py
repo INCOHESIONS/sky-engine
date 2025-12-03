@@ -49,7 +49,7 @@ class Chrono(Service):
 
     @property
     def avg_fps(self) -> float:
-        """The average framerate achieved since the start of the app."""
+        """The average framerate achieved since the start of the app, or 0 if it hasn't started yet."""
 
         return (
             self.frames / self.time_since_start.total_seconds()
