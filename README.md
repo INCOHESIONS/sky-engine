@@ -118,11 +118,10 @@ To allow for interactions by grabbing user input, users may utilize the `mouse` 
 ```python
 from pygame import draw
 
-from sky import App, MouseButton, WindowSpec
+from sky import App, Key, MouseButton, WindowSpec
 from sky.colors import ALICE_BLUE, CRIMSON
 
 app = App(spec=WindowSpec(fill=CRIMSON))
-app.keyboard.add_keybindings(escape=app.quit)
 
 pos = app.window.center
 speed = 2
@@ -132,7 +131,7 @@ radius = 32
 @app.window.on_render
 def render():
     global pos
-    pos += app.keyboard.get_movement_2d(("a", "d"), ("w", "s")) * speed
+    pos += app.keyboard.get_movement_2d((Key.a, Key.d), (Key.w, Key.s)) * speed
     draw.aacircle(app.window.surface, ALICE_BLUE, pos, radius)
 
 
@@ -145,7 +144,36 @@ def change_radius(button: MouseButton) -> None:
 app.mainloop()
 ```
 
-Using globals for everything is bad practice, however. Using `Component`s, we can rewrite the example above, packaging everything into a single object:
+This isn't the only way to grab input, however. One may also check for a key's or button's state every frame, using the `State` checking methods `is_downed`, `is_pressed` and `is_released`. Here's the example shown above, but using those functions instead:
+
+```python
+from pygame import draw
+
+from sky import App, MouseButton, State, WindowSpec
+from sky.colors import ALICE_BLUE, CRIMSON
+
+app = App(spec=WindowSpec(fill=CRIMSON))
+
+pos = app.window.center
+speed = 2
+radius = 32
+
+
+@app.window.on_render
+def render():
+    global pos, radius
+
+    if app.mouse.any(State.downed):
+        radius += -1 if app.mouse.is_downed(MouseButton.right) else 1
+
+    pos += app.keyboard.get_movement_2d((Key.a, Key.d), (Key.w, Key.s)) * speed
+    draw.aacircle(app.window.surface, ALICE_BLUE, pos, radius)
+
+
+app.mainloop()
+```
+
+Using globals for everything, like we did with `pos`, `speed` and `radius`, is bad practice. Using `Component`s, the engine's fundamental object type, used to represent anything in a game, we can once again rewrite the example above, packaging those values into a single object:
 
 ```python
 from dataclasses import dataclass, field
@@ -153,11 +181,10 @@ from typing import override
 
 from pygame import draw
 
-from sky import App, Component, MouseButton, Vector2, WindowSpec
+from sky import App, Component, Vector2, WindowSpec
 from sky.colors import ALICE_BLUE, CRIMSON
 
 app = App(spec=WindowSpec(fill=CRIMSON))
-app.keyboard.add_keybindings(escape=app.quit)
 
 
 @dataclass
@@ -167,21 +194,20 @@ class Player(Component):
     radius: int = 32
 
     @override
-    def start(self) -> None:
-        app.mouse.on_mouse_button_downed += self.change_radius
-
-    @override
     def update(self) -> None:
         self.pos += app.keyboard.get_movement_2d(("a", "d"), ("w", "s")) * self.speed
-        draw.aacircle(app.window.surface, ALICE_BLUE, self.pos, self.radius)
 
-    def change_radius(self, button: MouseButton) -> None:
-        self.radius += -1 if button == MouseButton.right else 1
+        if app.mouse.any("downed"):
+            self.radius += -1 if app.mouse.is_downed("right") else 1
+
+        draw.aacircle(app.window.surface, ALICE_BLUE, self.pos, self.radius)
 
 
 app.add_component(Player)
 app.mainloop()
 ```
+
+> Every method that accepts a `Key`, `MouseButton` or `State` also accepts a `str` version of those values. As such, `app.mouse.is_downed(MouseButton.right)` and `app.mouse.is_downed("right")` are the same. Methods that accept `Key` and `MouseButton` also accept `int`s, as pygame has constants that represent every key. With that, `app.keyboard.is_downed(Key.a)`, `app.keyboard.is_downed("a")` and `app.keyboard.is_downed(pygame.K_a)` are all equivalent.
 
 Since `Player` has defaults for all of its constructor parameters, we may pass the type directly into `add_component`, letting the app instance it for us. Alternatively, if one is building a singleplayer game, or has some sort of "game controller" class that contains shared logic or data, they may use the `@app.singleton_component` decorator, making the class declaration look like this:
 
@@ -226,12 +252,12 @@ app.add_service(SomeService())
 app.mainloop()
 ```
 
-So far, we've used methods that run either at the start, or at every frame. But many games require more granular control over timing, using delays, loops and animations for a better user experience. `Coroutine`s are the engine's way of handling such tasks.
+So far, we've used methods that run either at the start, or at every frame. But many games require more granular control over timing, using delays, loops and animations. `Coroutine`s are the engine's way of handling such tasks.
 
 ```python
-from sky import App, Coroutine
+from sky import App, Coroutine, Color
 from sky.colors import CRIMSON, DODGER_BLUE
-from sky.utils import Color, animate
+from sky.utils import animate
 
 app = App()
 
@@ -246,11 +272,11 @@ def lerp_color() -> Coroutine:
 app.mainloop()
 ```
 
+> This feature based on `Unity`'s coroutines. See their [documentation](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html) for their version of the feature, done in `C#`.
+
 `Hook`s can automatically detect `Coroutine`s, calling `app.executor.start_coroutine` when triggered instead of simply calling the decorated generator function.
 
-> The use of generators and `yield` was heavily inspired by `Unity`. See their [documentation](https://docs.unity3d.com/6000.2/Documentation/Manual/Coroutines.html) for their version of the feature, done in `C#`.
-
-Earlier, we'd called `add_component` directly on our `app` instance. Doing this actually calls `add_component` on the most recently added `Scene`, the engine's way of organizing many components into separate objects for easier management. Multiple `Scene`s may be loaded at once, as games usually contain portions that act differently from others, but are ran concurrently, such as the level and user interface.
+Earlier, we called `add_component` directly on our `App` instance. Doing this actually calls `add_component` on the most recently added `Scene`, the engine's way of organizing many components into separate collections for easier management. Multiple `Scene`s may be loaded at once, as games usually contain portions that act differently from others, but run in parallel, such as the level and user interface.
 
 In our case, the most recently added `Scene` is simply the default scene, as we haven't added any others. Here's an example that does not create a default scene, and instead adds two scenes, with each rendering a differently colored circle:
 
@@ -294,4 +320,6 @@ app.keyboard.add_keybindings(
 app.mainloop()
 ```
 
-This README covers most of the engine's main features, but one may dig through the source code and extra examples to learn more. Do note that this project is in heavy active development and breaking changes occur constantly, so don't use it for anything serious.
+Yet another way of handling user input is using `Keybinding`s. Their constructor provides exact control over the binding, accepting multiple keys with possibly differing activation `State`s to allow for complex key combinations. A simpler way of adding keybindings, however, is using the `Keybinding.make` method, that simply takes a key and an action as arguments. `add_keybindings` is a method that uses `kwargs` to create a mapping of key to action, simplifying the process further.
+
+> This README covers most of the engine's main features, but one may dig through the source code and extra examples to learn more. Do note that this project is in heavy active development and breaking changes occur constantly, so don't use it for anything serious.

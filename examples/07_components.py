@@ -3,11 +3,10 @@ from typing import override
 
 from pygame import draw
 
-from sky import App, Component, MouseButton, Vector2, WindowSpec
+from sky import App, Component, Vector2, WindowSpec
 from sky.colors import ALICE_BLUE, CRIMSON
 
 app = App(spec=WindowSpec(fill=CRIMSON))
-app.keyboard.add_keybindings(escape=app.quit)
 
 
 @dataclass
@@ -17,16 +16,13 @@ class Player(Component):
     radius: int = 32
 
     @override
-    def start(self) -> None:
-        app.mouse.on_mouse_button_downed += self.change_radius
-
-    @override
     def update(self) -> None:
         self.pos += app.keyboard.get_movement_2d(("a", "d"), ("w", "s")) * self.speed
-        draw.aacircle(app.window.surface, ALICE_BLUE, self.pos, self.radius)
 
-    def change_radius(self, button: MouseButton) -> None:
-        self.radius += -1 if button == MouseButton.right else 1
+        if app.mouse.any("downed"):
+            self.radius += -1 if app.mouse.is_downed("right") else 1
+
+        draw.aacircle(app.window.surface, ALICE_BLUE, self.pos, self.radius)
 
 
 app.add_component(Player)

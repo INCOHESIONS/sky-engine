@@ -1,10 +1,9 @@
 from pygame import draw
 
-from sky import App, MouseButton, WindowSpec
+from sky import App, Key, MouseButton, WindowSpec
 from sky.colors import ALICE_BLUE, CRIMSON
 
 app = App(spec=WindowSpec(fill=CRIMSON))
-app.keyboard.add_keybindings(escape=app.quit)
 
 pos = app.window.center
 speed = 2
@@ -14,7 +13,7 @@ radius = 32
 @app.window.on_render
 def render():
     global pos
-    pos += app.keyboard.get_movement_2d(("a", "d"), ("w", "s")) * speed
+    pos += app.keyboard.get_movement_2d((Key.a, Key.d), (Key.w, Key.s)) * speed
     draw.aacircle(app.window.surface, ALICE_BLUE, pos, radius)
 
 
