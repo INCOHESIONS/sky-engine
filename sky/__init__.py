@@ -39,7 +39,7 @@ from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
 from .types import Coroutine
-from .utils import Color, Vector2
+from .utils import Color, Vector2, Vector3
 from .window import Window
 from .yieldable import WaitForFrames, WaitForSeconds, WaitUntil, WaitWhile
 
@@ -66,6 +66,7 @@ __all__ = [
     "Service",
     "State",
     "Vector2",
+    "Vector3",
     "WaitForFrames",
     "WaitForSeconds",
     "WaitUntil",
