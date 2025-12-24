@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sky-engine"
-description = "A wrapper around pygame that makes it less painful to use."
+description = "A wrapper around Pygame that makes it easier to use."
 authors = ["iNCOHESiONS"]
 version = "0.0.1"
 
@@ -10,12 +10,11 @@ readme = "README.md"
 repository = "https://github.com/incohesions/sky-engine"
 homepage = "https://github.com/incohesions/sky-engine"
 
-keywords = ["pygame", "gamedev"]
+keywords = ["pygame", "gamedev", "game-engine"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: Windows",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
@@ -31,8 +30,7 @@ python = "^3.13"
 pygame-ce = "^2.5.3"
 singleton-decorator = "==1.0.0"
 screeninfo = "^0.8.1"
-pywin32 = {version = "^311", markers = "sys_platform == 'win32'"}
-
+pywin32 = { version = "^311", markers = "sys_platform == 'win32'" }
 
 [tool.basedpyright]
 typeCheckingMode="all"
