@@ -1,9 +1,12 @@
 """Utilities, and extensions of `pygame` classes that replace certain methods with expection-less versions for ease of use."""
 
+from __future__ import annotations
+
+from collections import ChainMap
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from inspect import Parameter, signature
 from random import randint, uniform
-from typing import Any, Callable, Self, override
+from typing import Any, Callable, Literal, Self, overload, override
 
 from pygame import Color as PygameColor
 from pygame import Rect as PygameRect
@@ -78,9 +81,34 @@ class Vector2(PygameVector2):
 
     @classmethod
     def random(cls) -> Self:
-        """Returns a `Vector2` pointing in a random direction."""
+        """
+        Returns a `Vector2` pointing in a random direction.
+
+        Returns
+        -------
+        `Vector2`
+            The random direction (of unit magnitude).
+        """
 
         return cls(uniform(-1, 1), uniform(-1, 1)).normalize()
+
+    @classmethod
+    def random_inside_rect(cls, rect: Rect, /) -> Self:
+        """
+        Returns a random position inside of a `Rect`.
+
+        Parameters
+        ----------
+        rect: `Rect`
+            The rect to use.
+
+        Returns
+        -------
+        `Vector2`
+            The random position.
+        """
+
+        return cls(uniform(rect.left, rect.right), uniform(rect.top, rect.bottom))
 
     @override
     def normalize(self) -> Self:
@@ -138,36 +166,71 @@ class Vector2(PygameVector2):
         dist = unnormalized_dir.magnitude()
         return unnormalized_dir / dist, dist
 
+    def set(self, x: float, y: float, /) -> None:
+        """
+        Modifies the x and y components of this vector in place. Useful for lambdas.
+
+        Parameters
+        ----------
+        x: `float`
+            The `x` component.
+        y: `float`
+            The `y` component.
+        """
+
+        self.x = x
+        self.y = y
+
     def clear(self) -> None:
         """Sets the x and y components of this vector to zero."""
 
         self.x = 0
         self.y = 0
 
+    def is_clear(self) -> bool:
+        """Checks if all elements of this vector are zero."""
+
+        return self.x == 0 and self.y == 0
+
     def with_x(self, x: float, /) -> Self:
-        """Returns a new vector with the x-component set to `x`."""
+        """
+        Returns a copy of this vector with the specified `x` component.
+
+        Parameters
+        ----------
+        x: `float`
+            The `x` component.
+        """
 
         return self.__class__(x, self.y)
 
     def with_y(self, y: float, /) -> Self:
-        """Returns a new vector with the y-component set to `y`."""
+        """
+        Returns a copy of this vector with the specified `y` component.
+
+        Parameters
+        ----------
+        y: `float`
+            The `y` component.
+        """
 
         return self.__class__(self.x, y)
 
     def with_inverted_x(self) -> Self:
-        """Returns a new vector with the x-component inverted."""
+        """Returns a copy of this vector with the `x` component inverted."""
 
         return self.__class__(-self.x, self.y)
 
     def with_inverted_y(self) -> Self:
-        """Returns a new vector with the y-component inverted."""
+        """Returns a copy of this vector with the `y` component inverted."""
 
         return self.__class__(self.x, -self.y)
 
     def to_int_tuple(self) -> tuple[int, int]:
         """
         This `Vector2` as a tuple of integers.\n
-        Useful for passing the vector to pygame or other libraries' functions that tend expect a tuple of integers.
+        Useful for passing the vector to functions that specifically expect a tuple of integers as opposed to any sequence of numbers
+        or for unpacking to positional arguments without type checking errors.
 
         Returns
         -------
@@ -175,8 +238,9 @@ class Vector2(PygameVector2):
             The vector as a tuple of integers.
         """
 
-        return (int(self.x), int(self.y))
+        return int(self.x), int(self.y)
 
+    as_int_tuple = to_int_tuple  # alias
     ituple = to_int_tuple  # alias
 
 
@@ -287,6 +351,24 @@ class Vector3(PygameVector3):
         dist = unnormalized_dir.magnitude()
         return unnormalized_dir / dist, dist
 
+    def set(self, x: float, y: float, z: float, /) -> None:
+        """
+        Modifies the x, y and z components of this vector in place. Useful for lambdas.
+
+        Parameters
+        ----------
+        x: `float`
+            The `x` component.
+        y: `float`
+            The `y` component.
+        z: `float`
+            The `z` component.
+        """
+
+        self.x = x
+        self.y = y
+        self.z = z
+
     def clear(self) -> None:
         """Sets the x, y and z components of this vector to zero."""
 
@@ -294,40 +376,67 @@ class Vector3(PygameVector3):
         self.y = 0
         self.z = 0
 
+    def is_clear(self) -> bool:
+        """Checks if all elements of this vector are zero."""
+
+        return self.x == 0 and self.y == 0 and self.z == 0
+
     def with_x(self, x: float, /) -> Self:
-        """Returns a new `Vector3` with the x-component set to `x`."""
+        """
+        Returns a copy of this vector with the specified `x` component.
+
+        Parameters
+        ----------
+        x: `float`
+            The `x` component.
+        """
 
         return self.__class__(x, self.y, self.z)
 
     def with_y(self, y: float, /) -> Self:
-        """Returns a new `Vector3` with the y-component set to `y`."""
+        """
+        Returns a copy of this vector with the specified `y` component.
+
+        Parameters
+        ----------
+        y: `float`
+            The `y` component.
+        """
 
         return self.__class__(self.x, y, self.z)
 
     def with_z(self, z: float, /) -> Self:
-        """Returns a new `Vector3` with the z-component set to `z`."""
+        """
+        Returns a copy of this vector with the specified `z` component.
+
+        Parameters
+        ----------
+        z: `float`
+            The `z` component.
+        """
 
         return self.__class__(self.x, self.y, z)
 
     def with_inverted_x(self) -> Self:
-        """Returns a new `Vector3` with the x-component inverted."""
+        """Returns a copy of this vector with the `x` component inverted."""
 
         return self.__class__(-self.x, self.y, self.z)
 
     def with_inverted_y(self) -> Self:
-        """Returns a new `Vector3` with the y-component inverted."""
+        """Returns a copy of this vector with the `y` component inverted."""
 
         return self.__class__(self.x, -self.y, self.z)
 
     def with_inverted_z(self) -> Self:
-        """Returns a new `Vector3` with the z-component inverted."""
+        """Returns a copy of this vector with the `z` component inverted."""
 
         return self.__class__(self.x, self.y, -self.z)
 
     def to_int_tuple(self) -> tuple[int, int, int]:
         """
         This `Vector3` as a tuple of integers.\n
-        Useful for passing the vector to pygame or other libraries' functions that tend expect a tuple of integers.
+        Useful for passing the vector to functions that specifically expect a tuple of integers as opposed to any sequence of numbers
+        or for unpacking to positional arguments without type checking errors.
 
         Returns
         -------
@@ -335,7 +444,10 @@ class Vector3(PygameVector3):
             The vector as a tuple of integers.
         """
 
-        return (int(self.x), int(self.y), int(self.z))
+        return int(self.x), int(self.y), int(self.z)
+
+    as_int_tuple = to_int_tuple  # alias
+    ituple = to_int_tuple  # alias
 
 
 class Color(PygameColor):
@@ -740,16 +852,71 @@ def filterl[T](f: Callable[[T], bool], i: Iterable[T]) -> list[T]:
     return list(filter(f, i))
 
 
-def walk_neighbours[T](seq: Sequence[T], /) -> Iterable[tuple[T | None, T, T | None]]:
+@overload
+def walk_neighbours[T](
+    seq: Sequence[T], /, *, wrap: Literal[True]
+) -> Generator[tuple[T, T, T]]:
     """
     Walks a sequence, yielding each element along with its neighbours.\n
-    For the first value, the left neighbour is `None` and for the last value, the right neighbour is `None`.
-    Otherwise, all values are guaranteed to be of type T.
+    For the first value, the left neighbour is the last value of the sequence,
+    and for the last value, the right neighbour is the first value of the sequence.
 
     Parameters
     ----------
     seq: `Sequence[T]`
         The sequence to walk.
+    wrap: `bool`
+        Whether to wrap values around, guaranteeing no values are `None`.
+
+    Yields
+    ------
+    `tuple[T, T, T]`
+        The current element and its neighbours.
+    """
+
+
+@overload
+def walk_neighbours[T](
+    seq: Sequence[T], /, *, wrap: Literal[False]
+) -> Generator[tuple[T | None, T, T | None]]:
+    """
+    Walks a sequence, yielding each element along with its neighbours.\n
+    For the first value, the left neighbour is `None`, and for the last value, the right neighbour is `None`.
+
+    Parameters
+    ----------
+    seq: `Sequence[T]`
+        The sequence to walk.
+    wrap: `bool`
+        Whether to wrap values around, guaranteeing no values are `None`.
+
+    Yields
+    ------
+    `tuple[T | None, T, T | None]`
+        The current element and its neighbours.
+    """
+
+
+@overload
+def walk_neighbours[T](
+    seq: Sequence[T], /, *, wrap: bool = False
+) -> Generator[tuple[T | None, T, T | None]]: ...
+
+
+def walk_neighbours[T](
+    seq: Sequence[T], /, *, wrap: bool = False
+) -> Generator[tuple[T | None, T, T | None]]:
+    """
+    Walks a sequence, yielding each element along with its neighbours.\n
+    For the first value, the left neighbour is `None` or the last value of the sequence if `wrap` is True,
+    and for the last value, the right neighbour is `None` or the first value of the sequence if `wrap` is True.
+
+    Parameters
+    ----------
+    seq: `Sequence[T]`
+        The sequence to walk.
+    wrap: `bool`
+        Whether to wrap values around, guaranteeing no values are `None`.
 
     Yields
     ------
@@ -759,9 +926,9 @@ def walk_neighbours[T](seq: Sequence[T], /) -> Iterable[tuple[T | None, T, T | N
 
     for i, el in enumerate(seq):
         yield (
-            seq[i - 1] if i > 0 else None,
+            seq[i - 1] if i > 0 else seq[-1] if wrap else None,
             el,
-            seq[i + 1] if i < len(seq) - 1 else None,
+            seq[i + 1] if i < len(seq) - 1 else seq[0] if wrap else None,
         )
 
 
@@ -775,8 +942,8 @@ def animate(
 ) -> Generator[float]:
     """
     Generates a sequence of floats, generally from 0 to 1, with a step size defined by `step`.
-    Optionally, an easing function can be provided to control the values returned.
-    Guaranteed to always yield 0, and, if `force_end` is `True`, 1.\n
+    Optionally, an `easing` function can be provided to control the yielded values.
+    Guaranteed to always yield 1 if `force_end` is `True`.
 
     Examples
     --------
@@ -894,12 +1061,6 @@ def saturate(value: float, /) -> float:
 clamp01 = saturate  # alias
 
 
-def singleton[C: type](cls: C, /) -> C:
-    """Makes the decorated class a singleton while properly keeping its type."""
-
-    return untyped_singleton(cls)  # pyright: ignore[reportReturnType]
-
-
 def is_callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
     """
     Checks whether or not the given `Callable` can be called with no arguments without actually calling it.
@@ -970,3 +1131,43 @@ def attempt_empty_call[T](callable: Callable[..., T], /, *, message: str) -> T:
         return callable()
     except TypeError:
         raise ValueError(message)
+
+
+def singleton[C: type](cls: C, /) -> C:
+    """Makes the decorated class a singleton while properly keeping its type."""
+
+    return untyped_singleton(cls)  # pyright: ignore[reportReturnType]
+
+
+def combine_metaclasses(*metaclasses: type) -> type:
+    """
+    Combines multiple metaclasses into a single one.
+
+    Parameters
+    ----------
+    metaclasses: `type`
+        The metaclasses to combine.
+
+    Returns
+    -------
+    `type`
+        The combined metaclass.
+
+    Raises
+    ------
+    `ValueError`
+        If no metaclasses are provided.
+    `TypeError`
+        If a consistent MRO cannot be created.
+    """
+
+    if len(metaclasses) == 0:
+        raise ValueError("At least one metaclass must be provided.")
+    elif len(metaclasses) == 1:
+        return metaclasses[0]
+
+    return type(
+        "_".join(mcls.__name__ for mcls in metaclasses),
+        metaclasses,
+        ChainMap(*(mcls.__dict__ for mcls in metaclasses)),  # pyright: ignore[reportArgumentType]
+    )
