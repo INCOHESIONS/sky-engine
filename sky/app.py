@@ -61,10 +61,10 @@ class App:
         - `Windowing` (handles windowing)
         - `Chrono` (handles time-related data)
         - `Executor` (handles coroutines)
-        - `UI` (handles the user interface)
+        - `UI` (handles the user interface, WIP)
 
     Constructor Parameters
-    ----------
+    ----------------------
     spec: `AppSpec | WindowSpec | SceneSpec | None`, optional
         Specification for the whole app, just the main scene, or just the main window.
         By default `None`, which creates a default `AppSpec`. See `AppSpec` for more information.
@@ -101,10 +101,10 @@ class App:
         )
         """The app's specification, i.e., pre-execution configuration."""
 
-        self.preload = Hook()
+        self.on_preload = Hook()
         """Executes before scenes and services are started up, just after mainloop is called."""
 
-        self.setup = Hook()
+        self.on_setup = Hook()
         """Executes after scenes and services are started up, and before the first frame."""
 
         self.pre_update = Hook()
@@ -113,15 +113,15 @@ class App:
         self.post_update = Hook()
         """Executes after scenes and services are updated."""
 
-        self.teardown = Hook()
+        self.on_teardown = Hook()
         """Executes before scenes and services are stopped, and after the last frame."""
 
-        self.cleanup = Hook()
+        self.on_cleanup = Hook()
         """Executes after scenes and services are stopped, and before the app is destroyed; cleans up registered modules."""
 
         for module in self.spec.modules:
             module.init()
-            self.cleanup += module.quit
+            self.on_cleanup += module.quit
 
         self.events = Events()
         """Handles pygame events."""
@@ -201,6 +201,7 @@ class App:
 
         return self._scenes[-1]
 
+    @property
     def all_components(self) -> Sequence[Component]:
         """All components, in all currently loaded scenes."""
 
@@ -225,8 +226,26 @@ class App:
         assert self.windowing.main_window is not None
         return self.windowing.main_window
 
+    @property
+    def on_render(self) -> Hook:
+        """
+        Alias for `app.window.on_render`.
+
+        Returns
+        -------
+        `Hook[[], None]`
+            The hook.
+
+        Raises
+        ------
+        `AssertionError`
+            If the main window is not set (i.e. no windows are open due to the app being in headless mode).
+        """
+
+        return self.window.on_render
+
     def mainloop(self) -> None:
-        """The app's main loop. See `App` documentation for the order of execution."""
+        """The app's main loop. See `App`'s documentation for more other information."""
 
         if self.spec.profile:
             profile("App()._mainloop()", sort="tottime")
@@ -234,7 +253,7 @@ class App:
             self._mainloop()
 
     def _mainloop(self) -> None:
-        self.preload.notify()
+        self.on_preload.notify()
 
         for service in self.services:
             service.start()
@@ -242,7 +261,7 @@ class App:
         for scene in self.scenes:
             scene.start()
 
-        self.setup.notify()
+        self.on_setup.notify()
 
         self.is_running = True
 
@@ -259,7 +278,7 @@ class App:
 
         self.is_running = False
 
-        self.teardown.notify()
+        self.on_teardown.notify()
 
         for service in self.services:
             service.stop()
@@ -267,7 +286,7 @@ class App:
         for scene in self.scenes:
             scene.stop()
 
-        self.cleanup.notify()
+        self.on_cleanup.notify()
 
         pygame.quit()
 
@@ -362,7 +381,7 @@ class App:
 
     def add_component(self, component: type[Component] | Component, /) -> Self:
         """
-        Adds a component to the `Scene`.\n
+        Adds a component to the current `Scene`.\n
         Calls the component's `start` method if it hasn't yet been started.
 
         Parameters
@@ -384,6 +403,32 @@ class App:
         self.scene.add_component(component)
         return self
 
+    def add_components(self, /, *components: type[Component] | Component) -> Self:
+        """
+        Adds a component to the current `Scene`.\n
+        Calls the component's `start` method if it hasn't yet been started.
+
+        Parameters
+        ----------
+        *components: `type[Component] | Component`
+            The components, or their `type`, to add. Will be instanced immediately if a `type` is passed.
+
+        Returns
+        -------
+        `Self`
+            The `App`, for chaining.
+
+        Raises
+        ------
+        `ValueError`
+            If a type is passed that cannot be instanced with no arguments or if the `Scene` has already stopped running.
+        """
+
+        for component in components:
+            self.add_component(component)
+
+        return self
+
     def remove_component(self, component: type[Component] | Component, /) -> None:
         """
         Removes a component from the main `Scene`.
@@ -401,40 +446,42 @@ class App:
 
         self.scene.remove_component(component)
 
-    def singleton_component[TComponent: type[Component]](
-        self, cls: TComponent, /
-    ) -> TComponent:
+    def clear_components(self):
+        """Removes all components from the main `Scene`."""
+
+        for component in self.scene.components:
+            self.remove_component(component)
+
+    def singleton_component[C: type[Component]](self, cls: C, /) -> C:
         """
         Instantiates and adds the instance of the decorated `Component` to the current `Scene` immediately.\n
         Also makes the decorated class a `Singleton`.
 
         Parameters
         ----------
-        component: `TComponent`
+        component: `C`
             The type to instantiate. Must be a subclass of `Component`.
 
         Returns
         -------
-        `TComponent`
+        `C`
             The original type.
         """
 
         return singleton(self.immediate_component(cls))
 
-    def immediate_component[TComponent: type[Component]](
-        self, cls: TComponent, /
-    ) -> TComponent:
+    def immediate_component[C: type[Component]](self, cls: C, /) -> C:
         """
         Instantiates and adds the instance of the decorated `Component` to the current `Scene` immediately.
 
         Parameters
         ----------
-        component: `TComponent`
+        component: `C`
             The type to instantiate. Must be a subclass of `Component`.
 
         Returns
         -------
-        `TComponent`
+        `C`
             The original type.
         """
 
@@ -489,7 +536,15 @@ class App:
         -------
         `Self`
             The app, for chaining.
+
+        Raises
+        ------
+        `ValueError`
+            If the service already exists.
         """
+
+        if service in self._services:
+            raise ValueError("Service already exists!")
 
         self._services.append(service)
         return self
@@ -510,7 +565,7 @@ class App:
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the service is an internal service or if the service is not registered.
         """
 

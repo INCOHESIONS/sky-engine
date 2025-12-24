@@ -75,7 +75,7 @@ class Layout[TDescriptor: LayoutDescriptor = Any](ABC):
 
         self.on_composite = Hook()
 
-        self.app.setup += self.composite
+        self.app.on_setup += self.composite
 
     def __iter__(self) -> Iterator[UIElement]:
         return iter(self._elements)
