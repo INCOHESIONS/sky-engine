@@ -4,6 +4,7 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING, Literal
 
 import pygame
+from pygame import Event as PygameEvent
 
 if TYPE_CHECKING:
     from .core import Cursor, Key, Modifier, MouseButton, State
@@ -16,6 +17,7 @@ __all__ = [
     "KeyLike",
     "ModifierLike",
     "MouseButtonLike",
+    "PygameEvent",
     "StateLike",
 ]
 

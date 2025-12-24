@@ -157,4 +157,4 @@ class Windowing(Service):
 
         self.add_window(spec=self.spec)
 
-        self.app.teardown += self.clear_extras
+        self.app.on_teardown += self.clear_extras

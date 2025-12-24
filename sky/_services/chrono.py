@@ -57,6 +57,12 @@ class Chrono(Service):
             else 0
         )
 
+    @property
+    def fps(self) -> float:
+        """Alias for `app.chrono.framerate`"""
+
+        return self.framerate
+
     @override
     def start(self) -> None:
         self.start_time = datetime.now()

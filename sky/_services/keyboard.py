@@ -56,19 +56,17 @@ class Keyboard(Service):
 
     @override
     def update(self) -> None:
-        previously_active_keybindings = self._active_keybindings.copy()
-
-        self._active_keybindings.clear()
-
         _pressed = pygame.key.get_pressed()
         _downed = pygame.key.get_just_pressed()
         _released = pygame.key.get_just_released()
 
         for key in Key:
+            idx = key.value
+
             state = State.from_bools(
-                pressed=_pressed[key.value],
-                released=_released[key.value],
-                down=_downed[key.value],
+                pressed=_pressed[idx],
+                released=_released[idx],
+                down=_downed[idx],
             )
 
             if state != State.none:
@@ -81,6 +79,10 @@ class Keyboard(Service):
         self._text = "".join(
             e.unicode for e in self.app.events.get_many(pygame.KEYDOWN)
         )
+
+        previously_active_keybindings = self._active_keybindings.copy()
+
+        self._active_keybindings.clear()
 
         for keybinding in self._keybindings:
             if self.is_active(keybinding):

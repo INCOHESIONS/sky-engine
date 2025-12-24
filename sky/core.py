@@ -38,11 +38,11 @@ class Component(ABC):
     def start(self) -> Coroutine | None:
         """Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine."""
 
-    def stop(self) -> Coroutine | None:
-        """Runs after the last frame, after `teardown` and before `cleanup`. Can be a Coroutine."""
-
     def update(self) -> None:
         """Runs every frame, after `pre_update` and before `post_update`."""
+
+    def stop(self) -> Coroutine | None:
+        """Runs after the last frame, after `teardown` and before `cleanup`. Can be a Coroutine."""
 
 
 class Service(Component, ABC):
@@ -95,7 +95,7 @@ class _InputEnum(IntEnum):
 
         Parameters
         ----------
-        value : `Self | str | int`
+        value: `Self | str | int`
             The value to be converted.
 
         Returns
@@ -289,6 +289,7 @@ class Key(_InputEnum):
     tilde = 126
     ç = 231
 
+    enter = return_  # alias
     _ = underscore  # alias
 
 
@@ -332,7 +333,7 @@ class Modifier(IntEnum):
 
         Parameters
         ----------
-        value : `ModifierLike`
+        value: `ModifierLike`
             The value to convert.
 
         Returns
@@ -437,14 +438,14 @@ class Keybinding:
 
         Parameters
         ----------
-        key : `Key`
+        key: `Key`
             The key to bind.
-        action : `Callable[[], None]`
+        action: `Callable[[], None]`
             The action to perform when the keybinding is activated.
-        modifier : `Modifier | None`, optional
+        modifier: `Modifier | None`, optional
             A `Modifier` key whose state has to be `State.pressed` for the keybinding to activate.\n
             Useful for keybindings like CTRL + C, for example.
-        state : `State`, optional
+        state: `State`, optional
             The state of the key. `State.downed` by default.
 
         Returns

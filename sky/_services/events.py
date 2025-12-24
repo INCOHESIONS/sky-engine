@@ -4,10 +4,10 @@ from collections.abc import Iterator, Sequence
 from typing import Any, Callable, Literal, Self, final
 
 import pygame
-from pygame.event import Event as PygameEvent
 
 from ..core import Service
 from ..hook import Hook
+from ..types import PygameEvent
 from ..utils import filter_by_attrs, first
 
 __all__ = ["Events"]
@@ -64,9 +64,9 @@ class Events(Service):
 
         Parameters
         ----------
-        event : `PygameEvent | int`
+        event: `PygameEvent | int`
             The event to listen for.
-        callback : `Callable[[PygameEvent], Any]`
+        callback: `Callable[[PygameEvent], Any]`
             The callback to call when the event is received.
         """
 
@@ -86,7 +86,7 @@ class Events(Service):
 
         Parameters
         ----------
-        callback : `Callable[[PygameEvent], Any]`
+        callback: `Callable[[PygameEvent], Any]`
             The callback to remove.
 
         Raises
@@ -103,7 +103,7 @@ class Events(Service):
 
         Parameters
         ----------
-        type : `int`
+        type: `int`
             The type of events to remove callbacks for.
 
         Raises

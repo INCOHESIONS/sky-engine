@@ -20,11 +20,12 @@ class Mouse(Service):
     def __init__(self) -> None:
         self._pos = Vector2()
         self._vel = Vector2()
+        self._acc = Vector2()
         self._wheel_delta = Vector2()
 
         self._num_buttons = len(MouseButton)
 
-        self._states: list[State] = [State.none for _ in range(self._num_buttons)]
+        self._states = [State.none for _ in range(self._num_buttons)]
 
         self.on_mouse_button = Hook[[MouseButton, State]]()
 
@@ -33,6 +34,9 @@ class Mouse(Service):
         self.on_mouse_button_released = Hook[[MouseButton]]()
 
         self.on_mouse_wheel = Hook[[Vector2]]()
+        self.on_scroll = self.on_mouse_wheel
+
+        self.on_mouse_move = Hook()
 
     @property
     def position(self) -> Vector2:
@@ -40,17 +44,31 @@ class Mouse(Service):
 
         return self._pos.copy()
 
+    pos = position
+
     @property
     def velocity(self) -> Vector2:
         """The relative change in the mouse's position since the last frame, in pixel coordinates."""
 
         return self._vel.copy()
 
+    vel = velocity
+
+    @property
+    def acceleration(self) -> Vector2:
+        """The relative change in the mouse's velocity since the last frame, in pixel coordinates."""
+
+        return self._acc.copy()
+
+    acc = acceleration
+
     @property
     def wheel_delta(self) -> Vector2:
         """The change in the mouse's scroll wheel position since the last frame."""
 
         return self._wheel_delta.copy()
+
+    scroll_delta = wheel_delta
 
     @property
     def states(self) -> Sequence[State]:
@@ -95,9 +113,12 @@ class Mouse(Service):
     @override
     def update(self) -> None:
         self._pos = Vector2(pygame.mouse.get_pos())
-        self._vel = Vector2(pygame.mouse.get_rel())
+        new_vel = Vector2(pygame.mouse.get_rel())
+        self._acc = new_vel - self._vel
+        self._vel = new_vel
 
-        self._wheel_delta = Vector2()
+        if not self._vel.is_clear():
+            self.on_mouse_move.notify()
 
         _pressed = pygame.mouse.get_pressed()
         _downed = pygame.mouse.get_just_pressed()
@@ -117,10 +138,15 @@ class Mouse(Service):
                 self.on_mouse_button.notify(button, state)
                 getattr(self, f"on_mouse_button_{state.name}").notify(button)
 
-        for evt in self.app.events.get_many(pygame.MOUSEWHEEL):
-            self._wheel_delta += Vector2(evt.precise_x, evt.precise_y)
+        self._wheel_delta = sum(
+            map(
+                lambda e: Vector2(e.precise_x, e.precise_y),
+                self.app.events.get_many(pygame.MOUSEWHEEL),
+            ),
+            Vector2(),
+        )
 
-        if self._wheel_delta != Vector2():
+        if not self._wheel_delta.is_clear():
             self.on_mouse_wheel.notify(self._wheel_delta)
 
     def get_state(self, button: MouseButtonLike, /) -> State:
