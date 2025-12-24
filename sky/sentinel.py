@@ -13,7 +13,11 @@ _sentinels: dict[str, Sentinel] = {}
 
 def _get_calling_module_name() -> str:
     try:
-        return inspect.getmodule(inspect.currentframe().f_back.f_back).__name__  # pyright: ignore[reportOptionalMemberAccess]
+        return (
+            module.__name__
+            if (module := inspect.getmodule(inspect.currentframe().f_back.f_back))  # pyright: ignore[reportOptionalMemberAccess]
+            else __name__
+        )
     except AttributeError:
         return __name__
 
@@ -30,8 +34,8 @@ class Sentinel:
     ) -> Sentinel:
         id = f"{module_name or _get_calling_module_name()}-{name}"
 
-        if (existing := _sentinels.get(id, None)) is not None:
-            return existing
+        if cached := _sentinels.get(id, None):
+            return cached
 
         sentinel = super().__new__(cls)
         sentinel._id = id
@@ -40,17 +44,11 @@ class Sentinel:
 
     @override
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}("{self.name}", module_name="{self.module_name}")'
+        return f'{self.__class__.__name__}("{self.name}", module_name="{self.module}")'
 
     @override
     def __reduce__(self) -> tuple[type[Self], tuple[str, str]]:
-        return (
-            self.__class__,
-            (
-                self.name,
-                self.module_name,
-            ),
-        )
+        return (self.__class__, (self.name, self.module))
 
     @property
     def name(self) -> str:
@@ -59,7 +57,7 @@ class Sentinel:
         return self._id.split("-")[-1]
 
     @property
-    def module_name(self) -> str:
+    def module(self) -> str:
         """This `Sentinel`'s module's name."""
 
         return self._id.split("-")[0]
