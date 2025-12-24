@@ -55,6 +55,9 @@ class WindowSpec:
     borderless: bool = False
     """Whether or not the window is borderless, which also means it has no decorations."""
 
+    flip: bool = True
+    """Whether or not the window should be flipped on `post_update`, i.e., updated."""
+
     fill: Color | None = field(default_factory=lambda: BLACK)
     """The window's fill color. If `None`, `fill` will not be called on `pre_update`"""
 

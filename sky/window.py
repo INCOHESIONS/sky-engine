@@ -6,12 +6,12 @@ import os
 from typing import TYPE_CHECKING, ClassVar, final
 
 import pygame
-from pygame import Event as PygameEvent
 from pygame import Rect as PygameRect
 
 from .core import Monitor
 from .hook import Hook
 from .spec import WindowSpec
+from .types import PygameEvent
 from .utils import Color, Rect, Vector2
 
 if TYPE_CHECKING:
@@ -33,8 +33,8 @@ class Window:
     app: ClassVar[App]
     windowing: ClassVar[Windowing]
 
-    _magic_fullscreen_position: ClassVar[Vector2] = Vector2(-8, -31)
-    _magic_size_offset: ClassVar[Vector2] = Vector2(16, 39)
+    _magic_fullscreen_position: ClassVar = Vector2(-8, -31)
+    _magic_size_offset: ClassVar = Vector2(16, 39)
 
     def __init__(self, /, *, spec: WindowSpec) -> None:
         self._spec = spec
@@ -88,10 +88,15 @@ class Window:
         self.on_focus_lost = self._make_event_hook(pygame.WINDOWFOCUSLOST)
 
         self.on_resize = self._make_event_hook(pygame.WINDOWRESIZED)
+        self.on_fullscreen = self._make_event_hook(self.windowing.WINDOWFULLSCREENED)
 
         self.app.pre_update += self._pre_update
-        self.app.post_update += self.flip
         self.app.events.on_event += self._handle_events
+
+        self._should_flip = self._spec.flip
+
+        if self._spec.flip:
+            self.app.post_update += self.flip
 
     @property
     def spec(self) -> WindowSpec:
@@ -121,6 +126,8 @@ class Window:
 
         return -1
 
+    hwnd = handle  # alias
+
     @property
     def surface(self) -> pygame.Surface:
         """This `Window`'s surface."""
@@ -143,6 +150,20 @@ class Window:
         """Whether this window is closed."""
 
         return not self.is_open
+
+    @property
+    def should_flip(self) -> bool:
+        return self._should_flip
+
+    @should_flip.setter
+    def should_flip(self, value: bool, /) -> None:
+        self._should_flip = value
+
+        if value and self.flip not in self.app.post_update:
+            self.app.post_update += self.flip
+
+        if not value and self.flip in self.app.post_update:
+            self.app.post_update -= self.flip
 
     @property
     def title(self) -> str:
@@ -302,6 +323,12 @@ class Window:
     def resizable(self, value: bool) -> None:
         self._underlying.resizable = value
 
+    @property
+    def focused(self) -> bool:
+        """Whether or not the window is focused."""
+
+        return self.underlying.focused
+
     def toggle_fullscreen(self, /, *, borderless: bool = False) -> None:
         """Toggles fullscreen mode."""
 
@@ -326,6 +353,11 @@ class Window:
         self.position = (
             monitor or self.windowing.primary_monitor
         ).size / 2 - self.size / 2
+
+    def focus(self) -> None:
+        """Focuses the window."""
+
+        self.underlying.focus()
 
     def fill(self, color: Color, /) -> None:
         """Fills the window with the specified color."""
@@ -352,7 +384,9 @@ class Window:
         self._underlying.destroy()
 
         self.app.pre_update -= self._pre_update
-        self.app.post_update -= self.flip
+
+        if self.flip in self.app.post_update:
+            self.app.post_update -= self.flip
 
         self.on_render.clear()
 
