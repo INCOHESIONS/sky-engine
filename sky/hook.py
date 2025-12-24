@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import functools
 from bisect import insort
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,12 +19,14 @@ from typing import (
 
 from .sentinel import Sentinel
 from .types import Coroutine
-from .utils import first
+from .utils import first, mapl
 
 if TYPE_CHECKING:
     from .app import App
 
 __all__ = ["Hook"]
+
+_NOT_EXECUTED = Sentinel("NOT_EXECUTED")
 
 
 class Hook[**TParams = [], TReturn: Any = None]:
@@ -157,8 +160,6 @@ class Hook[**TParams = [], TReturn: Any = None]:
 
     app: ClassVar[App]
 
-    _NOT_EXECUTED: ClassVar = Sentinel("NOT_EXECUTED")
-
     def __init__(
         self,
         callbacks: list[Callable[TParams, TReturn]] | None = None,
@@ -218,6 +219,13 @@ class Hook[**TParams = [], TReturn: Any = None]:
     def __isub__(self, callback: Callable[TParams, TReturn], /) -> Self:
         self.remove_callback(callback)
         return self
+
+    def __contains__(self, callback: Callable[TParams, TReturn], /) -> bool:
+        return callback in self.callbacks
+
+    @property
+    def callbacks(self) -> Sequence[Callable[TParams, TReturn]]:
+        return mapl(itemgetter(0), self._callbacks)
 
     @property
     def cancellable(self) -> bool:
@@ -318,9 +326,9 @@ class Hook[**TParams = [], TReturn: Any = None]:
 
         Parameters
         ----------
-        *args : TParams.args
+        *args: TParams.args
             Positional arguments to pass to the callbacks.
-        **kwargs : TParams.kwargs
+        **kwargs: TParams.kwargs
             Keyword arguments to pass to the callbacks.
 
         Returns
@@ -337,11 +345,14 @@ class Hook[**TParams = [], TReturn: Any = None]:
         if self._once and self._called:
             raise RuntimeError("Hook with `once` set to `True` was already called.")
 
+        if not self._callbacks:
+            return []
+
         results: list[TReturn] = []
 
         if not self._cancelled:
             for callback in self:
-                if (result := callback(*args, **kwargs)) is not self._NOT_EXECUTED:
+                if (result := callback(*args, **kwargs)) is not _NOT_EXECUTED:
                     results.append(result)
 
                 if self._cancelled:
@@ -398,9 +409,9 @@ class Hook[**TParams = [], TReturn: Any = None]:
 
         Parameters
         ----------
-        *args : `TParams.args`
+        *args: `TParams.args`
             The arguments to check against.
-        **kwargs : `TParams.kwargs`
+        **kwargs: `TParams.kwargs`
             The keyword arguments to check against.
 
         Returns
@@ -418,10 +429,23 @@ class Hook[**TParams = [], TReturn: Any = None]:
             def wrapper(*args2: TParams.args, **kwargs2: TParams.kwargs) -> TReturn:
                 if args == args2 and kwargs == kwargs2:
                     return func()
-                return self._NOT_EXECUTED  # pyright: ignore[reportReturnType]
+                return _NOT_EXECUTED  # pyright: ignore[reportReturnType]
 
             self += wrapper
 
             return wrapper
 
         return decorator
+
+    def execute_once(
+        self, callback: Callable[TParams, TReturn], /
+    ) -> Callable[TParams, TReturn]:
+        def proxy(*args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
+            nonlocal self
+            results = callback(*args, **kwargs)
+            self -= proxy
+            return results
+
+        self += proxy
+
+        return callback
