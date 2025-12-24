@@ -4,7 +4,7 @@ from sky import App, AppSpec, Color, Window, WindowSpec
 from sky.colors import CRIMSON, DODGER_BLUE
 from sky.utils import discard
 
-app = App(spec=AppSpec.headless())
+app = App(spec=AppSpec.headless())  # no default window since we'll add our own
 
 window1 = app.windowing.add_window(spec=WindowSpec(title="Window 1", fill=CRIMSON))
 window2 = app.windowing.add_window(spec=WindowSpec(title="Window 2", fill=DODGER_BLUE))

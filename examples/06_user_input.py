@@ -10,7 +10,7 @@ speed = 2
 radius = 32
 
 
-@app.window.on_render
+@app.on_render
 def render():
     global pos
     pos += app.keyboard.get_movement_2d((Key.a, Key.d), (Key.w, Key.s)) * speed

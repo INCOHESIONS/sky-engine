@@ -7,7 +7,7 @@ from sky.utils import Color, animate
 app = App()
 
 
-@app.setup
+@app.on_setup
 def lerp_color() -> Coroutine:
     for t in animate(duration=3, step=lambda: app.chrono.deltatime):
         app.window.fill_color = Color(CRIMSON.lerp(DODGER_BLUE, t))
