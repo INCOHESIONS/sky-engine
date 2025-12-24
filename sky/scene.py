@@ -245,7 +245,7 @@ class Scene:
 
     def remove_component(self, component: type[Component] | Component, /) -> None:
         """
-        Removes a component from the `Scene`.
+        Removes a component from the `Scene`. Also calls its `stop` method.
 
         Parameters
         ----------
@@ -258,15 +258,21 @@ class Scene:
             If the component wasn't found.
         """
 
-        if isinstance(component, type):
-            component = self.get_component(component)  # pyright: ignore[reportAssignmentType]
+        comp = (
+            self.get_component(component) if isinstance(component, type) else component
+        )
 
-        self._components.remove(component)  # pyright: ignore[reportArgumentType]
+        if comp is None:
+            raise ValueError("Component not found.")
+
+        self._components.remove(comp)
+        comp.stop()
 
     def clear_components(self):
         """Removes all components from the `Scene`."""
 
-        self._components.clear()
+        for component in self._components:
+            self.remove_component(component)
 
     def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
         """
