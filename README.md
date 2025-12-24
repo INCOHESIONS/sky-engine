@@ -41,7 +41,7 @@ from sky.colors import ALICE_BLUE, CRIMSON
 app = App(spec=WindowSpec(fill=CRIMSON))
 
 
-@app.setup
+@app.on_setup
 def setup() -> None:
     print("This will run as the app starts.")
 
@@ -52,15 +52,19 @@ def pre_update() -> None:
 
 
 @app.window.on_render
-def on_render() -> None:
+def on_render1() -> None:
     print(
         "This will also run every frame, but is tied to a certain Window. Use this for rendering!"
     )
 
+
+@app.on_render
+def on_render2() -> None:
+    print("Alternatively, use the alias `app.on_render`.")
     draw.aacircle(app.window.surface, ALICE_BLUE, app.window.center, 32)
 
 
-@app.cleanup
+@app.on_cleanup
 def cleanup() -> None:
     print("This will run as soon as the app finishes running.")
 
@@ -94,7 +98,7 @@ from sky import App, AppSpec, Color, Window, WindowSpec
 from sky.colors import CRIMSON, DODGER_BLUE
 from sky.utils import discard
 
-app = App(spec=AppSpec.headless())
+app = App(spec=AppSpec.headless())  # no default window since we'll add our own
 
 window1 = app.windowing.add_window(spec=WindowSpec(title="Window 1", fill=CRIMSON))
 window2 = app.windowing.add_window(spec=WindowSpec(title="Window 2", fill=DODGER_BLUE))
@@ -128,7 +132,7 @@ speed = 2
 radius = 32
 
 
-@app.window.on_render
+@app.on_render
 def render():
     global pos
     pos += app.keyboard.get_movement_2d((Key.a, Key.d), (Key.w, Key.s)) * speed
@@ -149,7 +153,7 @@ This isn't the only way to grab input, however. One may also check for a key's o
 ```python
 from pygame import draw
 
-from sky import App, MouseButton, State, WindowSpec
+from sky import App, MouseButton, State, WindowSpec, Key
 from sky.colors import ALICE_BLUE, CRIMSON
 
 app = App(spec=WindowSpec(fill=CRIMSON))
@@ -159,7 +163,7 @@ speed = 2
 radius = 32
 
 
-@app.window.on_render
+@app.on_render
 def render():
     global pos, radius
 
@@ -262,7 +266,7 @@ from sky.utils import animate
 app = App()
 
 
-@app.setup
+@app.on_setup
 def lerp_color() -> Coroutine:
     for t in animate(duration=3, step=lambda: app.chrono.deltatime):
         app.window.fill_color = Color(CRIMSON.lerp(DODGER_BLUE, t))
