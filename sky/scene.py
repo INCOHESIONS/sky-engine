@@ -155,7 +155,8 @@ class Scene:
         self.pre_stop.notify()
 
         for component in self._components:
-            self._handle_possible_coroutine(component.stop)
+            if not getattr(component, "_has_stopped", False):
+                component.stop()
 
         self.post_stop.notify()
 
@@ -266,7 +267,9 @@ class Scene:
             raise ValueError("Component not found.")
 
         self._components.remove(comp)
-        comp.stop()
+
+        if not getattr(comp, "_has_stopped", False):
+            comp.stop()
 
     def clear_components(self):
         """Removes all components from the `Scene`."""
@@ -341,6 +344,11 @@ class Scene:
     def _start_component(self, /, component: Component) -> None:
         self._handle_possible_coroutine(component.start)
         component._has_started = True  # pyright: ignore[reportAttributeAccessIssue]
+
+    @final
+    def _stop_component(self, /, component: Component) -> None:
+        self._handle_possible_coroutine(component.start)
+        component._has_stopped = True  # pyright: ignore[reportAttributeAccessIssue]
 
     @final
     def _handle_possible_coroutine(

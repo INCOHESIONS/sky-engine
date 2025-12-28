@@ -36,13 +36,22 @@ class Component(ABC):
     app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
 
     def start(self) -> Coroutine | None:
-        """Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine."""
+        """
+        Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine.
+        Called by the engine; should not be called by the user.
+        """
 
     def update(self) -> None:
-        """Runs every frame, after `pre_update` and before `post_update`."""
+        """
+        Runs every frame, after `pre_update` and before `post_update`.
+        Called by the engine; should not be called by the user.
+        """
 
-    def stop(self) -> Coroutine | None:
-        """Runs after the last frame, after `teardown` and before `cleanup`. Can be a Coroutine."""
+    def stop(self) -> None:
+        """
+        Runs after the last frame, after `teardown` and before `cleanup`.
+        Called by the engine; should not be called by the user.
+        """
 
 
 class Service(Component, ABC):
