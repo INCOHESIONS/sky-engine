@@ -1,5 +1,9 @@
 # Sky Engine
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.14-blue?logo=python" alt="Python 3.14" />
+</p>
+
 Makes `pygame` (or rather, [pygame-ce](https://github.com/pygame-community/pygame-ce), more specifically) less painful to use. More like a wrapper than an engine. Fully typed with [basedpyright](https://github.com/DetachHead/basedpyright).
 
 > Theoretically cross-platform, but mostly tested on Windows. May have some window manager weirdness on Linux, specifically when it comes to fullscreening.
