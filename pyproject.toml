@@ -4,6 +4,10 @@ description = "A wrapper around Pygame that makes it easier to use."
 authors = ["iNCOHESiONS"]
 version = "0.0.1"
 
+packages = [
+    { include = "sky" }
+]
+
 license = "MIT"
 readme = "README.md"
 
@@ -16,17 +20,16 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python",
 ]
 
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = "^3.14"
 pygame-ce = "^2.5.3"
 singleton-decorator = "==1.0.0"
 screeninfo = "^0.8.1"
@@ -34,7 +37,7 @@ pywin32 = { version = "^311", markers = "sys_platform == 'win32'" }
 
 [tool.basedpyright]
 typeCheckingMode="all"
-pythonVersion="3.13"
+pythonVersion="3.14"
 
 reportAny=false
 reportExplicitAny=false
