@@ -44,16 +44,22 @@ class Vector2(PygameVector2):
     """Replacement for `pygame.Vector2` with some extra utilities and exception-less versions of common methods."""
 
     @classmethod
+    def splat(cls, value: float) -> Self:
+        """Returns a `Vector2` with all values set to `value`"""
+
+        return cls(value, value)
+
+    @classmethod
     def zero(cls) -> Self:
         """Returns a zero `Vector2`. Same as `Vector2()`"""
 
-        return cls(0, 0)
+        return cls(0)
 
     @classmethod
     def one(cls) -> Self:
         """Returns a `Vector2` with all components set to 1."""
 
-        return cls(1, 1)
+        return cls.splat(1)
 
     @classmethod
     def up(cls) -> Self:
@@ -248,16 +254,22 @@ class Vector3(PygameVector3):
     """Replacement for `pygame.Vector3` with some extra utilities and exception-less versions of common methods"""
 
     @classmethod
+    def splat(cls, value: float) -> Self:
+        """Returns a `Vector3` with all values set to `value`"""
+
+        return cls(value, value, value)
+
+    @classmethod
     def zero(cls) -> Self:
         """Returns a zero `Vector3`. Same as `Vector3()`"""
 
-        return cls(0, 0, 0)
+        return cls()
 
     @classmethod
     def one(cls) -> Self:
         """Returns a `Vector3` with all components set to 1."""
 
-        return cls(1, 1, 1)
+        return cls.splat(1)
 
     @classmethod
     def up(cls) -> Self:
