@@ -1,5 +1,3 @@
-"""Contains the `Windowing` component that handles windowing and display management."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence

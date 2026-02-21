@@ -1,5 +1,3 @@
-"""Contains the `Mouse` component that handles mouse input."""
-
 from collections.abc import Sequence
 from typing import final, override
 

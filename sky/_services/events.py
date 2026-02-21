@@ -1,5 +1,3 @@
-"""Contains the `Events` component that handles pygame events."""
-
 from collections.abc import Iterator, Sequence
 from typing import Any, Callable, Literal, Self, final
 
