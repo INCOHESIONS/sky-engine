@@ -1016,13 +1016,16 @@ def animate(
 
     start = 0
 
-    while start < duration:
+    while True:
         t = easing(start / duration)
-        yield saturate(t) if clamped else t
+        y = saturate(t) if clamped else t
         start += step()
 
-    if force_end:
-        yield 1
+        if start >= duration:
+            yield 1 if force_end else y
+            break
+        else:
+            yield y
 
 
 def clamp(value: float, minimum: float, maximum: float, /) -> float:
