@@ -1042,8 +1042,8 @@ def clamp(value: float, minimum: float, maximum: float, /) -> float:
     -------
     `float`
         The clamped value.\n
-        Note: doesn't actually always return a `float`. For example, `clamp(1.5, 0, 1)` returns `maximum`, which is an `int` here, not a `float`.
-        If you want it to always return a `float`, use upper and lower boundaries that are `floats`, or simply cast the result to a `float`.
+        This function's return type is set to `float` as it is simpler to use, but its actual return type depends on
+        the arguments passed to it. For instance, `clamp(2, 0, 1)` returns 1, which is an `int`.
     """
 
     return max(minimum, min(value, maximum))
@@ -1054,7 +1054,7 @@ constrain = clamp  # alias
 
 def saturate(value: float, /) -> float:
     """
-    Contains a value to between 0 and 1.
+    Clamps a value to between 0 and 1.
 
     Parameters
     ----------
@@ -1089,7 +1089,7 @@ def is_callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
     is_callable_with_no_arguments(a)  # False, a() -> raises a TypeError()
     is_callable_with_no_arguments(b)  # True, b() -> arg has a default
     is_callable_with_no_arguments(c)  # True, c() -> args is an empty list
-    is_callable_with_no_arguments(d)  # True, d() -> args is an empty dict
+    is_callable_with_no_arguments(d)  # True, d() -> kwargs is an empty dict
     ```
 
     Parameters
@@ -1113,36 +1113,43 @@ def is_callable_with_no_arguments(callable: Callable[..., Any], /) -> bool:
     return count == 0
 
 
-def attempt_empty_call[T](callable: Callable[..., T], /, *, message: str) -> T:
+def attempt_empty_call[T](
+    callable: Callable[..., T],
+    /,
+    *,
+    err: str,
+    exception_type: type[Exception] = ValueError,
+) -> T:
     """
     Attempts to call a `Callable` with an empty argument list.
-    Used to display richer error messages, as the usual `TypeError` normally raised
-    in these cases might not contain enough information for an easy debugging experience.\n
-
+    Used to display richer error messages, as the usual `TypeError` usually raised may not contain enough information
+    for easy debugging. Raises a `ValueError` by default.\n
     Alternatively, for a simple check that does not execute the callable, use `is_callable_with_no_arguments`.
 
     Parameters
     ----------
     callable: `Callable[..., T]`
         The `Callable` to check.
-    message: `str`
-        The error message to attach to the raised `ValueError`.
+    err: `str`
+        The error message to attach to the raised exception.
+    exception_type: `type[Exception]`
+        The exception to raise. `ValueError` by default.
 
     Returns
     -------
     `T`
-        Whatever was returned by the callable.
+        Whatever was returned by the `Callable`.
 
     Raises
     ------
-    `ValueError`
-        Instead of a `TypeError`, raises a ValueError with `message` as the error message.
+    `exception_type`
+        Instead of a `TypeError`, raises `exception_type`, with `err` as the error message.
     """
 
     try:
         return callable()
     except TypeError:
-        raise ValueError(message)
+        raise exception_type(err)
 
 
 def singleton[C: type](cls: C, /) -> C:

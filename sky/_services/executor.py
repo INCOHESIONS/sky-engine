@@ -116,7 +116,7 @@ class Executor(Service):
         if isinstance(value, type):
             return attempt_empty_call(
                 value,
-                message=f"The type ({value.__name__}) cannot be instanced without arguments!",
+                err=f"The type ({value.__name__}) cannot be instanced without arguments!",
             )
 
         return value or WaitForFrames()

@@ -245,7 +245,7 @@ class App:
         return self.window.on_render
 
     def mainloop(self) -> None:
-        """The app's main loop. See `App`'s documentation for more other information."""
+        """The app's main loop. See `App`'s documentation for more information."""
 
         if self.spec.profile:
             profile("App()._mainloop()", sort="tottime")
@@ -291,7 +291,7 @@ class App:
         pygame.quit()
 
     run = mainloop  # alias
-    __call__ = mainloop
+    __call__ = mainloop  # app = App(); app()
 
     def load_scene(
         self,
@@ -325,7 +325,7 @@ class App:
 
         if isinstance(scene, type):
             scene = attempt_empty_call(
-                scene, message="Scene cannot be instanced with no arguments."
+                scene, err="Scene cannot be instanced with no arguments."
             )
 
         match mode:
