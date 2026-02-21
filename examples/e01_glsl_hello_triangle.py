@@ -1,5 +1,3 @@
-# pyright: reportUninitializedInstanceVariable=false
-
 # Based on https://github.com/pygame-community/pygame-ce/blob/main/examples/window_opengl.py
 
 from typing import final, override
@@ -50,8 +48,7 @@ class Renderer(Component):
         }
     """
 
-    @override
-    def start(self) -> None:
+    def __init__(self) -> None:
         self._ctx = zengl.context()
         self._image = self._ctx.image(app.window.size.ituple(), "rgba8unorm", samples=4)
         self._pipeline = self._ctx.pipeline(
