@@ -78,17 +78,29 @@ app.mainloop()
 
 > Note: although `Sky` itself doesn't favor any particular module or form of rendering, we will use `pygame.draw` for examples, as it comes bundled with `pygame`. For examples that perform hardware rendering using other libraries, see the [examples](https://github.com/INCOHESIONS/sky-engine/tree/main/examples) folder.
 
-`Hook`s may also have their execution cancelled. The following example prevents the window and the app from closing:
+`Hook`s may also have their execution cancelled. Example:
 
 ```python
-import pygame
-
-from sky import App
+from sky import App, Hook
+from sky.utils import discard
 
 app = App()
 
-app.events.cancel(pygame.WINDOWCLOSE, when="always")
-app.events.cancel(pygame.QUIT, when="always")
+some_event = Hook(cancellable=True)
+
+
+@some_event
+def some_event1() -> None:
+    print("This will print.")
+    some_event.cancel()
+
+
+@some_event
+def some_event2() -> None:
+    print("This will not print.")
+
+
+app.on_setup += lambda: discard(some_event.invoke())
 
 app.mainloop()
 ```
