@@ -7,8 +7,9 @@ import pygame
 from screeninfo import get_monitors
 
 from ..core import Monitor, Service
+from ..hook import Hook
 from ..spec import WindowSpec
-from ..utils import filter_by_attrs, first, get_by_attrs
+from ..utils import discard, filter_by_attrs, first, get_by_attrs
 from ..window import Window
 
 __all__ = ["Windowing"]
@@ -30,6 +31,9 @@ class Windowing(Service):
             Monitor.from_monitor(monitor, index=i)
             for i, monitor in enumerate(get_monitors())
         ]
+
+        self.on_window_added = Hook[[Window]]()
+        self.on_window_removed = Hook[[Window]]()
 
         if self.spec and self.spec.initialization == "immediate":
             self._initialize()
@@ -94,12 +98,14 @@ class Windowing(Service):
 
         Returns
         -------
-        `WindowWrapper`
+        `Window`
             The wrapper for the generated window.
         """
 
-        self._windows.append(wrapper := Window(spec=spec))
-        return wrapper
+        self._windows.append(window := Window(spec=spec))
+        self.on_window_added.notify(window)
+        window.after_destroy += lambda: discard(self.on_window_removed.notify(window))
+        return window
 
     def remove_window(self, window: Window | pygame.Window, /) -> None:
         """
@@ -109,7 +115,7 @@ class Windowing(Service):
 
         Parameters
         ----------
-        window: `WindowWrapper | pygame.Window`
+        window: `Window | pygame.Window`
             The window to remove.
 
         Raises
@@ -125,7 +131,7 @@ class Windowing(Service):
         )
 
         if win is None:
-            raise ValueError(f"Window {window.title} not found.")
+            raise ValueError(f"Window {window} not found.")
 
         win.destroy()
 
