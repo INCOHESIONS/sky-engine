@@ -6,7 +6,7 @@ import zengl
 
 from sky import App, Component, WindowSpec
 
-app = App(spec=WindowSpec(backend="opengl"))
+app = App(spec=WindowSpec(graphics_api="opengl"))
 
 
 @final

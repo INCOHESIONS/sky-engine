@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass, field
 from enum import Enum, IntEnum, auto, unique
@@ -17,6 +17,7 @@ from .utils import Vector2
 
 if TYPE_CHECKING:
     from .app import App
+    from .window import Window
 
 __all__ = [
     "Component",
@@ -56,6 +57,26 @@ class Component(ABC):
 
 class Service(Component, ABC):
     """Services are global components that work across `Scene`s."""
+
+
+class InputManager(ABC):
+    """Base class for per-window input managers."""
+
+    app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
+
+    def __init__(self, window: Window, /) -> None:
+        self._window = window
+
+    @abstractmethod
+    def update(self) -> None:
+        raise NotImplementedError()
+
+    @final
+    @property
+    def window(self) -> Window:
+        """The `Window` this `InputManager` gets input from."""
+
+        return self._window
 
 
 @final

@@ -145,6 +145,9 @@ class Windowing(Service):
         for window in self.windows:
             window.on_render.notify()
 
+            for im in window.input_managers:
+                im.update()
+
     @override
     def stop(self) -> None:
         for window in self.windows:

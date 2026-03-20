@@ -1,40 +1,53 @@
-from collections.abc import Sequence
-from typing import final, override
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, final, override
 
 import pygame
+from pygame.constants import MOUSEBUTTONDOWN, MOUSEBUTTONUP
 
-from ..core import Cursor, MouseButton, Service, State
+from ..core import Cursor, InputManager, MouseButton, State
 from ..hook import Hook
 from ..types import CursorLike, MouseButtonLike, StateLike
 from ..utils import Vector2
+
+if TYPE_CHECKING:
+    from ..window import Window
 
 __all__ = ["Mouse"]
 
 
 @final
-class Mouse(Service):
+class Mouse(InputManager):
     """Handles mouse input."""
 
-    def __init__(self) -> None:
+    def __init__(self, window: Window, /) -> None:
+        super().__init__(window)
+
         self._pos = Vector2()
         self._vel = Vector2()
         self._acc = Vector2()
         self._wheel_delta = Vector2()
 
-        self._num_buttons = len(MouseButton)
-
-        self._states = [State.none for _ in range(self._num_buttons)]
+        self._states = {btn.value: State.none for btn in MouseButton}
 
         self.on_mouse_button = Hook[[MouseButton, State]]()
+        """Executes whenever the state of any mouse button changes, including changes to `State.none`"""
 
         self.on_mouse_button_pressed = Hook[[MouseButton]]()
+        """Executes whenever the state of any mouse button changes `State.pressed`"""
+
         self.on_mouse_button_downed = Hook[[MouseButton]]()
+        """Executes whenever the state of any mouse button changes `State.downed`"""
+
         self.on_mouse_button_released = Hook[[MouseButton]]()
+        """Executes whenever the state of any mouse button changes `State.released`"""
 
         self.on_mouse_wheel = Hook[[Vector2]]()
-        self.on_scroll = self.on_mouse_wheel
+        """Executes whenever the mouse wheel is scrolled. Inputs on the x-axis happen when the wheel is scrolled while shift is being pressed."""
+
+        self.on_scroll = self.on_mouse_wheel  # alias
 
         self.on_mouse_move = Hook()
+        """Executes whenever the mouse's velocity is different from zero."""
 
     @property
     def position(self) -> Vector2:
@@ -69,10 +82,10 @@ class Mouse(Service):
     scroll_delta = wheel_delta
 
     @property
-    def states(self) -> Sequence[State]:
+    def states(self) -> Mapping[MouseButton, State]:
         """The current state of all buttons listed in the `MouseButton` enum."""
 
-        return self._states.copy()
+        return {MouseButton(btn): state for btn, state in self._states.items()}
 
     @property
     def cursor(self) -> pygame.Cursor:
@@ -118,23 +131,41 @@ class Mouse(Service):
         if not self._vel.is_clear():
             self.on_mouse_move.notify()
 
-        _pressed = pygame.mouse.get_pressed()
-        _downed = pygame.mouse.get_just_pressed()
-        _released = pygame.mouse.get_just_released()
+        downed: set[int] = set(
+            e.button - 1
+            for e in self.app.events.get_many(MOUSEBUTTONDOWN)
+            if self._window == e.window
+        )
+        released: set[int] = set(
+            e.button - 1
+            for e in self.app.events.get_many(MOUSEBUTTONUP)
+            if self._window == e.window
+        )
 
-        self._states = [
-            State.from_bools(
-                pressed=_pressed[i],
-                released=_released[i],
-                down=_downed[i],
+        for btn, state in self._states.items():
+            self._states[btn] = (
+                State.pressed
+                if state is State.downed
+                else State.none
+                if state is State.released
+                else state
             )
-            for i in range(self._num_buttons)
-        ]
 
-        for button, state in zip(MouseButton, self._states):
+            if btn in downed:
+                self._states[btn] = State.downed
+
+            if btn in released:
+                self._states[btn] = State.released
+
+            new_state = self._states[btn]
+
+            if new_state != State.none:
+                getattr(self, f"on_mouse_button_{new_state.name}").notify(
+                    MouseButton(btn)
+                )
+
             if state != State.none:
-                self.on_mouse_button.notify(button, state)
-                getattr(self, f"on_mouse_button_{state.name}").notify(button)
+                self.on_mouse_button.notify(MouseButton(btn), new_state)
 
         self._wheel_delta = sum(
             map(

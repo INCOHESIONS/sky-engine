@@ -3,25 +3,30 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, ClassVar, final
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, final, override
 
 import pygame
 from pygame import Rect as PygameRect
 
-from .core import Monitor
+from ._managers import Keyboard, Mouse
+from .core import InputManager, Monitor
 from .hook import Hook
 from .spec import WindowSpec
 from .types import PygameEvent
-from .utils import Color, Rect, Vector2
+from .utils import Color, Rect, Vector2, first
 
 if TYPE_CHECKING:
-    from ._services.windowing import Windowing
+    from ._services import Windowing
     from .app import App
 
-is_windows = os.name == "nt"
 
-if is_windows:
+if os.name == "nt":
+    import win32api
+    import win32con
     import win32gui
+else:
+    win32gui = win32con = win32api = None
 
 __all__ = ["Window"]
 
@@ -39,29 +44,29 @@ class Window:
     def __init__(self, /, *, spec: WindowSpec) -> None:
         self._spec = spec
 
+        self._minimized = spec.state == "minimized"
+        self._maximized = spec.state == "maximized"
+
         self._underlying = pygame.Window(
+            title=spec.title,
+            size=spec.size,
+            resizable=spec.resizable,
+            borderless=spec.borderless,
+            always_on_top=spec.always_on_top,
             position=spec.position or (0, 0),
-            opengl=spec.backend == "opengl",
-            vulkan=spec.backend == "vulkan",
-            **{spec.state: True} if spec.state != "windowed" else {},
-            **{
-                name: getattr(spec, name)
-                for name in (
-                    "title",
-                    "size",
-                    "resizable",
-                    "borderless",
-                )
-            },
+            opengl=spec.graphics_api == "opengl",
+            vulkan=spec.graphics_api == "vulkan",
+            maximized=self._maximized,
+            minimized=self._minimized,
         )
-        _ = self._underlying.get_surface()  # necessary
 
-        self._fullscreen = False
-        self._minimized = False
-        self._maximized = False
+        if spec.use_surface:
+            _ = self._underlying.get_surface()
 
-        if self._spec.state != "windowed":
-            setattr(self, f"_{self._spec.state}", True)
+        self._fullscreen = spec.state == "fullscreen"
+
+        if self._fullscreen:
+            self.app.on_preload += lambda: setattr(self, "fullscreen", True)
 
         if self._spec.position is None:
             self.center_on_monitor()
@@ -72,24 +77,6 @@ class Window:
 
         self.fill_color = self._spec.fill
 
-        self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
-
-        self.on_render = Hook()
-
-        self.before_destroy = Hook()
-        self.after_destroy = Hook()
-        self.on_close = self.after_destroy  # alias
-
-        self.on_mouse_enter = self._make_event_hook(pygame.WINDOWENTER)
-        self.on_mouse_leave = self._make_event_hook(pygame.WINDOWLEAVE)
-        self.on_mouse_move = self._make_event_hook(pygame.MOUSEMOTION)
-
-        self.on_focus_gained = self._make_event_hook(pygame.WINDOWFOCUSGAINED)
-        self.on_focus_lost = self._make_event_hook(pygame.WINDOWFOCUSLOST)
-
-        self.on_resize = self._make_event_hook(pygame.WINDOWRESIZED)
-        self.on_fullscreen = self._make_event_hook(self.windowing.WINDOWFULLSCREENED)
-
         self.app.pre_update += self._pre_update
         self.app.events.on_event += self._handle_events
 
@@ -97,6 +84,63 @@ class Window:
 
         if self._spec.flip:
             self.app.post_update += self.flip
+
+        if self._spec.transparency_color is not None:
+            self._handle_transparency()
+
+        self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
+
+        self._setup_hooks()
+
+        self._input_managers = [im(self) for im in spec.input_managers]
+
+        self._keyboard = first(
+            im for im in self._input_managers if isinstance(im, Keyboard)
+        )
+        self._mouse = first(im for im in self._input_managers if isinstance(im, Mouse))
+
+    @override
+    def __eq__(self, other: Any, /) -> bool:
+        return (
+            isinstance(other, self.__class__)
+            and other.id == self.id
+            or isinstance(other, pygame.Window)
+            and other.id == self.id
+        )
+
+    @property
+    def input_managers(self) -> Sequence[InputManager]:
+        """This `Window`'s input managers."""
+
+        return self._input_managers.copy()
+
+    @property
+    def keyboard(self) -> Keyboard:
+        """
+        This `Window`'s input manager for the keyboard.
+
+        Raises
+        ------
+        `AssertionError`
+            If no input manager was found, i.e., it wasn't included in this `Window`'s spec.
+        """
+
+        assert self._keyboard
+        return self._keyboard
+
+    @property
+    def mouse(self) -> Mouse:
+        """
+        This `Window`'s input manager for the mouse.
+
+        Raises
+        ------
+        `AssertionError`
+            If no input manager was found, i.e., it wasn't included in this `Window`'s spec.
+        """
+
+        assert self._mouse
+        return self._mouse
 
     @property
     def spec(self) -> WindowSpec:
@@ -121,12 +165,15 @@ class Window:
         Only available on Windows. Will return -1 on other platforms.
         """
 
-        if is_windows:
-            return win32gui.FindWindow(None, self.title)  # pyright: ignore[reportPossiblyUnboundVariable]
-
-        return -1
+        return win32gui.FindWindow(None, self.title) if win32gui else -1
 
     hwnd = handle  # alias
+
+    @property
+    def id(self) -> int:
+        """This `Window`'s unique ID."""
+
+        return self.underlying.id
 
     @property
     def surface(self) -> pygame.Surface:
@@ -251,27 +298,30 @@ class Window:
     def fullscreen(self, value: bool, /) -> None:
         self._fullscreen = value
 
-        if os.name != "nt":
+        if os.name == "nt":
+            # this is based on some old code i wrote to fix fullscreening problems with pygame.
+            # i don't really know what the magic numbers mean, i just know that they work.
+            # well, mostly. at least they do on my machine
+
+            self.size = (
+                (self.windowing.primary_monitor.size + self._magic_size_offset)
+                if value
+                else self._spec.size
+            )
+
+            if value:
+                self.position = self._magic_fullscreen_position
+            else:
+                self.center_on_monitor()
+        else:
             self._underlying.set_fullscreen(value)
 
-        # this is based on some old code i wrote to fix fullscreening problems with pygame.
-        # i don't really know what the magic numbers mean, i just know that they work.
-        # well, mostly. at least they do on my machine
-
-        self.size = (
-            (self.windowing.primary_monitor.size + self._magic_size_offset)
-            if value
-            else self._spec.size
-        )
-
         if value:
-            self.position = self._magic_fullscreen_position
-        else:
-            self.center_on_monitor()
-
-        self.app.events.post(
-            PygameEvent(self.windowing.WINDOWFULLSCREENED, dict(window=self.underlying))
-        )
+            self.app.events.post(
+                PygameEvent(
+                    self.windowing.WINDOWFULLSCREENED, dict(window=self.underlying)
+                )
+            )
 
     @property
     def minimized(self) -> bool:
@@ -402,6 +452,43 @@ class Window:
     def _pre_update(self) -> None:
         if self.fill_color:
             self.fill(self.fill_color)
+
+    def _setup_hooks(self) -> None:
+        self.on_render = Hook()
+
+        self.before_destroy = Hook()
+        self.after_destroy = Hook()
+        self.on_close = self.after_destroy  # alias
+
+        self.on_mouse_enter = self._make_event_hook(pygame.WINDOWENTER)
+        self.on_mouse_leave = self._make_event_hook(pygame.WINDOWLEAVE)
+        self.on_mouse_move = self._make_event_hook(pygame.MOUSEMOTION)
+
+        self.on_focus_gained = self._make_event_hook(pygame.WINDOWFOCUSGAINED)
+        self.on_focus_lost = self._make_event_hook(pygame.WINDOWFOCUSLOST)
+
+        self.on_resize = self._make_event_hook(pygame.WINDOWRESIZED)
+        self.on_fullscreen = self._make_event_hook(self.windowing.WINDOWFULLSCREENED)
+
+    def _handle_transparency(self) -> None:
+        if win32gui is None or win32con is None or win32api is None:
+            raise OSError("This method is only supported on Windows.")
+
+        assert self.spec.transparency_color
+
+        win32gui.SetWindowLong(  # pyright: ignore[reportUnknownMemberType]
+            self.handle,
+            win32con.GWL_EXSTYLE,
+            win32gui.GetWindowLong(self.handle, win32con.GWL_EXSTYLE)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            | win32con.WS_EX_LAYERED,
+        )
+
+        win32gui.SetLayeredWindowAttributes(  # pyright: ignore[reportUnknownMemberType]
+            self.handle,
+            win32api.RGB(*self.spec.transparency_color.rgb),
+            0,
+            win32con.LWA_COLORKEY,
+        )
 
     def _handle_events(self, event: pygame.event.Event, /):
         if not hasattr(event, "window") or event.window != self.underlying:

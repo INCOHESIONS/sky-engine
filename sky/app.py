@@ -7,8 +7,9 @@ from typing import Literal, Self
 
 import pygame
 
-from ._services import UI, Chrono, Events, Executor, Keyboard, Mouse, Windowing
-from .core import Component, Service
+from ._managers import Keyboard, Mouse
+from ._services import UI, Chrono, Events, Executor, Windowing
+from .core import Component, InputManager, Service
 from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
@@ -56,8 +57,6 @@ class App:
 
     # Services (in order of execution):
         - `Events` (handles `pygame` events)
-        - `Keyboard` (handles keyboard input)
-        - `Mouse` (handles mouse input)
         - `Windowing` (handles windowing)
         - `Chrono` (handles time-related data)
         - `Executor` (handles coroutines)
@@ -126,12 +125,6 @@ class App:
         self.events = Events()
         """Handles pygame events."""
 
-        self.keyboard = Keyboard()
-        """Handles keyboard input."""
-
-        self.mouse = Mouse()
-        """Handles mouse input."""
-
         self.windowing = Windowing()
         """Handles windowing."""
 
@@ -146,8 +139,6 @@ class App:
 
         self._internal_services: list[Service] = [
             self.events,
-            self.mouse,
-            self.keyboard,
             self.windowing,
             self.chrono,
             self.executor,
@@ -210,7 +201,8 @@ class App:
     @property
     def window(self) -> Window:
         """
-        Short for `app.windowing.main_window`, but with its being non-optional for ease of use.
+        Shorthand for `app.windowing.main_window`.\n
+        Instead of being optional, this property raises an exception in case there's no main window, for ease of use.
 
         Returns
         -------
@@ -227,14 +219,50 @@ class App:
         return self.windowing.main_window
 
     @property
+    def keyboard(self) -> Keyboard:
+        """
+        Shorthand for `app.windowing.main_window.keyboard`.
+
+        Returns
+        -------
+        `Keyboard`
+            The main window's `InputManager` for the keyboard.
+
+        Raises
+        ------
+        `AssertionError`
+            If the main window is not set (i.e. no windows are open due to the app being in headless mode).
+        """
+
+        return self.window.keyboard
+
+    @property
+    def mouse(self) -> Mouse:
+        """
+        Shorthand for `app.windowing.main_window.mouse`.
+
+        Returns
+        -------
+        `Mouse`
+            The main window's `InputManager` for the mouse.
+
+        Raises
+        ------
+        `AssertionError`
+            If the main window is not set (i.e. no windows are open due to the app being in headless mode).
+        """
+
+        return self.window.mouse
+
+    @property
     def on_render(self) -> Hook:
         """
-        Alias for `app.window.on_render`.
+        Shorthand for `app.window.on_render`.
 
         Returns
         -------
         `Hook[[], None]`
-            The hook.
+            The main window's `on_render` hook.
 
         Raises
         ------
@@ -582,6 +610,7 @@ class App:
 
     # probably bad practice but this makes things real easy to use which is the whole point of this library
     def _handle_references(self) -> None:
+        InputManager.app = self
         Component.app = self
         Yieldable.app = self
         Scene.app = self

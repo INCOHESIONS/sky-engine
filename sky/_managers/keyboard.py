@@ -1,38 +1,52 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Callable, Literal, final, override
+from typing import TYPE_CHECKING, Callable, Literal, final, override
 
 import pygame
+from pygame.constants import KEYDOWN, KEYUP
 
-from ..core import Key, Keybinding, Service, State
+from ..core import InputManager, Key, Keybinding, State
 from ..hook import Hook
 from ..types import KeyLike, StateLike
 from ..utils import Vector2, Vector3
+
+if TYPE_CHECKING:
+    from ..window import Window
 
 __all__ = ["Keyboard"]
 
 
 @final
-class Keyboard(Service):
+class Keyboard(InputManager):
     """Handles keyboard input."""
 
-    def __init__(self) -> None:
-        self._states: dict[Key, State] = {key: State.none for key in Key}
+    def __init__(self, window: Window, /) -> None:
+        super().__init__(window)
+
+        self._states = {key.value: State.none for key in Key}
         self._text = ""
 
         self._keybindings: list[Keybinding] = []
         self._active_keybindings: list[Keybinding] = []
 
         self.on_key = Hook[[Key, State]]()
+        """Executes whenever the state of any key changes, including changes to `State.none`"""
 
         self.on_key_pressed = Hook[[Key]]()
+        """Executes whenever the state of any key changes `State.pressed`"""
+
         self.on_key_downed = Hook[[Key]]()
+        """Executes whenever the state of any key changes `State.downed`"""
+
         self.on_key_released = Hook[[Key]]()
+        """Executes whenever the state of any key changes `State.released`"""
 
     @property
     def states(self) -> dict[Key, State]:
         """The current state of all keys listed in the `Key` enum."""
 
-        return self._states
+        return {Key(id): state for id, state in self._states.items()}
 
     @property
     def text(self) -> str:
@@ -54,28 +68,40 @@ class Keyboard(Service):
 
     @override
     def update(self) -> None:
-        _pressed = pygame.key.get_pressed()
-        _downed = pygame.key.get_just_pressed()
-        _released = pygame.key.get_just_released()
+        downed: set[int] = set(
+            e.key for e in self.app.events.get_many(KEYDOWN) if self._window == e.window
+        )
+        released: set[int] = set(
+            e.key for e in self.app.events.get_many(KEYUP) if self._window == e.window
+        )
 
-        for key in Key:
-            idx = key.value
-
-            state = State.from_bools(
-                pressed=_pressed[idx],
-                released=_released[idx],
-                down=_downed[idx],
+        for key, state in self._states.items():
+            self._states[key] = (
+                State.pressed
+                if state is State.downed
+                else State.none
+                if state is State.released
+                else state
             )
 
+            if key in downed:
+                self._states[key] = State.downed
+
+            if key in released:
+                self._states[key] = State.released
+
+            new_state = self._states[key]
+
+            if new_state != State.none:
+                getattr(self, f"on_key_{new_state.name}").notify(Key(key))
+
             if state != State.none:
-                getattr(self, f"on_key_{state.name}").notify(key)
-
-            self.on_key.notify(key, state)
-
-            self._states[key] = state
+                self.on_key.notify(Key(key), new_state)
 
         self._text = "".join(
-            e.unicode for e in self.app.events.get_many(pygame.KEYDOWN)
+            e.unicode
+            for e in self.app.events.get_many(pygame.KEYDOWN)
+            if self._window == e.window
         )
 
         previously_active_keybindings = self._active_keybindings.copy()
@@ -265,12 +291,18 @@ class Keyboard(Service):
 
     def add_keybindings(self, **kwargs: Callable[[], None]) -> None:
         """
-        Adds many keybindings using keyword arguments.
+        Utility method to easily add many keybindings using keyword arguments.
+
+        Examples
+        --------
+        ```python
+        app.keyboard.add_keybindings(escape=app.quit, f11=app.window.toggle_fullscreen)
+        ```
 
         Parameters
         ----------
         **kwargs: `Callable[[], None]`
-            A dict of KeyLiteral to action.
+            A mapping of KeyLiteral to action.
         """
 
         for key, action in kwargs.items():

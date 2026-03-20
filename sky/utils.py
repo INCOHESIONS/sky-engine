@@ -45,7 +45,7 @@ class Vector2(PygameVector2):
 
     @classmethod
     def splat(cls, value: float) -> Self:
-        """Returns a `Vector2` with all values set to `value`"""
+        """Returns a `Vector2` with all components set to `value`"""
 
         return cls(value, value)
 
@@ -53,7 +53,7 @@ class Vector2(PygameVector2):
     def zero(cls) -> Self:
         """Returns a zero `Vector2`. Same as `Vector2()`"""
 
-        return cls(0)
+        return cls()
 
     @classmethod
     def one(cls) -> Self:
@@ -707,6 +707,9 @@ class Rect(PygameRect):
         r.center = position
 
         return r
+
+    def random_within(self) -> Vector2:
+        return Vector2.random_inside_rect(self)
 
 
 def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:

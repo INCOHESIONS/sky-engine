@@ -7,8 +7,9 @@ from typing import Literal, Protocol, Self, final
 
 from pygame import Surface
 
+from ._managers import Keyboard, Mouse
 from .colors import BLACK
-from .core import Component
+from .core import Component, InputManager
 from .utils import Color, Vector2
 
 __all__ = [
@@ -55,6 +56,15 @@ class WindowSpec:
     borderless: bool = False
     """Whether or not the window is borderless, which also means it has no decorations."""
 
+    always_on_top: bool = False
+    """Whether or not the window is always on top."""
+
+    use_surface: bool = True
+    """Whether or not to call `get_surface` once the underlying window is created. Setting this to `False` is necessary to use pygame's new `_sdl2.video.Renderer` class."""
+
+    transparency_color: Color | None = None
+    """The window's transparency key color. All pixels that match this color will be colored transparent instead. Windows only."""
+
     flip: bool = True
     """Whether or not the window should be flipped on `post_update`, i.e., updated."""
 
@@ -64,23 +74,16 @@ class WindowSpec:
     state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
     """What state the window should be initialized at. Defaults to windowed."""
 
-    backend: Literal["software", "opengl", "vulkan"] = "software"
-    """The backend to use for the window. Software by default."""
+    graphics_api: Literal["opengl", "vulkan"] | None = None
+    """Enables support for an OpenGL context or a Vulkan instance."""
 
     initialization: Literal["immediate", "deferred"] = "immediate"
     """Whether or not the main window should be initialized immediately or wait until `mainloop` is called. This is useful for adding callbacks to the window before the app has started."""
 
-    @property
-    def is_software(self) -> bool:
-        """Whether the window is running on a software backend."""
-
-        return self.backend == "software"
-
-    @property
-    def is_hardware(self) -> bool:
-        """Whether the window is running on a hardware backend (OpenGL or Vulkan)."""
-
-        return not self.is_software
+    input_managers: list[type[InputManager]] = field(
+        default_factory=lambda: [Keyboard, Mouse]
+    )
+    """The list of constructors for the input managers that will be updated every frame by this window. Includes `Keyboard` and `Mouse` by default."""
 
 
 @final
