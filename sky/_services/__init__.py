@@ -1,5 +1,3 @@
-"""All of the engine's internal services."""
-
 from .chrono import Chrono
 from .events import Events
 from .executor import Executor
