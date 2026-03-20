@@ -61,6 +61,12 @@ class Chrono(Service):
 
         return self.framerate
 
+    @property
+    def frame_count(self) -> int:
+        """The number of frames since the start of the app. Alias for `frames`."""
+
+        return self.frames
+
     @override
     def start(self) -> None:
         self.start_time = datetime.now()
