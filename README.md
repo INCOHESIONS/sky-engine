@@ -244,14 +244,14 @@ The decorator immediately instances the class, and adds it to the app. It also m
 assert Player() is Player()  # passes
 ```
 
-Notably, these examples use `app.mouse` and `app.keyboard`, which are `Service`s, `Service`s are objects that offer persistant, generalized functionality, and have an `update` method that runs every frame. By default, the engine offers 7 `Service`s:
+Notably, these examples use `app.mouse` and `app.keyboard`, which are `InputManager`s included by default in every window. `InputManager`s run every frame, grabbing input from a given window, using the `Windowing` `Service`. `Service`s are objects that handle a certain portion of functionality for the engine, also updating their data every frame. By default, the engine offers 5 `Service`s:
 - `Events` (handles `pygame` events)
-- `Keyboard` (handles keyboard input)
-- `Mouse` (handles mouse input)
 - `Windowing` (handles windowing)
 - `Chrono` (handles time-related data)
 - `Executor` (handles coroutines)
-- `UI` (handles the user interface)
+- `UI` (handles the user interface, WIP)
+
+> Note that every window handles its own inputs, and as such has their own instance of a given `InputManager`, usually `Keyboard` and `Mouse`, which are included by default. Accessing `app.keyboard`, for instance, returns a reference to the main window's input manager, serving as an alias for `app.windowing.main_window.keyboard`, as that can be a bit of a mouthful (or typeful?).
 
 Users may add their own `Service`s by subclassing the `Service` class, and using the `add_service` method:
 ```python
@@ -340,6 +340,6 @@ app.keyboard.add_keybindings(
 app.mainloop()
 ```
 
-Yet another way of handling user input is using `Keybinding`s. Their constructor provides exact control over the binding, accepting multiple keys with possibly differing activation `State`s to allow for complex key combinations. A simpler way of adding keybindings, however, is using the `Keybinding.make` method, that simply takes a key and an action as arguments. `add_keybindings` is a method that uses `kwargs` to create a mapping of key to action, simplifying the process further.
+Yet another way of handling user input is using `Keybinding`s. Their constructor provides exact control over the binding, accepting multiple keys with possibly differing activation `State`s to allow for complex key combinations. A simpler way of adding keybindings, however, is using the `Keybinding.make` method, that simply takes a key and an action as arguments. `add_keybindings` is a method that uses `**kwargs` to create a mapping of key to action, simplifying the process further.
 
 > This README covers most of the engine's main features, but one may dig through the source code and extra examples to learn more. Do note that this project is in heavy active development and breaking changes occur constantly, so don't use it for anything serious.
