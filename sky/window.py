@@ -458,7 +458,6 @@ class Window:
 
         self.before_destroy = Hook()
         self.after_destroy = Hook()
-        self.on_close = self.after_destroy  # alias
 
         self.on_mouse_enter = self._make_event_hook(pygame.WINDOWENTER)
         self.on_mouse_leave = self._make_event_hook(pygame.WINDOWLEAVE)
