@@ -9,24 +9,18 @@ from typing import TYPE_CHECKING, Any, ClassVar, final, override
 import pygame
 from pygame import Rect as PygameRect
 
+from ._compat import get_window_handle, hide_window, transparentize_window
 from ._managers import Keyboard, Mouse
 from .core import InputManager, Monitor
 from .hook import Hook
 from .spec import WindowSpec
 from .types import PygameEvent
-from .utils import Color, Rect, Vector2, first
+from .utils import Color, Rect, Vector2, get_by_type
 
 if TYPE_CHECKING:
     from ._services import Windowing
     from .app import App
 
-
-if os.name == "nt":
-    import win32api
-    import win32con
-    import win32gui
-else:
-    win32gui = win32con = win32api = None
 
 __all__ = ["Window"]
 
@@ -48,16 +42,16 @@ class Window:
         self._maximized = spec.state == "maximized"
 
         self._underlying = pygame.Window(
-            title=spec.title,
-            size=spec.size,
-            resizable=spec.resizable,
-            borderless=spec.borderless,
             always_on_top=spec.always_on_top,
-            position=spec.position or (0, 0),
-            opengl=spec.graphics_api == "opengl",
-            vulkan=spec.graphics_api == "vulkan",
+            borderless=spec.borderless,
             maximized=self._maximized,
             minimized=self._minimized,
+            opengl=spec.graphics_api == "opengl",
+            position=spec.position or (0, 0),
+            resizable=spec.resizable,
+            size=spec.size,
+            title=spec.title,
+            vulkan=spec.graphics_api == "vulkan",
         )
 
         if spec.use_surface:
@@ -66,27 +60,37 @@ class Window:
         self._fullscreen = spec.state == "fullscreen"
 
         if self._fullscreen:
-            self.app.on_preload += lambda: setattr(self, "fullscreen", True)
 
-        if self._spec.position is None:
+            def __fullscreen() -> None:
+                self.fullscreen = True
+
+            if self.app.is_running:
+                __fullscreen()
+            else:
+                self.app.on_preload += __fullscreen
+
+        if spec.position is None:
             self.center_on_monitor()
 
-        self._icon = self._spec.icon
-        if self._spec.icon is not None:
-            self.icon = self._spec.icon
+        self._icon = spec.icon
+        if spec.icon is not None:
+            self.icon = spec.icon
 
-        self.fill_color = self._spec.fill
+        self.fill_color = spec.fill
 
         self.app.pre_update += self._pre_update
         self.app.events.on_event += self._handle_events
 
-        self._should_flip = self._spec.flip
+        self._should_flip = spec.flip
 
-        if self._spec.flip:
+        if spec.flip:
             self.app.post_update += self.flip
 
-        if self._spec.transparency_color is not None:
-            self._handle_transparency()
+        if spec.transparency_color is not None:
+            transparentize_window(self.handle, spec.transparency_color)
+
+        if spec.hide_from_taskbar:
+            hide_window(self.handle)
 
         self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
 
@@ -94,10 +98,8 @@ class Window:
 
         self._input_managers = [im(self) for im in spec.input_managers]
 
-        self._keyboard = first(
-            im for im in self._input_managers if isinstance(im, Keyboard)
-        )
-        self._mouse = first(im for im in self._input_managers if isinstance(im, Mouse))
+        self._keyboard = get_by_type(self._input_managers, Keyboard)
+        self._mouse = get_by_type(self._input_managers, Mouse)
 
     @override
     def __eq__(self, other: Any, /) -> bool:
@@ -161,11 +163,15 @@ class Window:
     @property
     def handle(self) -> int:
         """
-        The window handle.\n
-        Only available on Windows. Will return -1 on other platforms.
+        The window handle. Only available on Windows.
+
+        Raises
+        ------
+        `OSError`
+            If called on other platforms.
         """
 
-        return win32gui.FindWindow(None, self.title) if win32gui else -1
+        return get_window_handle(self.title)
 
     hwnd = handle  # alias
 
@@ -468,26 +474,6 @@ class Window:
 
         self.on_resize = self._make_event_hook(pygame.WINDOWRESIZED)
         self.on_fullscreen = self._make_event_hook(self.windowing.WINDOWFULLSCREENED)
-
-    def _handle_transparency(self) -> None:
-        if win32gui is None or win32con is None or win32api is None:
-            raise OSError("This method is only supported on Windows.")
-
-        assert self.spec.transparency_color
-
-        win32gui.SetWindowLong(  # pyright: ignore[reportUnknownMemberType]
-            self.handle,
-            win32con.GWL_EXSTYLE,
-            win32gui.GetWindowLong(self.handle, win32con.GWL_EXSTYLE)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
-            | win32con.WS_EX_LAYERED,
-        )
-
-        win32gui.SetLayeredWindowAttributes(  # pyright: ignore[reportUnknownMemberType]
-            self.handle,
-            win32api.RGB(*self.spec.transparency_color.rgb),
-            0,
-            win32con.LWA_COLORKEY,
-        )
 
     def _handle_events(self, event: pygame.event.Event, /):
         if not hasattr(event, "window") or event.window != self.underlying:

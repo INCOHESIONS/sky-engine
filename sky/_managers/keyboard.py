@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Callable, Literal, final, override
 
 import pygame
@@ -30,20 +30,10 @@ class Keyboard(InputManager):
         self._keybindings: list[Keybinding] = []
         self._active_keybindings: list[Keybinding] = []
 
-        self.on_key = Hook[[Key, State]]()
-        """Executes whenever the state of any key changes, including changes to `State.none`"""
-
-        self.on_key_pressed = Hook[[Key]]()
-        """Executes whenever the state of any key changes `State.pressed`"""
-
-        self.on_key_downed = Hook[[Key]]()
-        """Executes whenever the state of any key changes `State.downed`"""
-
-        self.on_key_released = Hook[[Key]]()
-        """Executes whenever the state of any key changes `State.released`"""
+        self._setup_hooks()
 
     @property
-    def states(self) -> dict[Key, State]:
+    def states(self) -> Mapping[Key, State]:
         """The current state of all keys listed in the `Key` enum."""
 
         return {Key(id): state for id, state in self._states.items()}
@@ -454,3 +444,16 @@ class Keyboard(InputManager):
             movement = Vector3(movement.xzy)  # pygame.math.Vector3 -> sky.Vector3
 
         return movement.normalize() if normalize else movement
+
+    def _setup_hooks(self) -> None:
+        self.on_key = Hook[[Key, State]]()
+        """Executes whenever the state of any key changes, including changes to `State.none`"""
+
+        self.on_key_pressed = Hook[[Key]]()
+        """Executes whenever the state of any key changes `State.pressed`"""
+
+        self.on_key_downed = Hook[[Key]]()
+        """Executes whenever the state of any key changes `State.downed`"""
+
+        self.on_key_released = Hook[[Key]]()
+        """Executes whenever the state of any key changes `State.released`"""

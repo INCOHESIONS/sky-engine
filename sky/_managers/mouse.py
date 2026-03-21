@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, final, override
 import pygame
 from pygame.constants import MOUSEBUTTONDOWN, MOUSEBUTTONUP
 
+from .._compat import get_mouse_position
 from ..core import Cursor, InputManager, MouseButton, State
 from ..hook import Hook
 from ..types import CursorLike, MouseButtonLike, StateLike
@@ -11,6 +12,7 @@ from ..utils import Vector2
 
 if TYPE_CHECKING:
     from ..window import Window
+
 
 __all__ = ["Mouse"]
 
@@ -29,37 +31,28 @@ class Mouse(InputManager):
 
         self._states = {btn.value: State.none for btn in MouseButton}
 
-        self.on_mouse_button = Hook[[MouseButton, State]]()
-        """Executes whenever the state of any mouse button changes, including changes to `State.none`"""
+        self._setup_hooks()
 
-        self.on_mouse_button_pressed = Hook[[MouseButton]]()
-        """Executes whenever the state of any mouse button changes `State.pressed`"""
-
-        self.on_mouse_button_downed = Hook[[MouseButton]]()
-        """Executes whenever the state of any mouse button changes `State.downed`"""
-
-        self.on_mouse_button_released = Hook[[MouseButton]]()
-        """Executes whenever the state of any mouse button changes `State.released`"""
-
-        self.on_mouse_wheel = Hook[[Vector2]]()
-        """Executes whenever the mouse wheel is scrolled. Inputs on the x-axis happen when the wheel is scrolled while shift is being pressed."""
-
-        self.on_scroll = self.on_mouse_wheel  # alias
-
-        self.on_mouse_move = Hook()
-        """Executes whenever the mouse's velocity is different from zero."""
+        self.use_system = True
+        """Whether or not to use system-level APIs to get input information, allowing constant updates even if the window isn't focused."""
 
     @property
     def position(self) -> Vector2:
-        """The mouse's position, in pixel coordinates."""
+        """The mouse's position."""
 
         return self._pos.copy()
 
     pos = position
 
     @property
+    def previous_position(self) -> Vector2:
+        """The mouse's previous position."""
+
+        return self._pos - self._vel
+
+    @property
     def velocity(self) -> Vector2:
-        """The relative change in the mouse's position since the last frame, in pixel coordinates."""
+        """The relative change in the mouse's position since the last frame."""
 
         return self._vel.copy()
 
@@ -67,7 +60,7 @@ class Mouse(InputManager):
 
     @property
     def acceleration(self) -> Vector2:
-        """The relative change in the mouse's velocity since the last frame, in pixel coordinates."""
+        """The relative change in the mouse's velocity since the last frame."""
 
         return self._acc.copy()
 
@@ -123,8 +116,10 @@ class Mouse(InputManager):
 
     @override
     def update(self) -> None:
-        self._pos = Vector2(pygame.mouse.get_pos())
-        new_vel = Vector2(pygame.mouse.get_rel())
+        new_pos = self._get_pos()
+        new_vel = new_pos - self._pos
+
+        self._pos = new_pos
         self._acc = new_vel - self._vel
         self._vel = new_vel
 
@@ -303,3 +298,29 @@ class Mouse(InputManager):
 
     def set_cursor(self, cursor: CursorLike, /) -> None:
         pygame.mouse.set_cursor(Cursor.as_cursor(cursor))
+
+    def _setup_hooks(self) -> None:
+        self.on_mouse_button = Hook[[MouseButton, State]]()
+        """Executes whenever the state of any mouse button changes, including changes to `State.none`"""
+
+        self.on_mouse_button_pressed = Hook[[MouseButton]]()
+        """Executes whenever the state of any mouse button changes `State.pressed`"""
+
+        self.on_mouse_button_downed = Hook[[MouseButton]]()
+        """Executes whenever the state of any mouse button changes `State.downed`"""
+
+        self.on_mouse_button_released = Hook[[MouseButton]]()
+        """Executes whenever the state of any mouse button changes `State.released`"""
+
+        self.on_mouse_wheel = Hook[[Vector2]]()
+        """Executes whenever the mouse wheel is scrolled. Inputs on the x-axis happen when the wheel is scrolled while shift is being pressed."""
+
+        self.on_scroll = self.on_mouse_wheel  # alias
+
+        self.on_mouse_move = Hook()
+        """Executes whenever the mouse's velocity is different from zero."""
+
+    def _get_pos(self) -> Vector2:
+        return Vector2(
+            get_mouse_position() if self.use_system else pygame.mouse.get_pos()
+        )
