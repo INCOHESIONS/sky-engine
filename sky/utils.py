@@ -700,7 +700,22 @@ class Rect(PygameRect):
 
     @classmethod
     def from_center(cls, position: Vector2, size: Vector2, /) -> Self:
-        """Returns a `Rect` with the given position and size, centered at the given position."""
+        """
+        Returns a `Rect` with the given position and size, centered at the given position.\n
+        Shorthand for setting the `center` and `size` properties of a `pygame.Rect` object.
+
+        Parameters
+        ----------
+        position: `Vector2`
+            The center position of the `Rect`.
+        size: `Vector2`
+            The size of the `Rect`.
+
+        Returns
+        -------
+        `Self`
+            The instanced `Rect`.
+        """
 
         r = cls()
         r.size = size
@@ -709,6 +724,15 @@ class Rect(PygameRect):
         return r
 
     def random_within(self) -> Vector2:
+        """
+        Returns a random position inside this `Rect`.
+
+        Returns
+        -------
+        `Vector2`
+            The random position.
+        """
+
         return Vector2.random_inside_rect(self)
 
 
@@ -729,12 +753,14 @@ def get_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> T | None:
     Parameters
     ----------
     iterable: `Iterable[T]`
-        The iterable to get an element from.
+        The `Iterable` to be filtered.
+    **attrs: `Any`
+        The attributes to filter for.
 
     Returns
     -------
     `T | None`
-        The element found. Or `None`, if no elements with matching attributes was found.
+        The element, or `None` if no elements with matching attributes was found.
     """
 
     return first(filter_by_attrs(iterable, **attrs))
@@ -748,6 +774,8 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
     ----------
     iterable: `Iterable[T]`
         The `Iterable` to be filtered.
+    **attrs: `Any`
+        The attributes to filter for.
 
     Returns
     -------
@@ -759,6 +787,59 @@ def filter_by_attrs[T](iterable: Iterable[T], /, **attrs: Any) -> Iterator[T]:
         lambda e: all(getattr(e, name) == value for name, value in attrs.items()),
         iterable,
     )
+
+
+def get_by_type[T, U](iterable: Iterable[T], typ: type[U], /) -> U | None:
+    """
+    Gets an element from an `Iterable` based on the specified type.
+
+    Examples
+    --------
+    ```python
+    class Foo: ...
+
+
+    class Bar(Foo): ...
+
+
+    bar = Bar()
+    assert get_by_attrs([Foo(), Foo(), b], Bar) == bar
+    ```
+
+    Parameters
+    ----------
+    iterable: `Iterable[T]`
+        The `Iterable` to be filtered.
+    typ: `type[U]`
+        The type to filter for. Must inherit from `T`.
+
+    Returns
+    -------
+    `U | None`
+        The element, or `None` if no elements with a matching type was found.
+    """
+
+    return first(filter_by_type(iterable, typ))
+
+
+def filter_by_type[T, U](iterable: Iterable[T], typ: type[U], /) -> Iterator[U]:
+    """
+    Filters an `Iterable` based on the specified type.
+
+    Parameters
+    ----------
+    iterable: `Iterable[T]`
+        The `Iterable` to be filtered.
+    typ: `type[U]`
+        The type to filter for. Must inherit from `T`.
+
+    Returns
+    -------
+    `Iterable[U]`
+        The filtered `Iterable`.
+    """
+
+    return filter(lambda e: isinstance(e, typ), iterable)  # pyright: ignore[reportReturnType]
 
 
 def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
