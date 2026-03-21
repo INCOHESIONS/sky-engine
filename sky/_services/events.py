@@ -70,13 +70,13 @@ class Events(Service):
 
         type = event.type if isinstance(event, PygameEvent) else event
 
-        def _callback(e: PygameEvent):
+        def __callback(e: PygameEvent) -> None:
             if e.type == type:
                 callback(e)
 
-        self._callbacks[type] = self._callbacks.get(type, []) + [_callback]
+        self._callbacks[type] = self._callbacks.get(type, []) + [__callback]
 
-        self.on_event += _callback
+        self.on_event += __callback
 
     def remove_callback(self, callback: Callable[[PygameEvent], Any], /) -> None:
         """

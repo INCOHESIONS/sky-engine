@@ -15,7 +15,7 @@ class Circle(Component):
     color: Color
 
     @override
-    def update(self):
+    def update(self) -> None:
         draw.aacircle(app.window.surface, self.color, self.pos, 50)
 
 

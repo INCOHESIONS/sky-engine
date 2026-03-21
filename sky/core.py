@@ -13,7 +13,7 @@ from screeninfo import Monitor as ScreenInfoMonitor
 
 from .hook import Hook
 from .types import Coroutine, CursorLike, KeyLike, ModifierLike, StateLike
-from .utils import Vector2
+from .utils import Rect, Vector2
 
 if TYPE_CHECKING:
     from .app import App
@@ -89,6 +89,18 @@ class Monitor:
     size: Vector2
     is_primary: bool
     index: int
+
+    @property
+    def width(self) -> int:
+        return int(self.size.x)
+
+    @property
+    def height(self) -> int:
+        return int(self.size.y)
+
+    @property
+    def rect(self) -> Rect:
+        return Rect((0, 0, *self.size))
 
     @classmethod
     def from_monitor(cls, monitor: ScreenInfoMonitor, /, *, index: int) -> Self:
@@ -446,7 +458,7 @@ class Keybinding:
     on_activation: Hook = field(default_factory=Hook[[]])
     on_deactivation: Hook = field(default_factory=Hook[[]])
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.keymap:
             raise ValueError("Keybinding must have at least one key")
 

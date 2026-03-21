@@ -44,7 +44,7 @@ class Renderer(Component):
         }}
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.target = compushady.Texture2D(
             *app.window.size.ituple(), format=B8G8R8A8_UNORM
         )
@@ -63,7 +63,7 @@ class Renderer(Component):
         self.swapchain = None
 
     @override
-    def update(self):
+    def update(self) -> None:
         self.compute.dispatch(self.target.width // 8, self.target.height // 8, 1)
         self.swapchain.present(self.target)  # pyright: ignore[reportOptionalMemberAccess]
 
@@ -75,7 +75,7 @@ class Renderer(Component):
     def points_buffer(self) -> compushady.Buffer:
         return compushady.Buffer(size=self.staging.size, format=R32G32_UINT)
 
-    def update_buffer(self):
+    def update_buffer(self) -> None:
         self.staging.upload(
             struct.pack(f"{self.COUNT * 2}i", *map(int, flatten(*self.points)))
         )

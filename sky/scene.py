@@ -40,7 +40,7 @@ class Scene:
 
     app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
 
-    def __init__(self, /, *, spec: SceneSpec | None = None):
+    def __init__(self, /, *, spec: SceneSpec | None = None) -> None:
         self.spec = spec if isinstance(spec, SceneSpec) else SceneSpec()
 
         self._components = self.spec.components
@@ -97,7 +97,7 @@ class Scene:
 
         return cls(spec=SceneSpec(components=components))
 
-    def start(self):
+    def start(self) -> None:
         """
         Starts this `Scene` and all of its components.
 
@@ -119,7 +119,7 @@ class Scene:
 
         self.is_running = True
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates this `Scene` and all of its components.
 
@@ -139,7 +139,7 @@ class Scene:
 
         self.post_update.notify()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stops this `Scene` and all of its components.
 
@@ -199,7 +199,7 @@ class Scene:
                 f"{component.__name__} cannot be instanced with no arguments!"
             )
 
-        def _add():
+        def __add() -> None:
             nonlocal when
 
             self._components.append(
@@ -210,12 +210,12 @@ class Scene:
                 self._start_component(comp)
 
             if when:
-                when -= _add
+                when -= __add
 
         if when is None:
-            _add()
+            __add()
         else:
-            when += _add
+            when += __add
 
         return self
 
@@ -271,7 +271,7 @@ class Scene:
         if not getattr(comp, "_has_stopped", False):
             comp.stop()
 
-    def clear_components(self):
+    def clear_components(self) -> None:
         """Removes all components from the `Scene`."""
 
         for component in self._components:

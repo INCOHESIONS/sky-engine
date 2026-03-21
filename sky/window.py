@@ -475,7 +475,7 @@ class Window:
         self.on_resize = self._make_event_hook(pygame.WINDOWRESIZED)
         self.on_fullscreen = self._make_event_hook(self.windowing.WINDOWFULLSCREENED)
 
-    def _handle_events(self, event: pygame.event.Event, /):
+    def _handle_events(self, event: pygame.event.Event, /) -> None:
         if not hasattr(event, "window") or event.window != self.underlying:
             return
 

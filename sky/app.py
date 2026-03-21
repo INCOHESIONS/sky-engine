@@ -9,7 +9,7 @@ import pygame
 
 from ._managers import Keyboard, Mouse
 from ._services import UI, Chrono, Events, Executor, Windowing
-from .core import Component, InputManager, Service
+from .core import Component, InputManager, Monitor, Service
 from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
@@ -199,6 +199,12 @@ class App:
         return list(flatten(*(scene.components for scene in self._scenes)))
 
     @property
+    def monitor(self) -> Monitor:
+        """Shorthand for `app.windowing.main_monitor`."""
+
+        return self.windowing.main_monitor
+
+    @property
     def window(self) -> Window:
         """
         Shorthand for `app.windowing.main_window`.\n
@@ -371,7 +377,7 @@ class App:
         if self.is_running:
             scene.start()
 
-    def unload_scene(self, scene: Scene, /):
+    def unload_scene(self, scene: Scene, /) -> None:
         """
         Removes a `Scene` from the list of scenes and stops it.
 
@@ -392,7 +398,7 @@ class App:
         self._scenes.remove(scene)
         scene.stop()
 
-    def toggle_scene(self, scene: Scene, /):
+    def toggle_scene(self, scene: Scene, /) -> None:
         """
         Loads a `Scene` if it's not already loaded, or unloads it if it is.
 
@@ -474,7 +480,7 @@ class App:
 
         self.scene.remove_component(component)
 
-    def clear_components(self):
+    def clear_components(self) -> None:
         """Removes all components from the main `Scene`."""
 
         for component in self.scene.components:

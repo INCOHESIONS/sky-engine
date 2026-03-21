@@ -81,7 +81,7 @@ class UIElement[TStyle: Style = Any](ABC):
         self.on_any_change = Hook()  # type: Hook  # pyright: ignore[reportTypeCommentUsage]  # HACK:
         """Listens to `on_state_changed`, `on_position_changed`, `on_size_changed` and `on_style_changed`."""
 
-        def __add(_1: Any, _2: Any):
+        def __add(_1: Any, _2: Any) -> None:
             self.on_any_change.notify()
 
         self.on_state_changed += __add

@@ -149,7 +149,7 @@ radius = 32
 
 
 @app.on_render
-def render():
+def render() -> None:
     global pos
     pos += app.keyboard.get_movement_2d((Key.a, Key.d), (Key.w, Key.s)) * speed
     draw.aacircle(app.window.surface, ALICE_BLUE, pos, radius)
@@ -180,7 +180,7 @@ radius = 32
 
 
 @app.on_render
-def render():
+def render() -> None:
     global pos, radius
 
     if app.mouse.any(State.downed):
@@ -318,7 +318,7 @@ class Circle(Component):
     color: Color
 
     @override
-    def update(self):
+    def update(self) -> None:
         draw.aacircle(app.window.surface, self.color, self.pos, 50)
 
 

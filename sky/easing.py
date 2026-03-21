@@ -181,7 +181,7 @@ def cubic_bezier(
     p2 = Vector2(x2, y2)
     p3 = Vector2.one()
 
-    def _calculate(t: float, /):
+    def __calculate(t: float, /) -> float:
         return (
             (1 - t) ** 3 * p0
             + 3 * (1 - t) ** 2 * t * p1
@@ -189,9 +189,9 @@ def cubic_bezier(
             + t**3 * p3
         ).y
 
-    _calculate.__name__ = name
+    __calculate.__name__ = name
 
-    return _calculate
+    return __calculate
 
 
 ease = cubic_bezier("ease", 0.25, 0.1, 0.25, 1)
