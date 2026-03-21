@@ -1,3 +1,5 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+
 import os
 
 from .utils import Color, Vector2
@@ -16,14 +18,13 @@ if os.name == "nt":
     import win32gui
 
     def make_window_transparent(hwnd: int, colorkey: Color, /) -> None:
-        win32gui.SetWindowLong(  # pyright: ignore[reportUnknownMemberType]
+        win32gui.SetWindowLong(
             hwnd,
             win32con.GWL_EXSTYLE,
-            win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
-            | win32con.WS_EX_LAYERED,
+            win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED,
         )
 
-        win32gui.SetLayeredWindowAttributes(  # pyright: ignore[reportUnknownMemberType]
+        win32gui.SetLayeredWindowAttributes(
             hwnd,
             win32api.RGB(*colorkey.rgb),
             0,
@@ -31,10 +32,10 @@ if os.name == "nt":
         )
 
     def make_window_tool(hwnd: int, /) -> None:
-        win32gui.SetWindowLong(  # pyright: ignore[reportUnknownMemberType]
+        win32gui.SetWindowLong(
             hwnd,
             win32con.GWL_EXSTYLE,
-            win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+            win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
             & ~win32con.WS_EX_APPWINDOW
             | win32con.WS_EX_TOOLWINDOW,
         )
