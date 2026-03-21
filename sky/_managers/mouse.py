@@ -34,7 +34,7 @@ class Mouse(InputManager):
         self._setup_hooks()
 
         self.use_system = True
-        """Whether or not to use system-level APIs to get input information, allowing constant updates even if the window isn't focused."""
+        """Whether or not to use system-level APIs to get input information, allowing constant updates even if the window isn't focused. Windows only."""
 
     @property
     def position(self) -> Vector2:
