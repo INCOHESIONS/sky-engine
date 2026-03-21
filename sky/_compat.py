@@ -5,8 +5,8 @@ from .utils import Color, Vector2
 __all__ = [
     "get_mouse_position",
     "get_window_handle",
-    "hide_window",
-    "transparentize_window",
+    "make_window_tool",
+    "make_window_transparent",
 ]
 
 
@@ -15,7 +15,7 @@ if os.name == "nt":
     import win32con
     import win32gui
 
-    def transparentize_window(hwnd: int, colorkey: Color, /) -> None:
+    def make_window_transparent(hwnd: int, colorkey: Color, /) -> None:
         win32gui.SetWindowLong(  # pyright: ignore[reportUnknownMemberType]
             hwnd,
             win32con.GWL_EXSTYLE,
@@ -30,7 +30,7 @@ if os.name == "nt":
             win32con.LWA_COLORKEY,
         )
 
-    def hide_window(hwnd: int, /) -> None:
+    def make_window_tool(hwnd: int, /) -> None:
         win32gui.SetWindowLong(  # pyright: ignore[reportUnknownMemberType]
             hwnd,
             win32con.GWL_EXSTYLE,
@@ -61,10 +61,10 @@ if os.name == "nt":
 
 else:
 
-    def transparentize_window(_1: int, _2: Color, /) -> None:
+    def make_window_transparent(_1: int, _2: Color, /) -> None:
         raise OSError("This method is only supported on Windows.")
 
-    def hide_window(_: int, /) -> None:
+    def make_window_tool(_: int, /) -> None:
         raise OSError("This method is only supported on Windows.")
 
     def get_window_handle(_: str, /) -> int:

@@ -53,8 +53,8 @@ class WindowSpec:
     graphics_api: Literal["opengl", "vulkan"] | None = None
     """Enables support for an OpenGL context or a Vulkan instance."""
 
-    hide_from_taskbar: bool = False
-    """Whether or not to make the window invisible in the taskbar. Windows only."""
+    tool_window: bool = False
+    """Makes the window a "tool window", which hides it from the taskbar and makes its title bar thinner. Windows only."""
 
     icon: Surface | None = None
     """The window's icon. Uses the default pygame icon if `None`."""

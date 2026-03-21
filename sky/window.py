@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, final, override
 import pygame
 from pygame import Rect as PygameRect
 
-from ._compat import get_window_handle, hide_window, transparentize_window
+from ._compat import get_window_handle, make_window_tool, make_window_transparent
 from ._managers import Keyboard, Mouse
 from .core import InputManager, Monitor
 from .hook import Hook
@@ -87,10 +87,10 @@ class Window:
             self.app.post_update += self.flip
 
         if spec.transparency_color is not None:
-            transparentize_window(self.handle, spec.transparency_color)
+            make_window_transparent(self.handle, spec.transparency_color)
 
-        if spec.hide_from_taskbar:
-            hide_window(self.handle)
+        if spec.tool_window:
+            make_window_tool(self.handle)
 
         self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
 
