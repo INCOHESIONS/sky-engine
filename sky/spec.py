@@ -38,44 +38,26 @@ class WindowSpec:
 
     _: KW_ONLY
 
-    title: str = "Sky Engine"
-    """The window's title. "Sky Engine" by default."""
-
-    position: Vector2 | None = None
-    """The window's position. Centers it on the main monitor by default."""
-
-    size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
-    """The window's size. 800x600 by default."""
-
-    icon: Surface | None = None
-    """The window's icon. Uses the default pygame icon if `None`."""
-
-    resizable: bool = False
-    """Whether or not the window can be resized. Posts a pygame.WINDOWRESIZED event whenever resized."""
+    always_on_top: bool = False
+    """Whether or not the window is always on top."""
 
     borderless: bool = False
     """Whether or not the window is borderless, which also means it has no decorations."""
 
-    always_on_top: bool = False
-    """Whether or not the window is always on top."""
-
-    use_surface: bool = True
-    """Whether or not to call `get_surface` once the underlying window is created. Setting this to `False` is necessary to use pygame's new `_sdl2.video.Renderer` class."""
-
-    transparency_color: Color | None = None
-    """The window's transparency key color. All pixels that match this color will be colored transparent instead. Windows only."""
+    fill: Color | None = field(default_factory=lambda: BLACK)
+    """The window's fill color. If `None`, `fill` will not be called on `pre_update`"""
 
     flip: bool = True
     """Whether or not the window should be flipped on `post_update`, i.e., updated."""
 
-    fill: Color | None = field(default_factory=lambda: BLACK)
-    """The window's fill color. If `None`, `fill` will not be called on `pre_update`"""
-
-    state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
-    """What state the window should be initialized at. Defaults to windowed."""
-
     graphics_api: Literal["opengl", "vulkan"] | None = None
     """Enables support for an OpenGL context or a Vulkan instance."""
+
+    hide_from_taskbar: bool = False
+    """Whether or not to make the window invisible in the taskbar. Windows only."""
+
+    icon: Surface | None = None
+    """The window's icon. Uses the default pygame icon if `None`."""
 
     initialization: Literal["immediate", "deferred"] = "immediate"
     """Whether or not the main window should be initialized immediately or wait until `mainloop` is called. This is useful for adding callbacks to the window before the app has started."""
@@ -85,9 +67,30 @@ class WindowSpec:
     )
     """The list of constructors for the input managers that will be updated every frame by this window. Includes `Keyboard` and `Mouse` by default."""
 
+    position: Vector2 | None = None
+    """The window's position. Centers it on the main monitor by default."""
+
+    resizable: bool = False
+    """Whether or not the window can be resized. Posts a pygame.WINDOWRESIZED event whenever resized."""
+
+    size: Vector2 = field(default_factory=lambda: Vector2(800, 600))
+    """The window's size. 800x600 by default."""
+
+    state: Literal["windowed", "minimized", "maximized", "fullscreen"] = "windowed"
+    """What state the window should be initialized at. Defaults to windowed."""
+
+    title: str = "Sky Engine"
+    """The window's title. "Sky Engine" by default."""
+
+    transparency_color: Color | None = None
+    """The window's transparency key color. All pixels that match this color will be colored transparent instead. Windows only."""
+
+    use_surface: bool = True
+    """Whether or not to call `get_surface` once the underlying window is created. Setting this to `False` is necessary to use pygame's new `_sdl2.video.Renderer` class."""
+
 
 @final
-@dataclass
+@dataclass(slots=True, frozen=True)
 class SceneSpec:
     """Defines information necessary to create a scene."""
 
