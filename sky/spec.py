@@ -112,8 +112,8 @@ class AppSpec:
     scene_spec: SceneSpec | None = field(default_factory=SceneSpec)
     """The default scene to add to the app. If `None`, will not create a default scene."""
 
-    modules: list[Module] = field(default_factory=list)
-    """A list of modules whose lifetime is to be handled by the `App`. For that purpose, each module must have an `init` and `quit` method."""
+    modules: list[type[Module] | Module] = field(default_factory=list)
+    """A list of modules (or module types) whose lifetime is to be handled by the `App`. For that purpose, each module must have an `init` and `quit` method."""
 
     # general debugging flag that currently does nothing internally
     debug: bool = False
