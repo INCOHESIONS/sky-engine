@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass, field
 from enum import Enum, IntEnum, auto, unique
-from typing import TYPE_CHECKING, Callable, ClassVar, Self, final
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, final
 
 import pygame
 from screeninfo import Monitor as ScreenInfoMonitor
@@ -36,11 +36,11 @@ class Component(ABC):
 
     app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
 
-    def __init_subclass__(cls, *, hot_reloadable: bool = False) -> None:
+    def __init_subclass__(cls, *, hot_reloadable: bool = False, **kwargs: Any) -> None:
         if hot_reloadable:
             cls.__hot_reloadable__ = True
 
-        return super().__init_subclass__()
+        return super().__init_subclass__(**kwargs)
 
     def start(self) -> Coroutine | None:
         """
