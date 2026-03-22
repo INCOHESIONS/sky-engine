@@ -21,9 +21,10 @@ __all__ = [
 
 class Module(Protocol):
     """
-    A module protocol class to be loaded during `App` instancing using the `modules` argument in `AppSpec`.\n
+    A protocol class describing modules, objects whose lifetime is handled by the `App`.
+    See the `modules` argument in `AppSpec`.\n
     Requires `init` and `quit` methods that each take no arguments.\n
-    Used for loading `pygame` modules such as `freetype` and `mixer`.
+    Useful for loading `pygame` modules such as `freetype` and `mixer`, but one may create their own.
     """
 
     def init(self) -> None: ...
@@ -112,7 +113,7 @@ class AppSpec:
     """The default scene to add to the app. If `None`, will not create a default scene."""
 
     modules: list[Module] = field(default_factory=list)
-    """A list of modules to add to the app. Modules must have a `init` and `quit` methods. Useful for initializing and cleaning up `pygame` modules such as `freetype` and `mixer`."""
+    """A list of modules whose lifetime is to be handled by the `App`. For that purpose, each module must have an `init` and `quit` method."""
 
     # general debugging flag that currently does nothing internally
     debug: bool = False
