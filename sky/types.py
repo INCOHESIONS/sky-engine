@@ -4,7 +4,11 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING, Literal
 
 import pygame
+from pygame import Color as PygameColor
 from pygame import Event as PygameEvent
+from pygame import Rect as PygameRect
+from pygame import Vector2 as PygameVector2
+from pygame import Vector3 as PygameVector3
 
 if TYPE_CHECKING:
     from .core import Cursor, Key, Modifier, MouseButton, State
@@ -17,7 +21,11 @@ __all__ = [
     "KeyLike",
     "ModifierLike",
     "MouseButtonLike",
+    "PygameColor",
     "PygameEvent",
+    "PygameRect",
+    "PygameVector2",
+    "PygameVector3",
     "StateLike",
 ]
 
