@@ -19,10 +19,6 @@ __all__ = ["HotReload", "hot_reloadable"]
 
 @final
 class _HotReloadEventHandler(FileSystemEventHandler):
-    @cached_property
-    def _app(self) -> App:
-        return App()
-
     @override
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         if isinstance(event, DirModifiedEvent):
@@ -40,6 +36,10 @@ class _HotReloadEventHandler(FileSystemEventHandler):
             for component in self._app.get_components(cls.__name__):
                 component.__class__ = cls
 
+    @cached_property
+    def _app(self) -> App:
+        return App()
+
     def _is_hot_reloadable(self, cls: type, /) -> bool:
         return getattr(cls, "__hot_reloadable__", False) and Component in cls.__bases__
 
@@ -52,7 +52,20 @@ class _HotReloadEventHandler(FileSystemEventHandler):
 
 @final
 class HotReload(Module):
-    """Module that adds support for hot reloading `Component`s from the specified directory."""
+    """
+    Module that adds support for hot reloading `Component`s from the specified directory.
+
+    Examples
+    --------
+
+    ```python
+    class SomeComponent(Component, hot_reloadable=True): ...
+
+
+    @hot_reloadable  # equivalent
+    class SomeOtherComponent(Component): ...
+    ```
+    """
 
     def __init__(
         self, /, *, directory: Path | str = ".", recursive: bool = True
@@ -80,7 +93,8 @@ class HotReload(Module):
 
 def hot_reloadable[C: type[Component]](cls: C, /) -> C:
     """
-    Makes a `Component` hot reloadable.
+    Makes a `Component` hot reloadable.\n
+    Alternative to using the `__init_subclass__` `hot_reloadable` attribute.
 
     Parameters
     ----------
