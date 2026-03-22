@@ -6,7 +6,7 @@ from collections import ChainMap
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from inspect import Parameter, signature
 from random import randint, uniform
-from typing import Any, Callable, Literal, Self, overload, override
+from typing import TYPE_CHECKING, Any, Callable, Literal, Self, overload, override
 
 from pygame import Color as PygameColor
 from pygame import Rect as PygameRect
@@ -16,6 +16,9 @@ from pygame.typing import SequenceLike
 from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
     singleton as untyped_singleton,  # pyright: ignore[reportUnknownVariableType]
 )
+
+if TYPE_CHECKING:
+    from .spec import Module
 
 __all__ = [
     "animate",
@@ -1277,3 +1280,30 @@ def combine_metaclasses(*metaclasses: type) -> type:
         metaclasses,
         ChainMap(*(mcls.__dict__ for mcls in metaclasses)),  # pyright: ignore[reportArgumentType]
     )
+
+
+def make_module(*, init: Callable[[], None], quit: Callable[[], None]) -> Module:
+    """
+    Creates a `Module` based on an `init` and `quit` method, for ease of use.
+
+    Parameters
+    ----------
+    init: `Callable[[], None]`
+        The modules's `init` method.
+    quit: `Callable[[], None]`
+        The modules's `quit` method`.
+
+    Returns
+    -------
+    `Module`
+        A `Module` that simply wraps the specified methods, with no additional metadata in particular.
+    """
+
+    class __mod:
+        def init(self) -> None:
+            init()
+
+        def quit(self) -> None:
+            quit()
+
+    return __mod()
