@@ -36,6 +36,12 @@ class Component(ABC):
 
     app: ClassVar[App] = None  # pyright: ignore[reportAssignmentType]
 
+    def __init_subclass__(cls, *, hot_reloadable: bool = False) -> None:
+        if hot_reloadable:
+            cls.__hot_reloadable__ = True
+
+        return super().__init_subclass__()
+
     def start(self) -> Coroutine | None:
         """
         Runs before the first frame, after `entrypoint` and before `setup`. Can be a Coroutine.

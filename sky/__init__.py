@@ -37,7 +37,7 @@ from .core import (
 )
 from .hook import Hook
 from .scene import Scene
-from .spec import AppSpec, SceneSpec, WindowSpec
+from .spec import AppSpec, Module, SceneSpec, WindowSpec
 from .types import Coroutine
 from .utils import Color, Vector2, Vector3
 from .window import Window
@@ -60,6 +60,7 @@ __all__ = [
     "Key",
     "Keybinding",
     "Modifier",
+    "Module",
     "MouseButton",
     "Scene",
     "SceneSpec",
