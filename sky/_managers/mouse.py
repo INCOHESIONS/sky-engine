@@ -33,8 +33,8 @@ class Mouse(InputManager):
 
         self._setup_hooks()
 
-        self.use_system = True
-        """Whether or not to use system-level APIs to get input information, allowing constant updates even if the window isn't focused. Windows only."""
+        self.use_system = False
+        """Whether or not to use system-level APIs to track the mouse's position. Note that its position can be negative when outside the window."""
 
     @property
     def position(self) -> Vector2:
@@ -322,5 +322,7 @@ class Mouse(InputManager):
 
     def _get_pos(self) -> Vector2:
         return Vector2(
-            get_mouse_position() if self.use_system else pygame.mouse.get_pos()
+            get_mouse_position() - self.app.window.position
+            if self.use_system
+            else pygame.mouse.get_pos()
         )
