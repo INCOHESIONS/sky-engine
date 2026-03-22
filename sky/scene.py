@@ -277,9 +277,11 @@ class Scene:
         for component in self._components:
             self.remove_component(component)
 
-    def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
+    def get_component[T: Component = Component](
+        self, component: type[T] | str, /
+    ) -> T | None:
         """
-        Gets a component from the `Scene`.
+        Gets a matching component from the `Scene`.
 
         Parameters
         ----------
@@ -294,9 +296,11 @@ class Scene:
 
         return first(self.get_components(component))
 
-    def get_components[T: Component](self, component: type[T] | str, /) -> Sequence[T]:
+    def get_components[T: Component = Component](
+        self, component: type[T] | str, /
+    ) -> Sequence[T]:
         """
-        Gets a collection of components from the `Scene`.
+        Gets a collection of matching components from the `Scene`.
 
         Parameters
         ----------
@@ -318,14 +322,12 @@ class Scene:
 
     def has_component(self, component: type[Component] | Component | str, /) -> bool:
         """
-        Checks if the `Scene` contains a component.\n
-        If a type is passed, checks if the `Scene` contains any component of that type. Does not instance the type.\n
-        If a string is passed, checks if the `Scene` contains any component with a matching type name.
+        Checks if the `Scene` contains a matching component.
 
         Parameters
         ----------
         component: `type[Component] | Component | str`
-            The `Component`, its type, or the name of its type to check for.
+            The `Component`, its type, or the name of its type to check for. Will not be instanced.
 
         Returns
         -------
