@@ -13,7 +13,13 @@ from .core import Component, InputManager, Monitor, Service
 from .hook import Hook
 from .scene import Scene
 from .spec import AppSpec, Module, SceneSpec, WindowSpec
-from .utils import attempt_empty_call, is_callable_with_no_arguments, singleton
+from .utils import (
+    attempt_empty_call,
+    filterl,
+    first,
+    is_callable_with_no_arguments,
+    singleton,
+)
 from .window import Window
 from .yieldable import Yieldable
 
@@ -119,8 +125,7 @@ class App:
         """Executes after scenes and services are stopped, and before the app is destroyed; cleans up registered modules."""
 
         for module in self.spec.modules:
-            module.init()
-            self.on_cleanup += module.quit
+            self.add_module(module)
 
         self.events = Events()
         """Handles pygame events."""
@@ -149,19 +154,13 @@ class App:
             self.load_scene(Scene(spec=self.spec.scene_spec))
 
     def __iter__(self) -> Iterator[Scene]:
-        """
-        Iterates over the app's scenes.
-
-        Yields
-        ------
-        `Scene`
-            The next scene.
-        """
-
         yield from self._scenes
 
     def __bool__(self) -> bool:
         return bool(self._scenes)
+
+    def __contains__(self, scene: Scene) -> bool:
+        return scene in self._scenes
 
     @property
     def services(self) -> Sequence[Service]:
@@ -519,9 +518,11 @@ class App:
 
         return cls
 
-    def get_component[T: Component](self, component: type[T] | str, /) -> T | None:
+    def get_component[T: Component = Component](
+        self, component: type[T] | str, /
+    ) -> T | None:
         """
-        Gets a component from the current `Scene`.
+        Gets a matching component from any of the currently loaded `Scene`s.
 
         Parameters
         ----------
@@ -534,11 +535,13 @@ class App:
             The component, if found.
         """
 
-        return self.scene.get_component(component)
+        return first(self.get_components(component))
 
-    def get_components[T: Component](self, component: type[T] | str, /) -> Sequence[T]:
+    def get_components[T: Component = Component](
+        self, component: type[T] | str, /
+    ) -> Sequence[T]:
         """
-        Gets a collection of components from the current `Scene`.
+        Gets a collection of matching components from all currently loaded scenes.
 
         Parameters
         ----------
@@ -551,7 +554,34 @@ class App:
             The collection of components, if found.
         """
 
-        return self.scene.get_components(component)
+        return filterl(
+            (lambda c: c.__class__.__name__ == component)
+            if isinstance(component, str)
+            else lambda c: isinstance(c, component),
+            self.all_components,
+        )  # pyright: ignore[reportReturnType]
+
+    def has_component(self, component: type[Component] | Component | str, /) -> bool:
+        """
+        Checks if the `App` contains a matching component in any of its currently active `Scene`s.
+
+        Parameters
+        ----------
+        component: `type[Component] | Component | str`
+            The `Component`, its type, or the name of its type to check for. Will not be instanced.
+
+        Returns
+        -------
+        `bool`
+            Whether the `App` contains the component.
+        """
+
+        return (
+            self.get_component(
+                component.__class__ if isinstance(component, Component) else component
+            )
+            is not None
+        )
 
     def add_service(self, service: Service, /) -> Self:
         """
