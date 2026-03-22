@@ -8,12 +8,12 @@ from typing import Literal, Self
 import pygame
 
 from ._managers import Keyboard, Mouse
-from ._services import UI, Chrono, Events, Executor, Windowing
+from ._services import Chrono, Events, Executor, Windowing
 from .core import Component, InputManager, Monitor, Service
 from .hook import Hook
 from .scene import Scene
-from .spec import AppSpec, SceneSpec, WindowSpec
-from .utils import attempt_empty_call, singleton
+from .spec import AppSpec, Module, SceneSpec, WindowSpec
+from .utils import attempt_empty_call, is_callable_with_no_arguments, singleton
 from .window import Window
 from .yieldable import Yieldable
 
@@ -134,15 +134,11 @@ class App:
         self.executor = Executor()
         """Handles `Coroutine`s."""
 
-        self.ui = UI()
-        """Handles `UIElement`s."""
-
         self._internal_services: list[Service] = [
             self.events,
             self.windowing,
             self.chrono,
             self.executor,
-            self.ui,
         ]  # do not change ordering
 
         self._services = self._internal_services.copy()
@@ -608,6 +604,45 @@ class App:
 
         self._services.remove(service)
         return self
+
+    def add_module(self, module: type[Module] | Module, /) -> None:
+        """
+        Adds a module to the app, calling its `init` method immediately and scheduling its `quit` method to be called upon cleanup.
+
+        Parameters
+        ----------
+        module: `type[Module] | Module`
+            The module, or its type, to be instanced with no arguments, to initialize.
+
+        Raises
+        ------
+        `ValueError`
+            If a type is passed that cannot be instanced with no arguments.
+        """
+
+        if callable(module) and not is_callable_with_no_arguments(module):
+            raise ValueError(
+                f"{module.__name__} cannot be instanced with no arguments!"
+            )
+
+        if isinstance(module, type):
+            module = module()
+
+        module.init()
+        self.on_cleanup += module.quit
+
+    def remove_module(self, module: Module, /) -> None:
+        """
+        Removes a module from cleanup, and immediately calls its `quit` method.
+
+        Parameters
+        ----------
+        module: `type[Module] | Module`
+            The module to be removed.
+        """
+
+        self.on_cleanup -= module.quit
+        module.quit()
 
     def quit(self) -> None:
         """Posts a `pygame.QUIT` event, telling the app to close the next frame."""
