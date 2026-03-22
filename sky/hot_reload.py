@@ -19,35 +19,48 @@ __all__ = ["HotReload", "hot_reloadable"]
 
 @final
 class _HotReloadEventHandler(FileSystemEventHandler):
+    @cached_property
+    def _app(self) -> App:
+        return App()
+
     @override
     def on_modified(self, event: DirModifiedEvent | FileModifiedEvent) -> None:
         if isinstance(event, DirModifiedEvent):
             return
 
-        path = Path(str(event.src_path))
-
-        if path.suffix != ".py":
+        if (path := Path(str(event.src_path))).suffix != ".py":
             return
 
-        name = path.with_suffix("").name
+        name = self._resolve_module_name(path)
+
+        if name not in sys.modules:
+            raise RuntimeError(
+                f"Module {name} at {path} was added during runtime. Restart the app to add a new module."
+            )
+
         mod = importlib.reload(sys.modules[name])
 
         for cls in filter(self._is_hot_reloadable, self._get_classes(module=mod)):
             for component in self._app.get_components(cls.__name__):
                 component.__class__ = cls
 
-    @cached_property
-    def _app(self) -> App:
-        return App()
-
     def _is_hot_reloadable(self, cls: type, /) -> bool:
-        return getattr(cls, "__hot_reloadable__", False) and Component in cls.__bases__
+        """Checks if a class is hot reloadable."""
+
+        return getattr(cls, "__hot_reloadable__", False) and issubclass(cls, Component)
 
     def _get_classes(self, /, *, module: ModuleType) -> Iterable[type]:
+        """Gets all classes from a module and filters imported ones."""
+
         return filter_by_attrs(
             map(itemgetter(1), inspect.getmembers(module, inspect.isclass)),
             __module__=module.__name__,
         )
+
+    def _resolve_module_name(self, path: Path) -> str:
+        """Resolves the path `./test/foo.py` to `test.foo`."""
+
+        return path.with_suffix("").as_posix().replace("/", ".")
 
 
 @final
