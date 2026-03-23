@@ -31,13 +31,14 @@ from .core import (
     Key,
     Keybinding,
     Modifier,
+    Module,
     MouseButton,
     Service,
     State,
 )
 from .hook import Hook
 from .scene import Scene
-from .spec import AppSpec, Module, SceneSpec, WindowSpec
+from .spec import AppSpec, SceneSpec, WindowSpec
 from .types import Coroutine
 from .utils import Color, Vector2, Vector3
 from .window import Window

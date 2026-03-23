@@ -9,10 +9,10 @@ import pygame
 
 from ._managers import Keyboard, Mouse
 from ._services import Chrono, Events, Executor, Windowing
-from .core import Component, InputManager, Monitor, Service
+from .core import Component, InputManager, Module, Monitor, Service
 from .hook import Hook
 from .scene import Scene
-from .spec import AppSpec, Module, SceneSpec, WindowSpec
+from .spec import AppSpec, SceneSpec, WindowSpec
 from .utils import (
     attempt_empty_call,
     filterl,

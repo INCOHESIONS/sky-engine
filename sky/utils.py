@@ -18,7 +18,7 @@ from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
 )
 
 if TYPE_CHECKING:
-    from .spec import Module
+    from .core import Module
 
 __all__ = [
     "animate",

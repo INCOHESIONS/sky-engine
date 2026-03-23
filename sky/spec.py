@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Literal, Protocol, Self, final
+from typing import Literal, Self, final
 
 from pygame import Surface
 
 from ._managers import Keyboard, Mouse
 from .colors import BLACK
-from .core import Component, InputManager
+from .core import Component, InputManager, Module
 from .utils import Color, Vector2
 
 __all__ = [
@@ -17,19 +17,6 @@ __all__ = [
     "SceneSpec",
     "WindowSpec",
 ]
-
-
-class Module(Protocol):
-    """
-    A protocol class describing modules, objects whose lifetime is handled by the `App`.
-    See the `modules` argument in `AppSpec`.\n
-    Requires `init` and `quit` methods that each take no arguments.\n
-    Useful for loading `pygame` modules such as `freetype` and `mixer`, but one may create their own.
-    """
-
-    def init(self) -> None: ...
-
-    def quit(self) -> None: ...
 
 
 @final
