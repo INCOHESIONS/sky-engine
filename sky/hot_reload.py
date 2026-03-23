@@ -44,11 +44,6 @@ class _HotReloadEventHandler(FileSystemEventHandler):
             for component in self._app.get_components(cls.__name__):
                 component.__class__ = cls
 
-    def _is_hot_reloadable(self, cls: type, /) -> bool:
-        """Checks if a class is hot reloadable."""
-
-        return getattr(cls, "__hot_reloadable__", False) and issubclass(cls, Component)
-
     def _get_classes(self, /, *, module: ModuleType) -> Iterable[type]:
         """Gets all classes from a module and filters imported ones."""
 
@@ -57,7 +52,12 @@ class _HotReloadEventHandler(FileSystemEventHandler):
             __module__=module.__name__,
         )
 
-    def _resolve_module_name(self, path: Path) -> str:
+    def _is_hot_reloadable(self, cls: type, /) -> bool:
+        """Checks if a class is hot reloadable."""
+
+        return getattr(cls, "__hot_reloadable__", False) and issubclass(cls, Component)
+
+    def _resolve_module_name(self, path: Path, /) -> str:
         """Resolves the path `./test/foo.py` to `test.foo`."""
 
         return path.with_suffix("").as_posix().replace("/", ".")
