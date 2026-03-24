@@ -354,7 +354,8 @@ class App:
 
         if isinstance(scene, type):
             scene = attempt_empty_call(
-                scene, err="Scene cannot be instanced with no arguments."
+                scene,
+                err=f"Scene {scene.__name__} cannot be instanced with no arguments.",
             )
 
         match mode:
