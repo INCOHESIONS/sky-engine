@@ -244,14 +244,35 @@ The decorator immediately instances the class, and adds it to the app. It also m
 assert Player() is Player()  # passes
 ```
 
+The engine supports hot reloading for `Component`s, meaning they can have their attributes changed and updated during runtime. To enable hot reloading, one must first add the `HotReload` module to their `App`'s spec:
+
+```python
+from sky.hot_reload import HotReload
+
+app = App(spec=AppSpec(modules=[HotReload]))
+```
+
+Then, to mark a `Component` as hot reloadable, simply use the `hot_reloadable` subclass argument:
+
+```python
+class Player(Component, hot_reloadable=True): ...
+```
+
+Alternatively, one may use the `hot_reloadable` class decorator.
+```python
+@hot_reloadable
+class Player(Component): ...
+```
+
+> Note that hot reloading simply changes a `Component`'s internal type reference (`__class__`), meaning it changes its methods, descriptors and inner classes, but it does not change its attributes (`__dict__`). As such, members set in `__init__` or `start` will not be updated unless those methods are executed again, which they normally won't be. With that in mind, to use hot reloading for prototyping, one must type values directly into arguments. For example, when writing something like `draw.aacircle(app.window.surface, self.color, self.position, self.radius)`, one should simply write `BLACK` directly into the color parameter, as opposed to modifying `self.color` in the initialization function, as that function won't be called again after the `Component`'s initialization.
+
 Notably, these examples use `app.mouse` and `app.keyboard`, which are `InputManager`s included by default in every window. `InputManager`s run every frame, grabbing input from a given window, using the `Windowing` `Service`. `Service`s are objects that handle a certain portion of functionality for the engine, also updating their data every frame. By default, the engine offers 5 `Service`s:
 - `Events` (handles `pygame` events)
 - `Windowing` (handles windowing)
 - `Chrono` (handles time-related data)
 - `Executor` (handles coroutines)
-- `UI` (handles the user interface, WIP)
 
-> Note that every window handles its own inputs, and as such has their own instance of a given `InputManager`, usually `Keyboard` and `Mouse`, which are included by default. Accessing `app.keyboard`, for instance, returns a reference to the main window's input manager, serving as an alias for `app.windowing.main_window.keyboard`, as that can be a bit of a mouthful (or typeful?).
+> Every window handles its own inputs, and as such has their own instance of a given `InputManager`, normally `Keyboard` and `Mouse`, which are included by default. Accessing `app.keyboard`, for instance, returns a reference to the main window's keyboard input manager, serving as a shorthand for `app.windowing.main_window.keyboard`.
 
 Users may add their own `Service`s by subclassing the `Service` class, and using the `add_service` method:
 ```python
