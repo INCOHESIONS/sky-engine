@@ -1,9 +1,9 @@
 """Contains the `App` class."""
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from cProfile import run as profile
 from itertools import chain as flatten
-from typing import Literal, Self
+from typing import Callable, Literal, Self
 
 import pygame
 
@@ -561,6 +561,25 @@ class App:
             else lambda c: isinstance(c, component),
             self.all_components,
         )  # pyright: ignore[reportReturnType]
+
+    def filter_components(
+        self, predicate: Callable[[Component], bool], /
+    ) -> Iterable[Component]:
+        """
+        Filters all currently loaded scenes for components that return `True` for the specified predicate.
+
+        Parameters
+        ----------
+        predicate: `Callable[[Component], bool]`
+            The predicate to be applied.
+
+        Returns
+        -------
+        `Iterable[Component]`
+            The filtered components.
+        """
+
+        return filter(predicate, self.all_components)
 
     def has_component(self, component: type[Component] | Component | str, /) -> bool:
         """

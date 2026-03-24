@@ -1,6 +1,6 @@
 """Contains the `Scene` class, used for managing components."""
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from inspect import isgeneratorfunction
 from typing import TYPE_CHECKING, Callable, ClassVar, Self, final
 
@@ -319,6 +319,25 @@ class Scene:
             else lambda c: isinstance(c, component),
             self._components,
         )  # pyright: ignore[reportReturnType]
+
+    def filter_components(
+        self, predicate: Callable[[Component], bool], /
+    ) -> Iterable[Component]:
+        """
+        Filters this `Scene` for components that return `True` for the specified predicate.
+
+        Parameters
+        ----------
+        predicate: `Callable[[Component], bool]`
+            The predicate to be applied.
+
+        Returns
+        -------
+        `Iterable[Component]`
+            The filtered components.
+        """
+
+        return filter(predicate, self._components)
 
     def has_component(self, component: type[Component] | Component | str, /) -> bool:
         """
