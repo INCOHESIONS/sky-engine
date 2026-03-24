@@ -33,6 +33,11 @@ class _HotReloadEventHandler(FileSystemEventHandler):
 
         name = self._resolve_module_name(path)
 
+        if name == self._resolve_module_name(Path(sys.argv[0])):
+            raise RuntimeError(
+                "The app's entrypoint cannot be hot reloaded. Try specifying a directory to hot reload instead."
+            )
+
         if name not in sys.modules:
             raise RuntimeError(
                 f"Module {name} at {path} was added during runtime. Restart the app to add a new module."
@@ -41,7 +46,12 @@ class _HotReloadEventHandler(FileSystemEventHandler):
         mod = importlib.reload(sys.modules[name])
 
         for cls in filter(self._is_hot_reloadable, self._get_classes(module=mod)):
-            for component in self._app.get_components(cls.__name__):
+            for component in self._app.filter_components(
+                lambda c: (
+                    c.__class__.__name__ == cls.__name__
+                    and c.__class__.__module__ == cls.__module__
+                )
+            ):
                 component.__class__ = cls
 
     def _get_classes(self, /, *, module: ModuleType) -> Iterable[type]:
