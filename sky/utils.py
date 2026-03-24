@@ -22,15 +22,20 @@ if TYPE_CHECKING:
 
 __all__ = [
     "animate",
+    "attempt_empty_call",
     "clamp",
     "Color",
+    "combine_metaclasses",
     "discard",
     "filter_by_attrs",
+    "filter_by_type",
     "filterl",
     "first",
     "get_by_attrs",
+    "get_by_type",
     "identity",
     "ilen",
+    "immediate",
     "is_callable_with_no_arguments",
     "last",
     "mapl",
@@ -1243,9 +1248,38 @@ def attempt_empty_call[T](
 
 
 def singleton[C: type](cls: C, /) -> C:
-    """Makes the decorated class a singleton while properly keeping its type."""
+    """
+    Makes the decorated class a singleton while keeping its type.
+
+    Parameters
+    ----------
+    cls: `C`
+        Any class.
+
+    Returns
+    `C`
+        Actually returns a `_SingletonWrapper` instance, but we lie to the type system for convenience.
+    """
 
     return untyped_singleton(cls)  # pyright: ignore[reportReturnType]
+
+
+def immediate[F: Callable[[], Any]](func: F, /) -> F:
+    """
+    Immediately executes the function it decorates.
+
+    Parameters
+    ----------
+    func: `F`
+        A function that can be called with no arguments.
+
+    Returns
+    `F`
+        The function itself, with no changes to its type.
+    """
+
+    func()
+    return func
 
 
 def combine_metaclasses(*metaclasses: type) -> type:
