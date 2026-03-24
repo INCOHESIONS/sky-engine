@@ -41,7 +41,7 @@ class WindowSpec:
     graphics_api: Literal["opengl", "vulkan"] | None = None
     """Enables support for an OpenGL context or a Vulkan instance."""
 
-    tool_window: bool = False
+    hide_from_taskbar: bool = False
     """Makes the window a "tool window", which hides it from the taskbar and makes its title bar thinner. Windows only."""
 
     icon: Surface | None = None

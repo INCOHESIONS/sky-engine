@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, final, override
 import pygame
 from pygame import Rect as PygameRect
 
-from ._compat import get_window_handle, make_window_tool, make_window_transparent
+from ._compat import get_window_handle, make_window_transparent
 from ._managers import Keyboard, Mouse
 from .core import InputManager, Monitor
 from .hook import Hook
@@ -52,6 +52,7 @@ class Window:
             size=spec.size,
             title=spec.title,
             vulkan=spec.graphics_api == "vulkan",
+            utility=spec.hide_from_taskbar,
         )
 
         if spec.use_surface:
@@ -88,9 +89,6 @@ class Window:
 
         if spec.transparency_color is not None:
             make_window_transparent(self.handle, spec.transparency_color)
-
-        if spec.tool_window:
-            make_window_tool(self.handle)
 
         self._hook_map: dict[int, Hook[[PygameEvent]]] = {}
 
