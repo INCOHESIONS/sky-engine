@@ -38,6 +38,7 @@ __all__ = [
     "immediate",
     "is_callable_with_no_arguments",
     "last",
+    "make_module",
     "mapl",
     "Rect",
     "saturate",
