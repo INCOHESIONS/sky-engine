@@ -10,32 +10,32 @@ __all__ = ["Chrono"]
 
 @final
 class Chrono(Service):
-    """Handles time."""
+    """Handles time-related data."""
 
     def __init__(self) -> None:
+        self.target_framerate = self.app.windowing.primary_monitor.refresh_rate
+        """The target framerate. Set to 0 to disable framerate limiting. Set to the main monitor's refresh rate by default."""
+
+        self.framerate = 0
+        """The current framerate."""
+
+        self.min_framerate = 0
+        """The minimum framerate achieved since the start of the app."""
+
+        self.max_framerate = 0
+        """The maximum framerate achieved since the start of the app."""
+
+        self.frames = 0
+        """The number of frames since the start of the app."""
+
+        self.deltatime = 0
+        """The time since the last frame."""
+
         self.start_time = None
         """The time the app started, or None if it hasn't started yet."""
 
         self.stop_time = None
         """The time the app stopped, or None if it hasn't stopped yet."""
-
-        self.target_framerate = self.app.windowing.primary_monitor.refresh_rate
-        """The target framerate. Set to 0 to disable framerate limiting. Set to the main monitor's refresh rate by default."""
-
-        self.deltatime = 0
-        """The time since the last frame."""
-
-        self.framerate = 0
-        """The current framerate."""
-
-        self.frames = 0
-        """The number of frames since the start of the app."""
-
-        self.min_fps = 0
-        """The minimum framerate achieved since the start of the app."""
-
-        self.max_fps = 0
-        """The maximum framerate achieved since the start of the app."""
 
         self._internal_clock = pygame.time.Clock()
 
@@ -46,26 +46,10 @@ class Chrono(Service):
         return datetime.now() - self.start_time if self.start_time else None
 
     @property
-    def avg_fps(self) -> float:
-        """The average framerate achieved since the start of the app, or 0 if it hasn't started yet."""
+    def time_since_stopped(self) -> timedelta | None:
+        """The time since the moment the app stopped running, or None if it hasn't stopped yet."""
 
-        return (
-            self.frames / self.time_since_start.total_seconds()
-            if self.time_since_start is not None
-            else 0
-        )
-
-    @property
-    def fps(self) -> float:
-        """Alias for `app.chrono.framerate`"""
-
-        return self.framerate
-
-    @property
-    def frame_count(self) -> int:
-        """The number of frames since the start of the app. Alias for `frames`."""
-
-        return self.frames
+        return datetime.now() - self.stop_time if self.stop_time else None
 
     @override
     def start(self) -> None:
@@ -79,9 +63,8 @@ class Chrono(Service):
     def update(self) -> None:
         self.deltatime = self._internal_clock.tick(self.target_framerate) / 1000
         self.framerate = self._internal_clock.get_fps()
-        self.frames += 1
 
-        if self.framerate < self.min_fps:
-            self.min_fps = self.framerate
-        if self.framerate > self.max_fps:
-            self.max_fps = self.framerate
+        self.min_framerate = min(self.framerate, self.min_framerate)
+        self.max_framerate = max(self.framerate, self.max_framerate)
+
+        self.frames += 1
