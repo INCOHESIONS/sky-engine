@@ -247,7 +247,7 @@ assert Player() is Player()  # passes
 The engine supports hot reloading for `Component`s, meaning they can have their attributes changed and updated during runtime. To enable hot reloading, one must first add the `HotReload` module to their `App`'s spec:
 
 ```python
-from sky.hot_reload import HotReload
+from sky.modules import HotReload
 
 app = App(spec=AppSpec(modules=[HotReload]))
 ```
@@ -266,7 +266,7 @@ class Player(Component): ...
 
 > Note that hot reloading simply changes a `Component`'s internal type reference (`__class__`), meaning it changes its methods, descriptors and inner classes, but it does not change its attributes (`__dict__`). As such, members set in `__init__` or `start` will not be updated unless those methods are executed again, which they normally won't be. With that in mind, to use hot reloading for prototyping, one must type values directly into arguments. For example, when writing something like `draw.aacircle(app.window.surface, self.color, self.position, self.radius)`, one should simply write `BLACK` directly into the color parameter, as opposed to modifying `self.color` in the initialization function, as that function won't be called again after the `Component`'s initialization.
 
-Notably, these examples use `app.mouse` and `app.keyboard`, which are `InputManager`s included by default in every window. `InputManager`s run every frame, grabbing input from a given window, using the `Windowing` `Service`. `Service`s are objects that handle a certain portion of functionality for the engine, also updating their data every frame. By default, the engine offers 5 `Service`s:
+Notably, these examples use `app.mouse` and `app.keyboard`, which are `InputManager`s included by default in every window. `InputManager`s run every frame, grabbing input from a given window, using the `Windowing` `Service`. `Service`s are objects that handle a certain portion of functionality for the engine, also updating their data every frame. By default, the engine offers 4 `Service`s:
 - `Events` (handles `pygame` events)
 - `Windowing` (handles windowing)
 - `Chrono` (handles time-related data)
