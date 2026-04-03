@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, final, override
 
 import pygame
 from pygame import Rect as PygameRect
+from pygame import Surface
 
 from ._compat import get_window_handle, make_window_transparent
 from ._managers import Keyboard, Mouse
@@ -51,8 +52,8 @@ class Window:
             resizable=spec.resizable,
             size=spec.size,
             title=spec.title,
-            vulkan=spec.graphics_api == "vulkan",
             utility=spec.hide_from_taskbar,
+            vulkan=spec.graphics_api == "vulkan",
         )
 
         if spec.use_surface:
@@ -402,7 +403,14 @@ class Window:
         self.maximized = not self._maximized
 
     def center_on_monitor(self, monitor: Monitor | None = None, /) -> None:
-        """Centers the window on the specified monitor, or the primary monitor if `None` is provided."""
+        """
+        Centers the window on the specified monitor, or the primary monitor if `None` is provided.
+
+        Parameters
+        ----------
+        monitor: `Monitor | None`, optional
+            The monitor to center the window on. Centers it on the primary monitor if `None`.
+        """
 
         self.position = (
             monitor or self.windowing.primary_monitor
@@ -413,15 +421,31 @@ class Window:
 
         self.underlying.focus()
 
-    def fill(self, color: Color, /) -> None:
-        """Fills the window with the specified color."""
+    def fill(self, color: Color, /, *, area: Rect | None = None) -> None:
+        """
+        Fills the entire window, or the specified area, with the specified color.
 
-        self.surface.fill(color)
+        Parameters
+        ----------
+        color: `Color`
+            The color to use for the fill.
+        area: `Rect | None`, optional
+            The area to fill. If `None`, the default, fills the entire window instead.
+        """
 
-    def blit(
-        self, surface: pygame.Surface, /, position: Vector2 | PygameRect | Rect
-    ) -> None:
-        """Blits the surface onto the window."""
+        self.surface.fill(color, area)
+
+    def blit(self, surface: Surface, /, position: Vector2 | PygameRect | Rect) -> None:
+        """
+        Blits the surface onto the window at the specified position.
+
+        Parameters
+        ----------
+        surface: `Surface`
+            The surface to blit.
+        position: `Vector2 | PygameRect | Rect`
+            Where to blit the surface.
+        """
 
         self.surface.blit(surface, position)
 
