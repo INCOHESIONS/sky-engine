@@ -15,6 +15,7 @@ from .scene import Scene
 from .spec import AppSpec, SceneSpec, WindowSpec
 from .utils import (
     attempt_empty_call,
+    filter_by_type,
     filterl,
     first,
     is_callable_with_no_arguments,
@@ -373,6 +374,8 @@ class App:
         if self.is_running:
             scene.start()
 
+    add_scene = load_scene  # alias
+
     def unload_scene(self, scene: Scene, /) -> None:
         """
         Removes a `Scene` from the list of scenes and stops it.
@@ -393,6 +396,8 @@ class App:
 
         self._scenes.remove(scene)
         scene.stop()
+
+    remove_scene = unload_scene  # alias
 
     def toggle_scene(self, scene: Scene, /) -> None:
         """
@@ -461,7 +466,7 @@ class App:
 
     def remove_component(self, component: type[Component] | Component, /) -> None:
         """
-        Removes a component from the main `Scene`.
+        Removes a component from any of the currently active `Scene`s.
 
         Parameters
         ----------
@@ -471,16 +476,52 @@ class App:
         Raises
         ------
         `ValueError`
-            If the component wasn't found.
+            If the component wasn't found in any of the currently active `Scene`s.
         """
 
-        self.scene.remove_component(component)
+        scenes = filterl(lambda scene: component in scene, self.scenes)
 
-    def clear_components(self) -> None:
-        """Removes all components from the main `Scene`."""
+        if all(component not in scene for scene in scenes):
+            raise ValueError(
+                "Component not found in any of the currently active scenes."
+            )
 
-        for component in self.scene.components:
+        for scene in scenes:
+            scene.remove_component(component)
+
+    def remove_components(self, /, *components: Component) -> None:
+        """
+        Removes all the listed components from any of the currently active `Scene`s, and calls their `stop` methods.
+
+        Parameters
+        ----------
+        *components: `Component`
+            The components to remove.
+
+        Raises
+        ------
+        `ValueError`
+            If a component wasn't found.
+        """
+
+        for component in components:
             self.remove_component(component)
+
+    def clear_components(self, /, *, of_type: type[Component] | None = None) -> None:
+        """
+        Removes all components from all the currently active `Scene`s, clearing the `App` completely.
+        If a type is passed, removes all components that match that type.
+
+        Parameters
+        ----------
+        of_type: `type[Component] | None`, optional
+            The component type to remove.
+            If `None`, the default, is passed, all components will be removed from the all the currently active `Scene`s.
+        """
+
+        self.remove_components(
+            *(self.get_components(of_type=of_type) if of_type else self.all_components)
+        )
 
     def singleton_component[C: type[Component]](self, cls: C, /) -> C:
         """
@@ -520,14 +561,14 @@ class App:
         return cls
 
     def get_component[T: Component = Component](
-        self, component: type[T] | str, /
+        self, /, *, of_type: type[T] | str
     ) -> T | None:
         """
         Gets a matching component from any of the currently loaded `Scene`s.
 
         Parameters
         ----------
-        component: `type[Component] | str`
+        of_type: `type[Component] | str`
             The component's type's name, or the type itself. Will not be instanced.
 
         Returns
@@ -536,17 +577,17 @@ class App:
             The component, if found.
         """
 
-        return first(self.get_components(component))
+        return first(self.get_components(of_type=of_type))
 
     def get_components[T: Component = Component](
-        self, component: type[T] | str, /
+        self, /, *, of_type: type[T] | str
     ) -> Sequence[T]:
         """
         Gets a collection of matching components from all currently loaded scenes.
 
         Parameters
         ----------
-        component: `type[Component] | str`
+        of_type: `type[Component] | str`
             The component's type's name, or the type itself. Will not be instanced.
 
         Returns
@@ -555,12 +596,7 @@ class App:
             The collection of components, if found.
         """
 
-        return filterl(
-            (lambda c: c.__class__.__name__ == component)
-            if isinstance(component, str)
-            else lambda c: isinstance(c, component),
-            self.all_components,
-        )  # pyright: ignore[reportReturnType]
+        return list(filter_by_type(self.all_components, of_type))
 
     def filter_components(
         self, predicate: Callable[[Component], bool], /
@@ -583,7 +619,8 @@ class App:
 
     def has_component(self, component: type[Component] | Component | str, /) -> bool:
         """
-        Checks if the `App` contains a matching component in any of its currently active `Scene`s.
+        Checks if the `App` contains the specified component in any of its currently active `Scene`s.
+        If a type or type name is passed instead, checks if any of the currently active `Scene`s contain a component of a matching type.
 
         Parameters
         ----------
@@ -597,10 +634,9 @@ class App:
         """
 
         return (
-            self.get_component(
-                component.__class__ if isinstance(component, Component) else component
-            )
-            is not None
+            component in self.all_components
+            if isinstance(component, Component)
+            else self.get_component(of_type=component) is not None
         )
 
     def add_service(self, service: Service, /) -> Self:

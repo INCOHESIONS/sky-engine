@@ -85,7 +85,7 @@ class AstronomicalObject(Component):
 
     def simulate(self) -> None:
         for _ in range(ITERATIONS):
-            for other in app.get_components(self.__class__):
+            for other in app.get_components(of_type=self.__class__):
                 if other == self:
                     continue
 

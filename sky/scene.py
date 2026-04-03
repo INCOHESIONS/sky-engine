@@ -8,7 +8,7 @@ from .core import Component
 from .hook import Hook
 from .spec import SceneSpec
 from .types import Coroutine
-from .utils import filterl, first, is_callable_with_no_arguments
+from .utils import filter_by_type, first, is_callable_with_no_arguments
 
 if TYPE_CHECKING:
     from .app import App
@@ -206,8 +206,7 @@ class Scene:
                 comp := component() if callable(component) else component
             )
 
-            if not getattr(comp, "_has_started", False):
-                self._start_component(comp)
+            self._start_component(comp)
 
             if when:
                 when -= __add
@@ -260,7 +259,9 @@ class Scene:
         """
 
         comp = (
-            self.get_component(component) if isinstance(component, type) else component
+            self.get_component(of_type=component)
+            if isinstance(component, type)
+            else component
         )
 
         if comp is None:
@@ -271,21 +272,47 @@ class Scene:
         if not getattr(comp, "_has_stopped", False):
             comp.stop()
 
-    def clear_components(self) -> None:
-        """Removes all components from the `Scene`."""
+    def remove_components(self, /, *components: Component) -> None:
+        """
+        Removes all the listed components from the `Scene`, and calls their `stop` methods.
 
-        for component in self._components:
+        Parameters
+        ----------
+        *components: `Component`
+            The components to remove.
+
+        Raises
+        ------
+        `ValueError`
+            If a component wasn't found.
+        """
+
+        for component in components:
             self.remove_component(component)
 
+    def clear_components(self, /, *, of_type: type[Component] | None = None) -> None:
+        """
+        Removes all components from the `Scene`. If a type is passed, removes all components that match that type.
+
+        Parameters
+        ----------
+        of_type: `type[Component] | None`
+            The component type to remove. If `None`, the default, is passed, all components will be removed from the `Scene`.
+        """
+
+        self.remove_components(
+            *(self.get_components(of_type=of_type) if of_type else self._components)
+        )
+
     def get_component[T: Component = Component](
-        self, component: type[T] | str, /
+        self, /, *, of_type: type[T] | str
     ) -> T | None:
         """
         Gets a matching component from the `Scene`.
 
         Parameters
         ----------
-        component: `type[Component] | str`
+        of_type: `type[Component] | str`
             The component's type's name, or the type itself. Will not be instanced.
 
         Returns
@@ -294,17 +321,17 @@ class Scene:
             The component, if found.
         """
 
-        return first(self.get_components(component))
+        return first(self.get_components(of_type=of_type))
 
     def get_components[T: Component = Component](
-        self, component: type[T] | str, /
+        self, /, *, of_type: type[T] | str
     ) -> Sequence[T]:
         """
         Gets a collection of matching components from the `Scene`.
 
         Parameters
         ----------
-        component: `type[Component] | str`
+        of_type: `type[Component] | str`
             The component's type's name, or the type itself. Will not be instanced.
 
         Returns
@@ -313,18 +340,13 @@ class Scene:
             The collection of components, if found.
         """
 
-        return filterl(
-            (lambda c: c.__class__.__name__ == component)
-            if isinstance(component, str)
-            else lambda c: isinstance(c, component),
-            self._components,
-        )  # pyright: ignore[reportReturnType]
+        return list(filter_by_type(self._components, of_type))
 
     def filter_components(
         self, predicate: Callable[[Component], bool], /
     ) -> Iterable[Component]:
         """
-        Filters this `Scene` for components that return `True` for the specified predicate.
+        Filters this `Scene` for components that pass the specified predicate.
 
         Parameters
         ----------
@@ -341,7 +363,8 @@ class Scene:
 
     def has_component(self, component: type[Component] | Component | str, /) -> bool:
         """
-        Checks if the `Scene` contains a matching component.
+        Checks if the `Scene` contains the specified component.
+        If a type or type name is passed instead, checks if the `Scene` contains a component of a matching type.
 
         Parameters
         ----------
@@ -355,21 +378,18 @@ class Scene:
         """
 
         return (
-            self.get_component(
-                component.__class__ if isinstance(component, Component) else component
-            )
-            is not None
+            component in self._components
+            if isinstance(component, Component)
+            else self.get_component(of_type=component) is not None
         )
 
     @final
-    def _start_component(self, /, component: Component) -> None:
+    def _start_component(self, component: Component, /) -> None:
+        if getattr(component, "_has_started", False):
+            return
+
         self._handle_possible_coroutine(component.start)
         component._has_started = True  # pyright: ignore[reportAttributeAccessIssue]
-
-    @final
-    def _stop_component(self, /, component: Component) -> None:
-        self._handle_possible_coroutine(component.start)
-        component._has_stopped = True  # pyright: ignore[reportAttributeAccessIssue]
 
     @final
     def _handle_possible_coroutine(
