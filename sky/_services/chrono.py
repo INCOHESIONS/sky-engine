@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import final, override
 
-import pygame
+from pygame import Clock
 
 from ..core import Service
 
@@ -37,7 +37,13 @@ class Chrono(Service):
         self.stop_time = None
         """The time the app stopped, or None if it hasn't stopped yet."""
 
-        self._internal_clock = pygame.time.Clock()
+        self._clock = Clock()
+
+    @property
+    def clock(self) -> Clock:
+        """The internal clock that keeps track of and manages framerate."""
+
+        return self._clock
 
     @property
     def time_since_start(self) -> timedelta | None:
@@ -61,8 +67,8 @@ class Chrono(Service):
 
     @override
     def update(self) -> None:
-        self.deltatime = self._internal_clock.tick(self.target_framerate) / 1000
-        self.framerate = self._internal_clock.get_fps()
+        self.deltatime = self._clock.tick(self.target_framerate) / 1000
+        self.framerate = self._clock.get_fps()
 
         self.min_framerate = min(self.framerate, self.min_framerate)
         self.max_framerate = max(self.framerate, self.max_framerate)
