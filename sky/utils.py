@@ -125,6 +125,12 @@ class Vector2(PygameVector2):
 
         return cls(uniform(rect.left, rect.right), uniform(rect.top, rect.bottom))
 
+    @property
+    def heading(self) -> float:
+        """Alias for `Vector2.angle`."""
+
+        return self.angle
+
     @override
     def normalize(self) -> Self:
         """
@@ -708,16 +714,16 @@ class Rect(PygameRect):
     """Replacement for `pygame.Rect` with some extra utilities."""
 
     @classmethod
-    def from_center(cls, position: Vector2, size: Vector2, /) -> Self:
+    def from_center(cls, position: Iterable[float], size: Iterable[float], /) -> Self:
         """
         Returns a `Rect` with the given position and size, centered at the given position.\n
         Shorthand for setting the `center` and `size` properties of a `pygame.Rect` object.
 
         Parameters
         ----------
-        position: `Vector2`
+        position: `Iterable[float]`
             The center position of the `Rect`.
-        size: `Vector2`
+        size: `Iterable[float]`
             The size of the `Rect`.
 
         Returns
@@ -727,8 +733,8 @@ class Rect(PygameRect):
         """
 
         r = cls()
-        r.size = size
-        r.center = position
+        r.size = Vector2(*size)
+        r.center = Vector2(*position)
 
         return r
 
@@ -831,16 +837,16 @@ def get_by_type[T, U](iterable: Iterable[T], typ: type[U], /) -> U | None:
     return first(filter_by_type(iterable, typ))
 
 
-def filter_by_type[T, U](iterable: Iterable[T], typ: type[U], /) -> Iterator[U]:
+def filter_by_type[T, U](iterable: Iterable[T], typ: type[U] | str, /) -> Iterator[U]:
     """
-    Filters an `Iterable` based on the specified type.
+    Filters an `Iterable` based on the specified type (or its name).
 
     Parameters
     ----------
     iterable: `Iterable[T]`
         The `Iterable` to be filtered.
-    typ: `type[U]`
-        The type to filter for. Must inherit from `T`.
+    typ: `type[U] | str`
+        The type (or its name) to filter for. Must inherit from `T`.
 
     Returns
     -------
@@ -848,7 +854,62 @@ def filter_by_type[T, U](iterable: Iterable[T], typ: type[U], /) -> Iterator[U]:
         The filtered `Iterable`.
     """
 
-    return filter(lambda e: isinstance(e, typ), iterable)  # pyright: ignore[reportReturnType]
+    return filter(
+        lambda e: (
+            isinstance(e, typ) if isinstance(typ, type) else e.__class__.__name__ == typ
+        ),
+        iterable,
+    )  # pyright: ignore[reportReturnType]
+
+
+def find[T, TDefault](
+    pred: Callable[[T], bool], i: Iterable[T], /, *, default: TDefault = None
+) -> T | TDefault:
+    """
+    Finds the first element in an `Iterable` that passes the specified predicate.
+
+    Parameters
+    ----------
+    pred: `Callable[[T], bool]`
+        The predicate to test the `Iterable`'s elements against.
+    i: `Iterable[T]`
+        The `Iterable` to find the element from.
+    default: `TDefault`, optional
+        The default value to return if the `Iterable` is empty.
+
+    Returns
+    -------
+    `T | TDefault`
+        The first element of the `Iterable` that passes the check,
+        or the `default` value (`None` by default) if the no values pass the check.
+    """
+
+    return first(filter(pred, i), default=default)
+
+
+def find_last[T, TDefault](
+    pred: Callable[[T], bool], i: Iterable[T], /, *, default: TDefault = None
+) -> T | TDefault:
+    """
+    Finds the last element in an `Iterable` that passes the specified predicate.
+
+    Parameters
+    ----------
+    pred: `Callable[[T], bool]`
+        The predicate to test the `Iterable`'s elements against.
+    i: `Iterable[T]`
+        The `Iterable` to find the element from.
+    default: `TDefault`, optional
+        The default value to return if the `Iterable` is empty.
+
+    Returns
+    -------
+    `T | TDefault`
+        The last element of the `Iterable` that passes the check,
+        or the `default` value (`None` by default) if the no values pass the check.
+    """
+
+    return last(filter(pred, i), default=default)
 
 
 def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDefault:
@@ -875,8 +936,8 @@ def first[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TD
 
     Returns
     -------
-    `T | None`
-        The first element of the `Iterable`, or `None` if the `Iterable` is empty.
+    `T | TDefault`
+        The first element of the `Iterable`, or the `default` value (`None` by default) if the `Iterable` is empty.
     """
 
     try:
@@ -910,7 +971,7 @@ def last[T, TDefault](i: Iterable[T], /, *, default: TDefault = None) -> T | TDe
     Returns
     -------
     `T | None`
-        The last element of the `Iterable`, or `None` if the `Iterable` is empty.
+        The first element of the `Iterable`, or the `default` value (`None` by default) if the `Iterable` is empty.
     """
 
     try:
