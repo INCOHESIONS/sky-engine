@@ -7,6 +7,7 @@ import pygame
 from pygame import Color as PygameColor
 from pygame import Event as PygameEvent
 from pygame import Rect as PygameRect
+from pygame import Surface as PygameSurface
 from pygame import Vector2 as PygameVector2
 from pygame import Vector3 as PygameVector3
 
@@ -24,6 +25,7 @@ __all__ = [
     "PygameColor",
     "PygameEvent",
     "PygameRect",
+    "PygameSurface",
     "PygameVector2",
     "PygameVector3",
     "StateLike",

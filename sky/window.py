@@ -7,15 +7,13 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, final, override
 
 import pygame
-from pygame import Rect as PygameRect
-from pygame import Surface
 
 from ._compat import get_window_handle, make_window_transparent
 from ._managers import Keyboard, Mouse
 from .core import InputManager, Monitor
 from .hook import Hook
 from .spec import WindowSpec
-from .types import PygameEvent
+from .types import PygameEvent, PygameRect, PygameSurface
 from .utils import Color, Rect, Vector2, get_by_type
 
 if TYPE_CHECKING:
@@ -181,7 +179,7 @@ class Window:
         return self.underlying.id
 
     @property
-    def surface(self) -> pygame.Surface:
+    def surface(self) -> PygameSurface:
         """This `Window`'s surface."""
 
         return self._underlying.get_surface()
@@ -421,7 +419,7 @@ class Window:
 
         self.underlying.focus()
 
-    def fill(self, color: Color, /, *, area: Rect | None = None) -> None:
+    def fill(self, color: Color, /, *, area: PygameRect | Rect | None = None) -> None:
         """
         Fills the entire window, or the specified area, with the specified color.
 
@@ -435,19 +433,24 @@ class Window:
 
         self.surface.fill(color, area)
 
-    def blit(self, surface: Surface, /, position: Vector2 | PygameRect | Rect) -> None:
+    def blit(
+        self,
+        surface: PygameSurface,
+        /,
+        position: Vector2 | PygameRect | Rect | None = None,
+    ) -> None:
         """
         Blits the surface onto the window at the specified position.
 
         Parameters
         ----------
-        surface: `Surface`
+        surface: `PygameSurface`
             The surface to blit.
-        position: `Vector2 | PygameRect | Rect`
-            Where to blit the surface.
+        position: `Vector2 | PygameRect | Rect | None`, optional
+            Where to blit the surface. (0, 0) by default.
         """
 
-        self.surface.blit(surface, position)
+        self.surface.blit(surface, position or Vector2())
 
     def destroy(self) -> None:
         """Destroys the window."""

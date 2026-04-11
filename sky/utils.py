@@ -8,14 +8,12 @@ from inspect import Parameter, signature
 from random import randint, uniform
 from typing import TYPE_CHECKING, Any, Callable, Literal, Self, overload, override
 
-from pygame import Color as PygameColor
-from pygame import Rect as PygameRect
-from pygame import Vector2 as PygameVector2
-from pygame import Vector3 as PygameVector3
 from pygame.typing import SequenceLike
 from singleton_decorator import (  # pyright: ignore[reportMissingTypeStubs]
     singleton as untyped_singleton,  # pyright: ignore[reportUnknownVariableType]
 )
+
+from .types import PygameColor, PygameRect, PygameVector2, PygameVector3
 
 if TYPE_CHECKING:
     from .core import Module
