@@ -440,12 +440,12 @@ class Hook[**TParams = [], TReturn: Any = None]:
     def execute_once(
         self, callback: Callable[TParams, TReturn], /
     ) -> Callable[TParams, TReturn]:
-        def proxy(*args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
+        def __proxy(*args: TParams.args, **kwargs: TParams.kwargs) -> TReturn:
             nonlocal self
             results = callback(*args, **kwargs)
-            self -= proxy
+            self -= __proxy
             return results
 
-        self += proxy
+        self += __proxy
 
         return callback
