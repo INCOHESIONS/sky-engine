@@ -1,5 +1,7 @@
 /__pycache__
 /.vscode
 /.ruff_cache
+/dist
 *.pyc
 main.py
+test.py
