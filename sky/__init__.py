@@ -12,7 +12,7 @@ __title__ = "sky-engine"
 __description__ = "A wrapper around pygame that makes it less painful to use."
 __url__ = "https://github.com/incohesions/sky-engine"
 __author__ = "iNCOHESiONS"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __license__ = "MIT"
 
 
